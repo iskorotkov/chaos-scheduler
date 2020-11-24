@@ -1,4 +1,4 @@
-package failures
+package loading
 
 import (
 	"fmt"

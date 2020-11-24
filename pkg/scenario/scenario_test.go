@@ -1,6 +1,8 @@
 package scenario
 
 import (
+	"math/rand"
+	"reflect"
 	"testing"
 	"testing/quick"
 )
@@ -43,8 +45,8 @@ func TestGeneration2(t *testing.T) {
 		c := Config{f, stages, nil}
 
 		s, err := NewScenario(c)
-		if err != nil {
-			return false
+		if stages <= 0 {
+			return err != nil
 		}
 
 		if len(s) != stages {
@@ -60,8 +62,10 @@ func TestGeneration2(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(f, nil); err != nil {
+	if err := quick.Check(f, &quick.Config{MaxCount: 100, Values: generateValuesForStages}); err != nil {
 		t.Error(err)
 	}
 }
 
+func generateValuesForStages(v []reflect.Value, r *rand.Rand) {
+}
