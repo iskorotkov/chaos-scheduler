@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	host     = os.Getenv("ARGO_HOST")
-	port     = os.Getenv("ARGO_PORT")
-	executor argo.Executor
+	host         = os.Getenv("EXECUTOR_HOST")
+	port         = os.Getenv("EXECUTOR_PORT")
+	failuresPath = os.Getenv("FAILURES_PATH")
+	templatePath = os.Getenv("TEMPLATE_PATH")
+	executor     argo.Executor
 )
 
 func main() {
@@ -22,6 +24,14 @@ func main() {
 		log.Fatalf("couldn't parse argo port")
 	}
 	executor = argo.NewExecutor(host, int(p))
+
+	if failuresPath == "" {
+		log.Fatalf("path to failures isn't set")
+	}
+
+	if templatePath == "" {
+		log.Fatalf("path to scenario template isn't set")
+	}
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
@@ -40,12 +50,6 @@ func homePage(rw http.ResponseWriter, r *http.Request) {
 
 func test(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		path := os.Getenv("FAILURES_PATH")
-		if path == "" {
-			internalError(rw, "FAILURES_PATH env var isn't set")
-			return
-		}
-
 		err := r.ParseForm()
 		if err != nil {
 			badRequest(rw, fmt.Sprintf("couldn't parse form data: %v\n", err))
@@ -58,7 +62,7 @@ func test(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		scenario, err := argo.NewScenario(argo.Config{Path: path, Stages: int(stages)})
+		scenario, err := argo.NewScenario(argo.Config{Path: failuresPath, Stages: int(stages)})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
 		}

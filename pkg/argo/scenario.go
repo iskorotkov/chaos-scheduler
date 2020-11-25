@@ -6,8 +6,8 @@ import (
 )
 
 type Action struct {
-	name       string
-	definition string
+	Name       string `yaml:"name"`
+	Definition string `yaml:"definition"`
 }
 
 type Stage []Action
