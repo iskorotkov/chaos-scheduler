@@ -14,13 +14,13 @@ type Stage []Action
 
 type Scenario []Stage
 
-type Config struct {
+type ScenarioConfig struct {
 	Path   string
 	Stages int
 	Rng    *rand.Rand
 }
 
-func NewScenario(c Config) (Scenario, error) {
+func NewScenario(c ScenarioConfig) (Scenario, error) {
 	if c.Stages <= 0 {
 		return nil, fmt.Errorf("can't create scenario with stages <= 0")
 	}

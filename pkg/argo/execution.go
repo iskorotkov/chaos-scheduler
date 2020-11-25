@@ -2,7 +2,6 @@ package argo
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"net/http"
 	"strings"
 )
@@ -12,17 +11,8 @@ type Executor struct {
 	port int
 }
 
-func (e Executor) Format(s Scenario) (string, error) {
-	content, err := yaml.Marshal(s)
-	if err != nil {
-		return "", fmt.Errorf("couldn't marshal scenario to yaml: %v", err)
-	}
-
-	return string(content), nil
-}
-
-func (e Executor) Execute(s Scenario) error {
-	formatted, err := e.Format(s)
+func (e Executor) Execute(config FormatConfig) error {
+	formatted, err := Format(config)
 	if err != nil {
 		return fmt.Errorf("couldn't format provided scenario: %v", err)
 	}

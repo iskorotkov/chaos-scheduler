@@ -62,12 +62,12 @@ func test(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		scenario, err := argo.NewScenario(argo.Config{Path: failuresPath, Stages: int(stages)})
+		scenario, err := argo.NewScenario(argo.ScenarioConfig{Path: failuresPath, Stages: int(stages)})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
 		}
 
-		output, err := executor.Format(scenario)
+		output, err := argo.Format(argo.FormatConfig{TemplatePath: templatePath, Scenario: scenario})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't convert scenario to given format: %v\n", err))
 		}
