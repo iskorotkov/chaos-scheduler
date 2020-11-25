@@ -5,22 +5,16 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path"
+	"strings"
 )
 
-type YamlContent map[interface{}]interface{}
-
-type failure struct {
-	name string
-	yaml YamlContent
-}
-
-func load(folder string) ([]failure, error) {
+func load(folder string) ([]Action, error) {
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("folder doesn't exist: %v", err)
 	}
 
-	failures := make([]failure, 0)
+	actions := make([]Action, 0)
 	for _, file := range files {
 		b, err := ioutil.ReadFile(path.Join(folder, file.Name()))
 		if err != nil {
@@ -33,8 +27,9 @@ func load(folder string) ([]failure, error) {
 			return nil, fmt.Errorf("couldn't unmarshall failure definition from yaml: %v", err)
 		}
 
-		failures = append(failures, failure{file.Name(), content})
+		filename := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		actions = append(actions, Action{filename, content})
 	}
 
-	return failures, nil
+	return actions, nil
 }

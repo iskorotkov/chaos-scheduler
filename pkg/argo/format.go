@@ -36,7 +36,7 @@ func Format(config FormatConfig) (string, error) {
 		return "", fmt.Errorf("couldn't get 'spec' property of template")
 	}
 
-	spec["templates"] = linearizeActions(config.Scenario)
+	spec["templates"] = createTemplatesList(config.Scenario)
 
 	res, err := yaml.Marshal(workflow)
 	if err != nil {
@@ -46,11 +46,13 @@ func Format(config FormatConfig) (string, error) {
 	return string(res), nil
 }
 
-func linearizeActions(s Scenario) []Action {
-	var actions []Action
+func createTemplatesList(s Scenario) []interface{} {
+	entryAction := createEntryAction(s)
+	actions := []interface{}{entryAction}
+
 	for _, stage := range s {
 		for _, a := range stage {
-			actions = append(actions, a)
+			actions = append(actions, a.Yaml)
 		}
 	}
 
