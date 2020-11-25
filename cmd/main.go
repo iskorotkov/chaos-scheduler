@@ -19,9 +19,13 @@ var (
 )
 
 func main() {
+	if host == "" {
+		log.Fatalf("executor host isn't set")
+	}
+
 	p, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
-		log.Fatalf("couldn't parse argo port")
+		log.Fatalf("couldn't parse executor port")
 	}
 	executor = argo.NewExecutor(host, int(p))
 

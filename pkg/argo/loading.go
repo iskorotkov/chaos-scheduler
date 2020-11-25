@@ -2,13 +2,16 @@ package argo
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path"
 )
 
+type YamlContent map[interface{}]interface{}
+
 type failure struct {
 	name string
-	yaml string
+	yaml YamlContent
 }
 
 func load(folder string) ([]failure, error) {
@@ -24,7 +27,12 @@ func load(folder string) ([]failure, error) {
 			return nil, fmt.Errorf("couldn't read file: %v", err)
 		}
 
-		content := string(b)
+		content := make(YamlContent)
+		err = yaml.Unmarshal(b, content)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't unmarshall failure definition from yaml: %v", err)
+		}
+
 		failures = append(failures, failure{file.Name(), content})
 	}
 

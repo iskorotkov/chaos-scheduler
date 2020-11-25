@@ -5,10 +5,7 @@ import (
 	"math/rand"
 )
 
-type Action struct {
-	Name       string `yaml:"name"`
-	Definition string `yaml:"definition"`
-}
+type Action YamlContent
 
 type Stage []Action
 
@@ -48,5 +45,5 @@ func NewScenario(c ScenarioConfig) (Scenario, error) {
 
 func createStage(failures []failure, i int) Stage {
 	f := failures[(i % len(failures))]
-	return []Action{{f.name, f.yaml}}
+	return Stage{Action(f.yaml)}
 }
