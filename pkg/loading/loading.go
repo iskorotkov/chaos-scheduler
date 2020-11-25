@@ -21,13 +21,13 @@ func (f Failure) Yaml() string {
 	return f.yaml
 }
 
-func Load(folder string) ([]Failure, error) {
+func Load(folder string) ([]scenario.Failure, error) {
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("folder doesn't exist: %v", err)
 	}
 
-	failures := make([]Failure, 0)
+	failures := make([]scenario.Failure, 0)
 	for _, file := range files {
 		b, err := ioutil.ReadFile(path.Join(folder, file.Name()))
 		if err != nil {
