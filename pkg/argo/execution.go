@@ -1,11 +1,10 @@
 package argo
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenario"
 	"gopkg.in/yaml.v2"
 	"net/http"
+	"strings"
 )
 
 type Executor struct {
@@ -13,14 +12,23 @@ type Executor struct {
 	port int
 }
 
-func (e Executor) Execute(scenario scenario.Scenario) error {
-	url := fmt.Sprintf("%s:%d", e.host, e.port)
-	content, err := yaml.Marshal(scenario)
+func (e Executor) Format(s Scenario) (string, error) {
+	content, err := yaml.Marshal(s)
 	if err != nil {
-		return fmt.Errorf("couldn't marshal scenario to yaml: %v", err)
+		return "", fmt.Errorf("couldn't marshal scenario to yaml: %v", err)
 	}
 
-	r, err := http.Post(url, "text/yaml", bytes.NewReader(content))
+	return string(content), nil
+}
+
+func (e Executor) Execute(s Scenario) error {
+	formatted, err := e.Format(s)
+	if err != nil {
+		return fmt.Errorf("couldn't format provided scenario: %v", err)
+	}
+
+	url := fmt.Sprintf("%s:%d", e.host, e.port)
+	r, err := http.Post(url, "text/yaml", strings.NewReader(formatted))
 	if err != nil {
 		return fmt.Errorf("couldn't post scenario to executor server: %v", err)
 	}

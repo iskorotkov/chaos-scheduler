@@ -1,4 +1,4 @@
-package scenario
+package argo
 
 import (
 	"fmt"
@@ -14,15 +14,10 @@ type Stage []Action
 
 type Scenario []Stage
 
-type Failure interface {
-	Name() string
-	Yaml() string
-}
-
 type Config struct {
-	Failures []Failure
-	Stages   int
-	Rng      *rand.Rand
+	Path   string
+	Stages int
+	Rng    *rand.Rand
 }
 
 func NewScenario(c Config) (Scenario, error) {
@@ -30,7 +25,12 @@ func NewScenario(c Config) (Scenario, error) {
 		return nil, fmt.Errorf("can't create scenario with stages <= 0")
 	}
 
-	if len(c.Failures) == 0 {
+	failures, err := Load(c.Path)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read failures: %v", err)
+	}
+
+	if len(failures) == 0 {
 		return nil, fmt.Errorf("can't create scenario without experiments")
 	}
 
@@ -40,13 +40,13 @@ func NewScenario(c Config) (Scenario, error) {
 
 	stages := make([]Stage, 0)
 	for i := 0; i < c.Stages; i++ {
-		stages = append(stages, createStage(c, i))
+		stages = append(stages, createStage(failures, i))
 	}
 
 	return stages, nil
 }
 
-func createStage(c Config, i int) Stage {
-	f := c.Failures[(i % len(c.Failures))]
-	return []Action{{f.Name(), f.Yaml()}}
+func createStage(failures []failure, i int) Stage {
+	f := failures[(i % len(failures))]
+	return []Action{{f.name, f.yaml}}
 }
