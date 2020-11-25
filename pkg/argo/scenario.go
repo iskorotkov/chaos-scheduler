@@ -25,7 +25,7 @@ func NewScenario(c Config) (Scenario, error) {
 		return nil, fmt.Errorf("can't create scenario with stages <= 0")
 	}
 
-	failures, err := Load(c.Path)
+	failures, err := load(c.Path)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read failures: %v", err)
 	}

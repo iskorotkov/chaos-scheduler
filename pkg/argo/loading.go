@@ -11,7 +11,7 @@ type failure struct {
 	yaml string
 }
 
-func Load(folder string) ([]failure, error) {
+func load(folder string) ([]failure, error) {
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("folder doesn't exist: %v", err)
