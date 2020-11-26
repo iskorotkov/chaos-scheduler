@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/communication"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,9 +14,9 @@ import (
 var (
 	host         = os.Getenv("EXECUTOR_HOST")
 	port         = os.Getenv("EXECUTOR_PORT")
-	failuresPath = os.Getenv("FAILURES_PATH")
+	failuresPath = os.Getenv("ACTIONS_PATH")
 	templatePath = os.Getenv("TEMPLATE_PATH")
-	executor     argo.Executor
+	executor     communication.Executor
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("couldn't parse executor port")
 	}
-	executor = argo.NewExecutor(host, int(p))
+	executor = communication.NewExecutor(host, int(p))
 
 	if failuresPath == "" {
 		log.Fatalf("path to failures isn't set")
@@ -66,12 +67,12 @@ func test(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		scenario, err := argo.NewScenario(argo.ScenarioConfig{Path: failuresPath, Stages: int(stages)})
+		s, err := scenario.NewScenario(scenario.Config{Path: failuresPath, Stages: int(stages)})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
 		}
 
-		output, err := argo.Format(argo.FormatConfig{TemplatePath: templatePath, Scenario: scenario})
+		output, err := communication.GenerateWorkflow(communication.FormatConfig{TemplatePath: templatePath, Scenario: s})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't convert scenario to given format: %v\n", err))
 		}

@@ -1,4 +1,4 @@
-package argo
+package io
 
 import (
 	"fmt"
@@ -8,7 +8,14 @@ import (
 	"strings"
 )
 
-func load(folder string) ([]Action, error) {
+type YamlContent map[interface{}]interface{}
+
+type Action struct {
+	Name string
+	Yaml YamlContent
+}
+
+func Load(folder string) ([]Action, error) {
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("folder doesn't exist: %v", err)

@@ -1,33 +1,27 @@
-package argo
+package scenario
 
 import (
 	"fmt"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/io"
 	"math/rand"
 )
 
-type YamlContent map[interface{}]interface{}
-
-type Action struct {
-	Name string
-	Yaml YamlContent
-}
-
-type Stage []Action
+type Stage []io.Action
 
 type Scenario []Stage
 
-type ScenarioConfig struct {
+type Config struct {
 	Path   string
 	Stages int
 	Rng    *rand.Rand
 }
 
-func NewScenario(c ScenarioConfig) (Scenario, error) {
+func NewScenario(c Config) (Scenario, error) {
 	if c.Stages <= 0 {
 		return nil, fmt.Errorf("can't create scenario with stages <= 0")
 	}
 
-	failures, err := load(c.Path)
+	failures, err := io.Load(c.Path)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't read failures: %v", err)
 	}
@@ -48,7 +42,7 @@ func NewScenario(c ScenarioConfig) (Scenario, error) {
 	return stages, nil
 }
 
-func createStage(actions []Action, stage int) Stage {
+func createStage(actions []io.Action, stage int) Stage {
 	template := actions[(stage % len(actions))]
 	return Stage{template}
 }

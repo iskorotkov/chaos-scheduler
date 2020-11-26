@@ -1,4 +1,4 @@
-package argo
+package communication
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ type Executor struct {
 }
 
 func (e Executor) Execute(config FormatConfig) error {
-	formatted, err := Format(config)
+	formatted, err := GenerateWorkflow(config)
 	if err != nil {
 		return fmt.Errorf("couldn't format provided scenario: %v", err)
 	}
