@@ -56,7 +56,7 @@ func createTemplatesList(s scenario.Scenario) ([]interface{}, error) {
 
 	for _, stage := range s {
 		for _, a := range stage {
-			template, err := templates.NewManifestTemplate(a.TemplateName, a.Yaml)
+			template, err := templates.NewManifestTemplate(a.Name, a.Yaml)
 			if err != nil {
 				return nil, fmt.Errorf("couldn't create template: %v", err)
 			}

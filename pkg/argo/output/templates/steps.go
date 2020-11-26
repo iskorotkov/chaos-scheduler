@@ -21,7 +21,7 @@ func NewStepsTemplate(scenario scenario.Scenario) StepsTemplate {
 		newStage := make([]Step, 0)
 
 		for _, template := range stage {
-			newStage = append(newStage, Step{template.StepName, template.TemplateName})
+			newStage = append(newStage, Step{template.Name, template.Name})
 		}
 
 		res.Steps = append(res.Steps, newStage)

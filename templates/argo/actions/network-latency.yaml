@@ -1,7 +1,7 @@
 apiVersion: litmuschaos.io/v1alpha1
 kind: ChaosEngine
 metadata:
-  name: network-latency
+  name: {{ .Name }}
   namespace: litmus
 spec:
   appinfo:
