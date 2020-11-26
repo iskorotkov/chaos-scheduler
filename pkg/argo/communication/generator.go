@@ -38,7 +38,10 @@ func GenerateWorkflow(config FormatConfig) (string, error) {
 		return "", fmt.Errorf("couldn't get 'spec' property of template")
 	}
 
-	spec["templates"] = createTemplatesList(config.Scenario)
+	spec["templates"], err = createTemplatesList(config.Scenario)
+	if err != nil {
+		return "", fmt.Errorf("couldn't create list of templates: %v", err)
+	}
 
 	res, err := yaml.Marshal(workflow)
 	if err != nil {
@@ -48,15 +51,19 @@ func GenerateWorkflow(config FormatConfig) (string, error) {
 	return string(res), nil
 }
 
-func createTemplatesList(s scenario.Scenario) []interface{} {
-	entryAction := templates.NewStepsTemplate(s)
-	actions := []interface{}{entryAction}
+func createTemplatesList(s scenario.Scenario) ([]interface{}, error) {
+	actions := []interface{}{templates.NewStepsTemplate(s)}
 
 	for _, stage := range s {
 		for _, a := range stage {
-			actions = append(actions, a.Yaml)
+			template, err := templates.NewManifestTemplate(a.Filename, a.Yaml, templates.ActionCreate)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't create template: %v", err)
+			}
+
+			actions = append(actions, template)
 		}
 	}
 
-	return actions
+	return actions, nil
 }

@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-type Stage []io.Action
+type Stage []io.Template
 
 type Scenario []Stage
 
@@ -42,7 +42,7 @@ func NewScenario(c Config) (Scenario, error) {
 	return stages, nil
 }
 
-func createStage(actions []io.Action, stage int) Stage {
+func createStage(actions []io.Template, stage int) Stage {
 	template := actions[(stage % len(actions))]
 	return Stage{template}
 }

@@ -22,8 +22,8 @@ func NewStepsTemplate(scenario scenario.Scenario) StepsTemplate {
 		newStage := make([]Step, 0)
 
 		for j, action := range stage {
-			friendlyName := fmt.Sprintf("%d.%d %s", i+1, j+1, action.Name)
-			newStage = append(newStage, Step{Name: friendlyName, Template: action.Name})
+			friendlyName := fmt.Sprintf("%d.%d %s", i+1, j+1, action.Filename)
+			newStage = append(newStage, Step{Name: friendlyName, Template: action.Filename})
 		}
 
 		res.Steps = append(res.Steps, newStage)
