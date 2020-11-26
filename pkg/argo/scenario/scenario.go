@@ -7,9 +7,9 @@ import (
 )
 
 type Template struct {
-	Identifier string
-	Name       string
-	Yaml       string
+	StepName     string
+	TemplateName string
+	Yaml         string
 }
 
 type Stage []Template
@@ -51,9 +51,8 @@ func NewScenario(c Config) (Scenario, error) {
 func createStage(stage int, t []input.Template) Stage {
 	selected := t[(stage % len(t))]
 
-	id := fmt.Sprintf("%s-%v-%v", selected.Filename, stage+1, 1)
-	name := fmt.Sprintf("Target %s with %s", "cluster", selected.Filename)
-	template := Template{id, name, selected.Yaml}
+	name := fmt.Sprintf("%s-%s-%v-%v", "cluster", selected.Filename, stage+1, 1)
+	template := Template{name, name, selected.Yaml}
 
 	return Stage{template}
 }
