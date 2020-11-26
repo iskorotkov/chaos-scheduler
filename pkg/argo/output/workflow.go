@@ -1,19 +1,19 @@
-package communication
+package output
 
 import (
 	"fmt"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/templates"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 )
 
-type FormatConfig struct {
+type Config struct {
 	TemplatePath string
 	Scenario     scenario.Scenario
 }
 
-func GenerateWorkflow(config FormatConfig) (string, error) {
+func GenerateWorkflow(config Config) (string, error) {
 	if config.TemplatePath == "" {
 		return "", fmt.Errorf("template path wasn't provided")
 	}
@@ -56,7 +56,7 @@ func createTemplatesList(s scenario.Scenario) ([]interface{}, error) {
 
 	for _, stage := range s {
 		for _, a := range stage {
-			template, err := templates.NewManifestTemplate(a.Filename, a.Yaml, templates.ActionCreate)
+			template, err := templates.NewManifestTemplate(a.Identifier, a.Yaml, templates.ActionCreate)
 			if err != nil {
 				return nil, fmt.Errorf("couldn't create template: %v", err)
 			}

@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
 )
 
@@ -18,12 +17,11 @@ type StepsTemplate struct {
 func NewStepsTemplate(scenario scenario.Scenario) StepsTemplate {
 	res := StepsTemplate{"entry", make([][]Step, 0)}
 
-	for i, stage := range scenario {
+	for _, stage := range scenario {
 		newStage := make([]Step, 0)
 
-		for j, action := range stage {
-			friendlyName := fmt.Sprintf("%d.%d %s", i+1, j+1, action.Filename)
-			newStage = append(newStage, Step{Name: friendlyName, Template: action.Filename})
+		for _, template := range stage {
+			newStage = append(newStage, Step{template.Name, template.Identifier})
 		}
 
 		res.Steps = append(res.Steps, newStage)

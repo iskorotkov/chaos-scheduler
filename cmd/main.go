@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/communication"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
 	"html/template"
 	"log"
@@ -72,12 +73,12 @@ func test(rw http.ResponseWriter, r *http.Request) {
 			internalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
 		}
 
-		output, err := communication.GenerateWorkflow(communication.FormatConfig{TemplatePath: templatePath, Scenario: s})
+		out, err := output.GenerateWorkflow(output.Config{TemplatePath: templatePath, Scenario: s})
 		if err != nil {
 			internalError(rw, fmt.Sprintf("couldn't convert scenario to given format: %v\n", err))
 		}
 
-		returnHTMLPage(rw, "templates/html/test.html", output)
+		returnHTMLPage(rw, "templates/html/test.html", out)
 	} else {
 		methodNotAvailable(rw, r)
 	}

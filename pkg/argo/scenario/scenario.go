@@ -2,11 +2,17 @@ package scenario
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/io"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/input"
 	"math/rand"
 )
 
-type Stage []io.Template
+type Template struct {
+	Identifier string
+	Name       string
+	Yaml       string
+}
+
+type Stage []Template
 
 type Scenario []Stage
 
@@ -21,13 +27,13 @@ func NewScenario(c Config) (Scenario, error) {
 		return nil, fmt.Errorf("can't create scenario with stages <= 0")
 	}
 
-	failures, err := io.Load(c.Path)
+	templates, err := input.Load(c.Path)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't read failures: %v", err)
+		return nil, fmt.Errorf("couldn't read templates: %v", err)
 	}
 
-	if len(failures) == 0 {
-		return nil, fmt.Errorf("can't create scenario without experiments")
+	if len(templates) == 0 {
+		return nil, fmt.Errorf("can't create scenario without templates")
 	}
 
 	if c.Rng == nil {
@@ -36,13 +42,18 @@ func NewScenario(c Config) (Scenario, error) {
 
 	stages := make([]Stage, 0)
 	for i := 0; i < c.Stages; i++ {
-		stages = append(stages, createStage(failures, i))
+		stages = append(stages, createStage(i, templates))
 	}
 
 	return stages, nil
 }
 
-func createStage(actions []io.Template, stage int) Stage {
-	template := actions[(stage % len(actions))]
+func createStage(stage int, t []input.Template) Stage {
+	selected := t[(stage % len(t))]
+
+	id := fmt.Sprintf("%s-%v-%v", selected.Filename, stage+1, 1)
+	name := fmt.Sprintf("Target %s with %s", "cluster", selected.Filename)
+	template := Template{id, name, selected.Yaml}
+
 	return Stage{template}
 }
