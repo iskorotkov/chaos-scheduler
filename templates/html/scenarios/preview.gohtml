@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview scenario</title>
+</head>
+<body>
+
+<h1>Generated scenario</h1>
+
+<form>
+    <!--suppress HtmlFormInputWithoutLabel -->
+    <input hidden name="seed" type="number" value="{{ .Seed }}">
+    <!--suppress HtmlFormInputWithoutLabel -->
+    <input hidden name="stages" type="number" value="{{ .Stages }}">
+    <button type="submit" formmethod="post" formaction="/scenarios">Run</button>
+</form>
+
+<div>
+    <pre>{{ .GeneratedWorkflow }}</pre>
+</div>
+
+</body>
+</html>

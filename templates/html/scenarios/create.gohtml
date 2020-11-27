@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create scenario</title>
+</head>
+<body>
+
+<h1>Create scenario</h1>
+
+<form>
+    <div>
+        <label>
+            Seed:
+            <input name="seed" type="number" value="42">
+        </label>
+    </div>
+
+    <div>
+        <label>
+            Number of steps
+            <input name="stages" type="number" value="5">
+        </label>
+    </div>
+
+    <div>
+        <button type="submit" formmethod="get" formaction="/scenarios">Generate</button>
+        <button type="submit" formmethod="post" formaction="/scenarios">Run</button>
+    </div>
+
+</form>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-package communication
+package execution
 
 import (
 	"fmt"
@@ -7,19 +7,17 @@ import (
 	"strings"
 )
 
-type Executor struct {
-	host string
-	port int
-}
-
-func (e Executor) Execute(config output.Config) error {
-	workflow, err := output.GenerateWorkflow(config)
+func ExecuteFromConfig(url string, config output.Config) error {
+	workflow, err := output.GenerateFromConfig(config)
 	if err != nil {
 		return fmt.Errorf("couldn't format provided scenario: %v", err)
 	}
 
-	url := fmt.Sprintf("%s:%d", e.host, e.port)
-	r, err := http.Post(url, "text/yaml", strings.NewReader(workflow))
+	return ExecuteWorkflow(url, workflow)
+}
+
+func ExecuteWorkflow(url string, w string) error {
+	r, err := http.Post(url, "text/yaml", strings.NewReader(w))
 	if err != nil {
 		return fmt.Errorf("couldn't post scenario to executor server: %v", err)
 	}
@@ -29,8 +27,4 @@ func (e Executor) Execute(config output.Config) error {
 	}
 
 	return nil
-}
-
-func NewExecutor(host string, port int) Executor {
-	return Executor{host, port}
 }

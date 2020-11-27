@@ -3,7 +3,6 @@ package scenario
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/input"
-	"math/rand"
 	"strings"
 	"text/template"
 )
@@ -26,7 +25,7 @@ type Scenario []Stage
 type Config struct {
 	Path   string
 	Stages int
-	Rng    *rand.Rand
+	Seed   int64
 }
 
 func NewScenario(c Config) (Scenario, error) {
@@ -41,10 +40,6 @@ func NewScenario(c Config) (Scenario, error) {
 
 	if len(templates) == 0 {
 		return nil, fmt.Errorf("can't create scenario without templates")
-	}
-
-	if c.Rng == nil {
-		c.Rng = rand.New(rand.NewSource(42))
 	}
 
 	stages := make([]Stage, 0)

@@ -13,7 +13,7 @@ type Config struct {
 	Scenario     scenario.Scenario
 }
 
-func GenerateWorkflow(config Config) (string, error) {
+func GenerateFromConfig(config Config) (string, error) {
 	if config.TemplatePath == "" {
 		return "", fmt.Errorf("template path wasn't provided")
 	}
