@@ -2,8 +2,8 @@ package output
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"io/ioutil"
