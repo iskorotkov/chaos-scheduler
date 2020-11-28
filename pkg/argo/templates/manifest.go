@@ -28,5 +28,5 @@ func NewManifestTemplate(name string, manifest string) (ManifestTemplate, error)
 		return ManifestTemplate{}, ManifestError
 	}
 
-	return ManifestTemplate{name, Resource{"create", manifest}}, nil
+	return ManifestTemplate{name, Resource{"apply", manifest}}, nil
 }
