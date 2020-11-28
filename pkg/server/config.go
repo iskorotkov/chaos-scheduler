@@ -1,7 +1,8 @@
 package server
 
 import (
-	"log"
+	"errors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"os"
 )
 
@@ -14,17 +15,17 @@ type Config struct {
 func ParseConfig() Config {
 	url := os.Getenv("SERVER_URL")
 	if url == "" {
-		log.Fatalf("executor host isn't set")
+		logger.Critical(errors.New("executor host isn't set"))
 	}
 
 	templates := os.Getenv("TEMPLATES_PATH")
 	if templates == "" {
-		log.Fatalf("path to tempaltes isn't set")
+		logger.Critical(errors.New("path to templates isn't set"))
 	}
 
 	workflowTemplate := os.Getenv("WORKFLOW_TEMPLATE_PATH")
 	if workflowTemplate == "" {
-		log.Fatalf("path to workflow template isn't set")
+		logger.Critical(errors.New("path to workflow template isn't set"))
 	}
 
 	return Config{ServerURL: url, TemplatesPath: templates, WorkflowTemplatePath: workflowTemplate}

@@ -1,7 +1,8 @@
 package input
 
 import (
-	"fmt"
+	"errors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -12,17 +13,24 @@ type Template struct {
 	Yaml     string
 }
 
+var (
+	FolderNotFoundError = errors.New("couldn't find specified folder")
+	FileError           = errors.New("couldn't read template file")
+)
+
 func Load(folder string) ([]Template, error) {
 	files, err := ioutil.ReadDir(folder)
 	if err != nil {
-		return nil, fmt.Errorf("folder doesn't exist: %v", err)
+		logger.Error(err)
+		return nil, FolderNotFoundError
 	}
 
 	actions := make([]Template, 0)
 	for _, file := range files {
 		b, err := ioutil.ReadFile(path.Join(folder, file.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("couldn't read file: %v", err)
+			logger.Error(err)
+			return nil, FileError
 		}
 
 		content := string(b)

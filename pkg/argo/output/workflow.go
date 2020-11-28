@@ -1,11 +1,22 @@
 package output
 
 import (
-	"fmt"
+	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+)
+
+var (
+	TemplatePathError      = errors.New("template path wasn't provided")
+	ScenarioError          = errors.New("scenario wasn't provided")
+	TemplateReadError      = errors.New("couldn't read template file")
+	TemplateMarshalError   = errors.New("couldn't marshall template from yaml")
+	TemplateUnmarshalError = errors.New("couldn't unmarshall template from yaml")
+	TemplatePropertyError  = errors.New("couldn't find required template property")
+	ManifestTemplateError  = errors.New("couldn't create manifest template")
 )
 
 type Config struct {
@@ -15,37 +26,41 @@ type Config struct {
 
 func GenerateFromConfig(config Config) (string, error) {
 	if config.TemplatePath == "" {
-		return "", fmt.Errorf("template path wasn't provided")
+		return "", TemplatePathError
 	}
 
 	if config.Scenario == nil {
-		return "", fmt.Errorf("scenario wasn't provided")
+		return "", ScenarioError
 	}
 
 	template, err := ioutil.ReadFile(config.TemplatePath)
 	if err != nil {
-		return "", fmt.Errorf("couldn't read template file: %v", err)
+		logger.Error(err)
+		return "", TemplateReadError
 	}
 
 	workflow := make(map[interface{}]interface{})
 	err = yaml.Unmarshal(template, workflow)
 	if err != nil {
-		return "", fmt.Errorf("couldn't unmarshall template from yaml: %v", err)
+		logger.Error(err)
+		return "", TemplateUnmarshalError
 	}
 
 	spec, ok := workflow["spec"].(map[interface{}]interface{})
 	if !ok {
-		return "", fmt.Errorf("couldn't get 'spec' property of template")
+		logger.Warning("couldn't access property 'spec'")
+		return "", TemplatePropertyError
 	}
 
 	spec["templates"], err = createTemplatesList(config.Scenario)
 	if err != nil {
-		return "", fmt.Errorf("couldn't create list of templates: %v", err)
+		return "", err
 	}
 
 	res, err := yaml.Marshal(workflow)
 	if err != nil {
-		return "", fmt.Errorf("couldn't marshal workflow to yaml: %v", err)
+		logger.Error(err)
+		return "", TemplateMarshalError
 	}
 
 	return string(res), nil
@@ -58,7 +73,8 @@ func createTemplatesList(s scenario.Scenario) ([]interface{}, error) {
 		for _, a := range stage {
 			template, err := templates.NewManifestTemplate(a.Name, a.Yaml)
 			if err != nil {
-				return nil, fmt.Errorf("couldn't create template: %v", err)
+				logger.Error(err)
+				return nil, ManifestTemplateError
 			}
 
 			actions = append(actions, template)

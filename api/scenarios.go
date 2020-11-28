@@ -1,13 +1,22 @@
 package api
 
 import (
-	"fmt"
+	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/execution"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"net/http"
 	"strconv"
+)
+
+var (
+	FormParseError         = errors.New("couldn't parse form data")
+	ScenarioCreationError  = errors.New("couldn't create test scenario")
+	ScenarioFormatError    = errors.New("couldn't format test scenario")
+	ScenarioExecutionError = errors.New("couldn't execute scenario")
+	RoutingError           = errors.New("couldn't determine what page to show")
 )
 
 type Form struct {
@@ -18,10 +27,13 @@ type Form struct {
 func Scenarios(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
 	if r.Method == "GET" {
 		form, err := parseForm(r)
-		if err != nil {
+		if err == FormParseError {
 			scenarioCreationPage(rw)
-		} else {
+		} else if err == nil {
 			scenarioPreviewPage(rw, cfg, form)
+		} else {
+			logger.Error(err)
+			server.InternalError(rw, RoutingError)
 		}
 	} else if r.Method == "POST" {
 		submissionStatusPage(rw, r, cfg)
@@ -33,43 +45,47 @@ func Scenarios(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
 func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
 	form, err := parseForm(r)
 	if err != nil {
-		server.InternalError(rw, fmt.Sprintf("couldn't parse form data: %v", err))
+		server.BadRequest(rw, err)
 		return
 	}
 
 	s, err := scenario.NewScenario(scenario.Config{Path: cfg.TemplatesPath, Stages: form.Stages})
 	if err != nil {
-		server.InternalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
+		logger.Error(err)
+		server.BadRequest(rw, ScenarioCreationError)
 		return
 	}
 
 	err = execution.ExecuteFromConfig(cfg.ServerURL, output.Config{TemplatePath: cfg.WorkflowTemplatePath, Scenario: s})
 	if err != nil {
-		server.InternalError(rw, fmt.Sprintf("couldn't execute generated scenario: %v", err))
+		logger.Error(err)
+		server.InternalError(rw, ScenarioExecutionError)
 		return
 	}
 
-	server.ReturnHTMLPage(rw, "templates/html/scenarios/submission-status.gohtml", nil)
+	server.HTMLPage(rw, "templates/html/scenarios/submission-status.gohtml", nil)
 }
 
 func scenarioCreationPage(rw http.ResponseWriter) {
-	server.ReturnHTMLPage(rw, "templates/html/scenarios/create.gohtml", nil)
+	server.HTMLPage(rw, "templates/html/scenarios/create.gohtml", nil)
 }
 
 func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
 	s, err := scenario.NewScenario(scenario.Config{Path: cfg.TemplatesPath, Stages: form.Stages, Seed: form.Seed})
 	if err != nil {
-		server.InternalError(rw, fmt.Sprintf("couldn't create test scenario: %v", err))
+		logger.Error(err)
+		server.InternalError(rw, ScenarioCreationError)
 		return
 	}
 
 	out, err := output.GenerateFromConfig(output.Config{TemplatePath: cfg.WorkflowTemplatePath, Scenario: s})
 	if err != nil {
-		server.InternalError(rw, fmt.Sprintf("couldn't convert scenario to given format: %v", err))
+		logger.Error(err)
+		server.InternalError(rw, ScenarioFormatError)
 		return
 	}
 
-	server.ReturnHTMLPage(rw, "templates/html/scenarios/preview.gohtml", struct {
+	server.HTMLPage(rw, "templates/html/scenarios/preview.gohtml", struct {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
@@ -79,17 +95,20 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
 func parseForm(r *http.Request) (Form, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return Form{}, fmt.Errorf("couldn't parse form data: %v", err)
+		logger.Error(err)
+		return Form{}, FormParseError
 	}
 
 	stages, err := strconv.ParseInt(r.FormValue("stages"), 10, 32)
 	if err != nil {
-		return Form{}, fmt.Errorf("couldn't parse number of stages: %v", err)
+		logger.Error(err)
+		return Form{}, FormParseError
 	}
 
 	seed, err := strconv.ParseInt(r.FormValue("seed"), 10, 64)
 	if err != nil {
-		return Form{}, fmt.Errorf("couldn't parse seed value: %v", err)
+		logger.Error(err)
+		return Form{}, FormParseError
 	}
 
 	return Form{Seed: seed, Stages: int(stages)}, err

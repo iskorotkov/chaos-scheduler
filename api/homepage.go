@@ -7,7 +7,7 @@ import (
 
 func Homepage(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		server.ReturnHTMLPage(rw, "templates/html/home.html", nil)
+		server.HTMLPage(rw, "templates/html/home.html", nil)
 	} else {
 		server.MethodNotAvailable(rw, r)
 	}

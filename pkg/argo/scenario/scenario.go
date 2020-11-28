@@ -1,10 +1,20 @@
 package scenario
 
 import (
+	"errors"
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/input"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"strings"
 	"text/template"
+)
+
+var (
+	StagesError                = errors.New("can't create scenario with stages <= 0")
+	TemplatesError             = errors.New("couldn't read templates")
+	InsufficientTemplatesError = errors.New("can't create scenario without templates")
+	TemplateParseError         = errors.New("couldn't parse text template")
+	TemplateExecuteError       = errors.New("couldn't execute template text")
 )
 
 type Context struct {
@@ -30,23 +40,24 @@ type Config struct {
 
 func NewScenario(c Config) (Scenario, error) {
 	if c.Stages <= 0 {
-		return nil, fmt.Errorf("can't create scenario with stages <= 0")
+		return nil, StagesError
 	}
 
 	templates, err := input.Load(c.Path)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't read templates: %v", err)
+		logger.Error(err)
+		return nil, TemplatesError
 	}
 
 	if len(templates) == 0 {
-		return nil, fmt.Errorf("can't create scenario without templates")
+		return nil, InsufficientTemplatesError
 	}
 
 	stages := make([]Stage, 0)
 	for i := 0; i < c.Stages; i++ {
 		stage, err := createStage(i, templates)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't create stage: %v", err)
+			return nil, err
 		}
 
 		stages = append(stages, stage)
@@ -63,7 +74,7 @@ func createStage(stage int, t []input.Template) (Stage, error) {
 
 	step, err := createStep(selected.Yaml, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't update template yaml: %v", err)
+		return nil, err
 	}
 
 	return Stage{step}, nil
@@ -72,13 +83,15 @@ func createStage(stage int, t []input.Template) (Stage, error) {
 func createStep(y string, ctx Context) (Step, error) {
 	t, err := template.New(ctx.Name).Parse(y)
 	if err != nil {
-		return Step{}, fmt.Errorf("couldn't parse text template: %v", err)
+		logger.Error(err)
+		return Step{}, TemplateParseError
 	}
 
 	b := &strings.Builder{}
 	err = t.Execute(b, ctx)
 	if err != nil {
-		return Step{}, fmt.Errorf("couldn't execute template text: %v", err)
+		logger.Error(err)
+		return Step{}, TemplateExecuteError
 	}
 
 	return Step{ctx.Name, b.String()}, nil

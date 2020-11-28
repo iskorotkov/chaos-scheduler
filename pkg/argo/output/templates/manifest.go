@@ -1,6 +1,13 @@
 package templates
 
-import "fmt"
+import (
+	"errors"
+)
+
+var (
+	FilenameError = errors.New("can't create template with empty name")
+	ManifestError = errors.New("can't create template with empty manifest")
+)
 
 type Resource struct {
 	Action   string `yaml:"action"`
@@ -14,11 +21,11 @@ type ManifestTemplate struct {
 
 func NewManifestTemplate(name string, manifest string) (ManifestTemplate, error) {
 	if name == "" {
-		return ManifestTemplate{}, fmt.Errorf("can't create template with empty name")
+		return ManifestTemplate{}, FilenameError
 	}
 
 	if manifest == "" {
-		return ManifestTemplate{}, fmt.Errorf("can't create template with empty manifest")
+		return ManifestTemplate{}, ManifestError
 	}
 
 	return ManifestTemplate{name, Resource{"create", manifest}}, nil

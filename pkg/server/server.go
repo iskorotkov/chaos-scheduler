@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
+	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -13,32 +13,32 @@ func WithConfig(f func(http.ResponseWriter, *http.Request, Config), cfg Config) 
 	}
 }
 
-func ReturnHTMLPage(rw http.ResponseWriter, path string, data interface{}) {
+func HTMLPage(rw http.ResponseWriter, path string, data interface{}) {
 	t, err := template.ParseFiles(path)
 	if err != nil {
-		log.Println(fmt.Println(err))
+		logger.Error(err)
 		return
 	}
 
 	err = t.Execute(rw, data)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 		return
 	}
 }
 
 func MethodNotAvailable(rw http.ResponseWriter, r *http.Request) {
-	err := fmt.Sprintf("method %v is not supported", r.Method)
-	log.Println(err)
-	http.Error(rw, err, http.StatusBadRequest)
+	err := fmt.Errorf("method %s is not supported for path %s", r.Method, r.URL.Path)
+	logger.Error(err)
+	http.Error(rw, err.Error(), http.StatusBadRequest)
 }
 
-func BadRequest(rw http.ResponseWriter, msg string) {
-	log.Println(msg)
-	http.Error(rw, msg, http.StatusBadRequest)
+func BadRequest(rw http.ResponseWriter, err error) {
+	logger.Error(err)
+	http.Error(rw, err.Error(), http.StatusBadRequest)
 }
 
-func InternalError(rw http.ResponseWriter, msg string) {
-	log.Println(msg)
-	http.Error(rw, msg, http.StatusInternalServerError)
+func InternalError(rw http.ResponseWriter, err error) {
+	logger.Error(err)
+	http.Error(rw, err.Error(), http.StatusInternalServerError)
 }
