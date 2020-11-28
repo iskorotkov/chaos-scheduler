@@ -6,7 +6,7 @@ import (
 )
 
 func ToJson(in interface{}) ([]byte, error) {
-	b, err := json.Marshal(in)
+	b, err := json.MarshalIndent(in, "", "    ")
 	if err != nil {
 		logger.Error(err)
 		return nil, MarshallError
