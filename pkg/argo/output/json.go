@@ -56,7 +56,11 @@ func GenerateFromConfig(config Config) (string, error) {
 		return "", err
 	}
 
-	res, err := marshall.ToJson(workflow)
+	msg := struct {
+		Workflow marshall.Tree `json:"workflow"`
+	}{workflow}
+
+	res, err := marshall.ToJson(msg)
 	if err != nil {
 		logger.Error(err)
 		return "", TemplateMarshalError
