@@ -5,13 +5,13 @@ import (
 )
 
 type Step struct {
-	Name     string `yaml:"name"`
-	Template string `yaml:"template"`
+	Name     string `yaml:"name" json:"name"`
+	Template string `yaml:"template" json:"template"`
 }
 
 type StepsTemplate struct {
-	Name  string   `yaml:"name"`
-	Steps [][]Step `yaml:"steps"`
+	Name  string   `yaml:"name" json:"name"`
+	Steps [][]Step `yaml:"steps" json:"steps"`
 }
 
 func NewStepsTemplate(scenario scenario.Scenario) StepsTemplate {

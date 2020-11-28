@@ -5,7 +5,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"gopkg.in/yaml.v2"
+	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"io/ioutil"
 )
 
@@ -39,14 +39,13 @@ func GenerateFromConfig(config Config) (string, error) {
 		return "", TemplateReadError
 	}
 
-	workflow := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(template, workflow)
+	workflow, err := marshall.FromYaml(template)
 	if err != nil {
 		logger.Error(err)
 		return "", TemplateUnmarshalError
 	}
 
-	spec, ok := workflow["spec"].(map[interface{}]interface{})
+	spec, ok := workflow["spec"].(marshall.Tree)
 	if !ok {
 		logger.Warning("couldn't access property 'spec'")
 		return "", TemplatePropertyError
@@ -57,7 +56,7 @@ func GenerateFromConfig(config Config) (string, error) {
 		return "", err
 	}
 
-	res, err := yaml.Marshal(workflow)
+	res, err := marshall.ToJson(workflow)
 	if err != nil {
 		logger.Error(err)
 		return "", TemplateMarshalError
