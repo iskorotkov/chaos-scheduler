@@ -16,7 +16,6 @@ var (
 	ScenarioCreationError  = errors.New("couldn't create test scenario")
 	ScenarioFormatError    = errors.New("couldn't format test scenario")
 	ScenarioExecutionError = errors.New("couldn't execute scenario")
-	RoutingError           = errors.New("couldn't determine what page to show")
 )
 
 type Form struct {
@@ -26,14 +25,21 @@ type Form struct {
 
 func Scenarios(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
 	if r.Method == "GET" {
-		form, err := parseForm(r)
-		if err == FormParseError {
-			scenarioCreationPage(rw)
-		} else if err == nil {
-			scenarioPreviewPage(rw, cfg, form)
-		} else {
+		err := r.ParseForm()
+		if err != nil {
 			logger.Error(err)
-			server.InternalError(rw, RoutingError)
+			server.BadRequest(rw, FormParseError)
+		}
+
+		if len(r.Form) == 0 {
+			scenarioCreationPage(rw)
+		} else {
+			form, err := parseForm(r)
+			if err != nil {
+				server.BadRequest(rw, err)
+			}
+
+			scenarioPreviewPage(rw, cfg, form)
 		}
 	} else if r.Method == "POST" {
 		submissionStatusPage(rw, r, cfg)
