@@ -2,6 +2,7 @@ package logger
 
 import (
 	"log"
+	"os"
 )
 
 type level int
@@ -18,30 +19,35 @@ var CurrentLevel = LevelWarning
 
 func Debug(msg string) {
 	if CurrentLevel <= LevelDebug {
-		log.Println(msg)
+		logFormatted(msg, "d")
 	}
 }
 
 func Info(msg string) {
 	if CurrentLevel <= LevelInfo {
-		log.Println(msg)
+		logFormatted(msg, "i")
 	}
 }
 
 func Warning(msg string) {
 	if CurrentLevel <= LevelWarning {
-		log.Println(msg)
+		logFormatted(msg, "w")
 	}
 }
 
 func Error(err error) {
 	if CurrentLevel <= LevelError {
-		log.Println(err)
+		logFormatted(err, "e")
 	}
 }
 
 func Critical(err error) {
 	if CurrentLevel <= LevelCritical {
-		log.Fatalln(err)
+		logFormatted(err, "c")
+		os.Exit(1)
 	}
+}
+
+func logFormatted(msg interface{}, lv string) {
+	log.Printf("[%v] %s", lv, msg)
 }
