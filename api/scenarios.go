@@ -2,10 +2,13 @@ package api
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/execution"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/output"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argo/scenario"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/executors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/exporters"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/importers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"net/http"
 	"strconv"
@@ -13,8 +16,6 @@ import (
 
 var (
 	FormParseError         = errors.New("couldn't parse form data")
-	ScenarioCreationError  = errors.New("couldn't create test scenario")
-	ScenarioFormatError    = errors.New("couldn't format test scenario")
 	ScenarioExecutionError = errors.New("couldn't execute scenario")
 )
 
@@ -55,14 +56,34 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg server.Co
 		return
 	}
 
-	s, err := scenario.NewScenario(scenario.Config{Path: cfg.TemplatesPath, Stages: form.Stages})
+	importer := importers.NewFolderImporter(cfg.TemplatesPath)
+	generator := scenarios.NewRoundRobinGenerator()
+	assembler := assemblers.NewSimpleAssembler(cfg.WorkflowTemplatePath)
+	exporter := exporters.NewJsonExporter()
+
+	workflow, err := argov2.NewWorkflow(argov2.Config{
+		Importer:  importer,
+		Generator: generator,
+		Config: scenarios.Config{
+			Stages: form.Stages,
+			Seed:   form.Seed,
+		},
+		Assembler: assembler,
+		Exporter:  exporter,
+	})
 	if err != nil {
 		logger.Error(err)
-		server.BadRequest(rw, ScenarioCreationError)
+		if err == argov2.TemplatesImportError || err == argov2.WorkflowExportError {
+			server.InternalError(rw, err)
+		} else {
+			server.BadRequest(rw, err)
+		}
+
 		return
 	}
 
-	err = execution.ExecuteFromConfig(cfg.ServerURL, output.Config{TemplatePath: cfg.WorkflowTemplatePath, Scenario: s})
+	executor := executors.NewRestExecutor(cfg.ServerURL)
+	err = executor.Execute(workflow)
 	if err != nil {
 		logger.Error(err)
 		server.InternalError(rw, ScenarioExecutionError)
@@ -77,17 +98,29 @@ func scenarioCreationPage(rw http.ResponseWriter) {
 }
 
 func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
-	s, err := scenario.NewScenario(scenario.Config{Path: cfg.TemplatesPath, Stages: form.Stages, Seed: form.Seed})
-	if err != nil {
-		logger.Error(err)
-		server.InternalError(rw, ScenarioCreationError)
-		return
-	}
+	importer := importers.NewFolderImporter(cfg.TemplatesPath)
+	generator := scenarios.NewRoundRobinGenerator()
+	assembler := assemblers.NewSimpleAssembler(cfg.WorkflowTemplatePath)
+	exporter := exporters.NewJsonExporter()
 
-	out, err := output.GenerateFromConfig(output.Config{TemplatePath: cfg.WorkflowTemplatePath, Scenario: s})
+	workflow, err := argov2.NewWorkflow(argov2.Config{
+		Importer:  importer,
+		Generator: generator,
+		Config: scenarios.Config{
+			Stages: form.Stages,
+			Seed:   form.Seed,
+		},
+		Assembler: assembler,
+		Exporter:  exporter,
+	})
 	if err != nil {
 		logger.Error(err)
-		server.InternalError(rw, ScenarioFormatError)
+		if err == argov2.TemplatesImportError || err == argov2.WorkflowExportError {
+			server.InternalError(rw, err)
+		} else {
+			server.BadRequest(rw, err)
+		}
+
 		return
 	}
 
@@ -95,7 +128,7 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
-	}{out, form.Seed, form.Stages})
+	}{workflow, form.Seed, form.Stages})
 }
 
 func parseForm(r *http.Request) (Form, error) {
