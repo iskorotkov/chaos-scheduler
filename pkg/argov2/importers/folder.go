@@ -2,6 +2,7 @@ package importers
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -11,14 +12,14 @@ type FolderImporter struct {
 	Path string
 }
 
-func (f FolderImporter) Import() ([]Item, error) {
+func (f FolderImporter) Import() ([]scenarios.Template, error) {
 	files, err := ioutil.ReadDir(f.Path)
 	if err != nil {
 		logger.Error(err)
 		return nil, FolderNotFoundError
 	}
 
-	actions := make([]Item, 0)
+	actions := make([]scenarios.Template, 0)
 	for _, file := range files {
 		b, err := ioutil.ReadFile(path.Join(f.Path, file.Name()))
 		if err != nil {
@@ -28,8 +29,8 @@ func (f FolderImporter) Import() ([]Item, error) {
 
 		filename := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
 
-		meta := Metadata{Name: filename}
-		actions = append(actions, Item{meta, string(b)})
+		meta := Metadata{name: filename}
+		actions = append(actions, item{meta, string(b)})
 	}
 
 	return actions, nil

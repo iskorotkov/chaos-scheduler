@@ -1,18 +1,12 @@
 package scenarios
 
 import (
-	"errors"
-)
-
-var (
-	NonPositiveStagesError = errors.New("number of stages must be positive")
-	TooManyStagesError     = errors.New("number of stages can't be that high")
-	ZeroActions            = errors.New("can't create scenario out of 0 actions")
+	"time"
 )
 
 type RoundRobin byte
 
-func (r RoundRobin) Generate(actions []ActionTemplate, config Config) (Scenario, error) {
+func (r RoundRobin) Generate(actions []Template, config Config) (Scenario, error) {
 	if len(actions) == 0 {
 		return nil, ZeroActions
 	}
@@ -25,16 +19,16 @@ func (r RoundRobin) Generate(actions []ActionTemplate, config Config) (Scenario,
 		return nil, TooManyStagesError
 	}
 
-	scenario := make([]Stage, 0, config.Stages)
+	stages := make([]Stage, 0, config.Stages)
 
 	for i := 0; i < config.Stages; i++ {
 		a := actions[i%len(actions)]
 
-		stage := []PlannedAction{{Name: a.Name, Template: a.Template}}
-		scenario = append(scenario, stage)
+		stage := stage{action{name: a.Name(), template: a.Template(), duration: time.Minute}}
+		stages = append(stages, stage)
 	}
 
-	return scenario, nil
+	return scenario(stages), nil
 }
 
 func NewRoundRobinGenerator() Generator {

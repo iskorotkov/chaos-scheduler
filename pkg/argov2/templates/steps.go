@@ -1,7 +1,7 @@
 package templates
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 )
 
 type Step struct {
@@ -14,14 +14,17 @@ type StepsTemplate struct {
 	Steps [][]Step `yaml:"steps" json:"steps"`
 }
 
-func NewStepsTemplate(scenario assemblers.Scenario) StepsTemplate {
+type IdGenerator func(action scenarios.Action, stage int, index int) string
+
+func NewStepsTemplate(scenario scenarios.Scenario, generator IdGenerator) StepsTemplate {
 	res := StepsTemplate{"entry", make([][]Step, 0)}
 
-	for _, stage := range scenario {
+	for i, stage := range scenario.Stages() {
 		newStage := make([]Step, 0)
 
-		for _, action := range stage {
-			newStage = append(newStage, Step{action.Id(), action.Template()})
+		for j, action := range stage.Actions() {
+			id := generator(action, i, j)
+			newStage = append(newStage, Step{id, id})
 		}
 
 		res.Steps = append(res.Steps, newStage)

@@ -2,6 +2,7 @@ package assemblers
 
 import (
 	"errors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"time"
 )
 
@@ -11,20 +12,19 @@ var (
 	WorkflowTemplatePropertyError  = errors.New("couldn't find required template property")
 	StagesError                    = errors.New("number of stages must be positive")
 	ActionsError                   = errors.New("number of actions in every stage must be positive")
+	TemplateParseError             = errors.New("couldn't parse template text")
+	TemplateExecuteError           = errors.New("couldn't execute template text")
 )
-
-type PlannedAction interface {
-	Id() string
-	Template() string
-	Duration() time.Duration
-}
-
-type Stage []PlannedAction
-
-type Scenario []Stage
 
 type Workflow map[string]interface{}
 
 type Assembler interface {
-	Assemble(scenario Scenario) (Workflow, error)
+	Assemble(scenario scenarios.Scenario) (Workflow, error)
+}
+
+type context struct {
+	Name     string
+	Duration time.Duration
+	Stage    int
+	Index    int
 }
