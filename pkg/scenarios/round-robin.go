@@ -22,9 +22,10 @@ func (r RoundRobin) Generate(actions []Template, config Config) (Scenario, error
 	stages := make([]Stage, 0, config.Stages)
 
 	for i := 0; i < config.Stages; i++ {
-		a := actions[i%len(actions)]
+		actionTemplate := actions[i%len(actions)]
 
-		stage := stage{action{name: a.Name(), template: a.Template(), duration: time.Minute}}
+		newAction := action{name: actionTemplate.Name(), template: actionTemplate.Template()}
+		stage := stage{actions: []Action{newAction}, duration: time.Minute}
 		stages = append(stages, stage)
 	}
 

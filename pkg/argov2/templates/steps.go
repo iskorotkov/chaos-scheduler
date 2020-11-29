@@ -16,14 +16,13 @@ type StepsTemplate struct {
 
 type IdGenerator func(action scenarios.Action, stage int, index int) string
 
-func NewStepsTemplate(scenario scenarios.Scenario, generator IdGenerator) StepsTemplate {
+func NewStepsTemplate(ids [][]string) StepsTemplate {
 	res := StepsTemplate{"entry", make([][]Step, 0)}
 
-	for i, stage := range scenario.Stages() {
+	for _, stage := range ids {
 		newStage := make([]Step, 0)
 
-		for j, action := range stage.Actions() {
-			id := generator(action, i, j)
+		for _, id := range stage {
 			newStage = append(newStage, Step{id, id})
 		}
 

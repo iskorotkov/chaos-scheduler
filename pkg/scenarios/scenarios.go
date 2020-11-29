@@ -19,13 +19,11 @@ type Template interface {
 type Action interface {
 	Name() string
 	Template() string
-	Duration() time.Duration
 }
 
 type action struct {
 	name     string
 	template string
-	duration time.Duration
 }
 
 func (a action) Name() string {
@@ -36,18 +34,22 @@ func (a action) Template() string {
 	return a.template
 }
 
-func (a action) Duration() time.Duration {
-	return a.duration
-}
-
 type Stage interface {
 	Actions() []Action
+	Duration() time.Duration
 }
 
-type stage []Action
+type stage struct {
+	actions  []Action
+	duration time.Duration
+}
 
 func (s stage) Actions() []Action {
-	return s
+	return s.actions
+}
+
+func (s stage) Duration() time.Duration {
+	return s.duration
 }
 
 type Scenario interface {

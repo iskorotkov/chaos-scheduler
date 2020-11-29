@@ -51,17 +51,20 @@ func NewSimpleAssembler(workflowTemplate string) Assembler {
 }
 
 func createTemplatesList(s scenarios.Scenario) ([]interface{}, error) {
-	actions := []interface{}{templates.NewStepsTemplate(s, generateActionId)}
+	actions := make([]interface{}, 0)
+	ids := make([][]string, 0)
 
 	for i, stage := range s.Stages() {
 		if len(stage.Actions()) == 0 {
 			return nil, ActionsError
 		}
 
+		stageIds := make([]string, 0)
+
 		for j, action := range stage.Actions() {
 			executedTemplate, err := executeTemplate(action.Template(), context{
 				Name:     action.Name(),
-				Duration: action.Duration(),
+				Duration: stage.Duration(),
 				Stage:    i,
 				Index:    j,
 			})
@@ -69,18 +72,25 @@ func createTemplatesList(s scenarios.Scenario) ([]interface{}, error) {
 				return nil, err
 			}
 
-			id := generateActionId(action, i, j)
+			id := fmt.Sprintf("%s-%d-%d", action.Name(), i+1, j+1)
 			manifestTemplate := templates.NewManifestTemplate(id, executedTemplate)
 
 			actions = append(actions, manifestTemplate)
+			stageIds = append(stageIds, id)
 		}
+
+		suspendId := fmt.Sprintf("delay-%d", i+1)
+		suspend := templates.NewSuspendTemplate(suspendId, stage.Duration())
+
+		actions = append(actions, suspend)
+		stageIds = append(stageIds, suspendId)
+
+		ids = append(ids, stageIds)
 	}
 
-	return actions, nil
-}
+	actions = append(actions, templates.NewStepsTemplate(ids))
 
-func generateActionId(action scenarios.Action, stage int, index int) string {
-	return fmt.Sprintf("%s-%d-%d", action.Name(), stage+1, index+1)
+	return actions, nil
 }
 
 func executeTemplate(content string, ctx context) (string, error) {
