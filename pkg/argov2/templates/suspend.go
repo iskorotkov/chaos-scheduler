@@ -13,6 +13,10 @@ type SuspendTemplate struct {
 	Suspend SuspendSection `yaml:"suspend" json:"suspend"`
 }
 
+func (s SuspendTemplate) Id() string {
+	return s.Name
+}
+
 func NewSuspendTemplate(name string, duration time.Duration) SuspendTemplate {
 	suspendFor := SuspendSection{Duration: duration.String()}
 	return SuspendTemplate{name, suspendFor}

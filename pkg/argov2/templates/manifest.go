@@ -10,6 +10,10 @@ type ManifestTemplate struct {
 	Resource Resource `yaml:"resource" json:"resource"`
 }
 
+func (m ManifestTemplate) Id() string {
+	return m.Name
+}
+
 func NewManifestTemplate(name string, manifest string) ManifestTemplate {
 	return ManifestTemplate{name, Resource{"apply", manifest}}
 }

@@ -58,7 +58,7 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg server.Co
 
 	importer := importers.NewFolderImporter(cfg.TemplatesPath)
 	generator := scenarios.NewRoundRobinGenerator()
-	assembler := assemblers.NewSimpleAssembler(cfg.WorkflowTemplatePath)
+	assembler := assemblers.DefaultModularAssembler(cfg.WorkflowTemplatePath)
 	exporter := exporters.NewJsonExporter()
 
 	workflow, err := argov2.NewWorkflow(argov2.Config{
@@ -100,7 +100,7 @@ func scenarioCreationPage(rw http.ResponseWriter) {
 func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
 	importer := importers.NewFolderImporter(cfg.TemplatesPath)
 	generator := scenarios.NewRoundRobinGenerator()
-	assembler := assemblers.NewSimpleAssembler(cfg.WorkflowTemplatePath)
+	assembler := assemblers.DefaultModularAssembler(cfg.WorkflowTemplatePath)
 	exporter := exporters.NewJsonExporter()
 
 	workflow, err := argov2.NewWorkflow(argov2.Config{
