@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/api"
+	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"log"
 	"net/http"
@@ -14,7 +15,7 @@ func main() {
 
 	http.HandleFunc("/", api.Homepage)
 
-	cfg := server.ParseConfig()
+	cfg := config.ParseConfigFromEnv()
 	http.HandleFunc("/scenarios", server.WithConfig(api.Scenarios, cfg))
 
 	fmt.Println("Open http://127.0.0.1:8811 to work with scheduler")

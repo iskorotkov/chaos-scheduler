@@ -50,12 +50,12 @@ func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (Workflow, error
 	return Workflow(workflow), nil
 }
 
-func DefaultModularAssembler(workflowTemplate string) Assembler {
+func NewModularAssembler(template string, ae []extensions.ActionExtension, se []extensions.StageExtension, we []extensions.WorkflowExtension) Assembler {
 	return ModularAssembler{
-		WorkflowTemplate:   workflowTemplate,
-		ActionExtensions:   []extensions.ActionExtension{},
-		StageExtensions:    []extensions.StageExtension{extensions.Suspend{}, extensions.StageMonitor{}},
-		WorkflowExtensions: []extensions.WorkflowExtension{extensions.Steps{}},
+		WorkflowTemplate:   template,
+		ActionExtensions:   ae,
+		StageExtensions:    se,
+		WorkflowExtensions: we,
 	}
 }
 

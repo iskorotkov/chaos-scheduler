@@ -4,9 +4,11 @@ import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argov2"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/executors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/exporters"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/importers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
@@ -24,7 +26,7 @@ type Form struct {
 	Stages int
 }
 
-func Scenarios(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
+func Scenarios(rw http.ResponseWriter, r *http.Request, cfg config.Config) {
 	if r.Method == "GET" {
 		err := r.ParseForm()
 		if err != nil {
@@ -49,36 +51,15 @@ func Scenarios(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
 	}
 }
 
-func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg server.Config) {
+func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Config) {
 	form, err := parseForm(r)
 	if err != nil {
 		server.BadRequest(rw, err)
 		return
 	}
 
-	importer := importers.NewFolderImporter(cfg.TemplatesPath)
-	generator := scenarios.NewRoundRobinGenerator()
-	assembler := assemblers.DefaultModularAssembler(cfg.WorkflowTemplatePath)
-	exporter := exporters.NewJsonExporter()
-
-	workflow, err := argov2.NewWorkflow(argov2.Config{
-		Importer:  importer,
-		Generator: generator,
-		Config: scenarios.Config{
-			Stages: form.Stages,
-			Seed:   form.Seed,
-		},
-		Assembler: assembler,
-		Exporter:  exporter,
-	})
+	workflow, err := generateWorkflow(rw, form, cfg)
 	if err != nil {
-		logger.Error(err)
-		if err == argov2.TemplatesImportError || err == argov2.WorkflowExportError {
-			server.InternalError(rw, err)
-		} else {
-			server.BadRequest(rw, err)
-		}
-
 		return
 	}
 
@@ -93,15 +74,11 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg server.Co
 	server.HTMLPage(rw, "templates/html/scenarios/submission-status.gohtml", nil)
 }
 
-func scenarioCreationPage(rw http.ResponseWriter) {
-	server.HTMLPage(rw, "templates/html/scenarios/create.gohtml", nil)
-}
-
-func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
+func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
 	importer := importers.NewFolderImporter(cfg.TemplatesPath)
 	generator := scenarios.NewRoundRobinGenerator()
-	assembler := assemblers.DefaultModularAssembler(cfg.WorkflowTemplatePath)
 	exporter := exporters.NewJsonExporter()
+	assembler := createAssembler(cfg)
 
 	workflow, err := argov2.NewWorkflow(argov2.Config{
 		Importer:  importer,
@@ -121,6 +98,28 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg server.Config, form Form) {
 			server.BadRequest(rw, err)
 		}
 
+		return "", err
+	}
+
+	return workflow, nil
+}
+
+func createAssembler(cfg config.Config) assemblers.Assembler {
+	return assemblers.NewModularAssembler(
+		cfg.WorkflowTemplatePath,
+		nil,
+		[]extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage), extensions.UseSuspend()},
+		[]extensions.WorkflowExtension{extensions.UseSteps()},
+	)
+}
+
+func scenarioCreationPage(rw http.ResponseWriter) {
+	server.HTMLPage(rw, "templates/html/scenarios/create.gohtml", nil)
+}
+
+func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
+	workflow, err := generateWorkflow(rw, form, cfg)
+	if err != nil {
 		return
 	}
 
