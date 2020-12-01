@@ -54,7 +54,7 @@ func DefaultModularAssembler(workflowTemplate string) Assembler {
 	return ModularAssembler{
 		WorkflowTemplate:   workflowTemplate,
 		ActionExtensions:   []extensions.ActionExtension{},
-		StageExtensions:    []extensions.StageExtension{extensions.Suspend{}},
+		StageExtensions:    []extensions.StageExtension{extensions.Suspend{}, extensions.StageMonitor{}},
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.Steps{}},
 	}
 }
