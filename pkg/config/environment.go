@@ -11,6 +11,8 @@ type Config struct {
 	TemplatesPath        string
 	WorkflowTemplatePath string
 	StageMonitorImage    string
+	TargetNamespace      string
+	IsInKubernetes       bool
 }
 
 func ParseConfigFromEnv() Config {
@@ -34,10 +36,20 @@ func ParseConfigFromEnv() Config {
 		logger.Warning("stage monitor image wasn't specified; no stage monitor will be created")
 	}
 
+	targetNs := os.Getenv("TARGET_NAMESPACE")
+	if targetNs == "" {
+		targetNs = "default"
+		logger.Warning("target namespace wasn't set")
+	}
+
+	isInKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+
 	return Config{
 		ServerURL:            url,
 		TemplatesPath:        templates,
 		WorkflowTemplatePath: workflowTemplate,
 		StageMonitorImage:    stageMonitorImage,
+		TargetNamespace:      targetNs,
+		IsInKubernetes:       isInKubernetes,
 	}
 }

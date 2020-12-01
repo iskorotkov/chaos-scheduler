@@ -108,7 +108,7 @@ func createAssembler(cfg config.Config) assemblers.Assembler {
 	return assemblers.NewModularAssembler(
 		cfg.WorkflowTemplatePath,
 		nil,
-		[]extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage), extensions.UseSuspend()},
+		[]extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.TargetNamespace), extensions.UseSuspend()},
 		[]extensions.WorkflowExtension{extensions.UseSteps()},
 	)
 }

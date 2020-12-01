@@ -8,11 +8,12 @@ import (
 )
 
 type StageMonitor struct {
-	Image string
+	image    string
+	targetNs string
 }
 
 func (s StageMonitor) Apply(_ scenarios.Stage, stageIndex int) Extension {
-	if s.Image == "" {
+	if s.image == "" {
 		logger.Warning("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil
 	}
@@ -20,9 +21,9 @@ func (s StageMonitor) Apply(_ scenarios.Stage, stageIndex int) Extension {
 	name := fmt.Sprintf("stage-monitor-%d", stageIndex+1)
 	return templates.NewContainerTemplate(name, templates.Container{
 		Name:  "stage-monitor",
-		Image: s.Image,
+		Image: s.image,
 		Env: []templates.EnvVar{
-			{"TARGET_NAMESPACE", "chaos-app"},
+			{"TARGET_NAMESPACE", s.targetNs},
 			{"DURATION", "1m"},
 		},
 		Ports:   nil,
@@ -31,6 +32,6 @@ func (s StageMonitor) Apply(_ scenarios.Stage, stageIndex int) Extension {
 	})
 }
 
-func UseStageMonitor(image string) StageExtension {
-	return StageMonitor{image}
+func UseStageMonitor(image string, targetNs string) StageExtension {
+	return StageMonitor{image: image, targetNs: targetNs}
 }
