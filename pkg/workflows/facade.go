@@ -1,12 +1,12 @@
-package argov2
+package workflows
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/importers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/importers"
 )
 
 var (

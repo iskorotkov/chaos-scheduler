@@ -2,8 +2,8 @@ package extensions
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
 
 type Suspend struct{}

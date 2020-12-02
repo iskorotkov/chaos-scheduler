@@ -2,11 +2,11 @@ package assemblers
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers/extensions"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"io/ioutil"
 	"strings"
 	"text/template"

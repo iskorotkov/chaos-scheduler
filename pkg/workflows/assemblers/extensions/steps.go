@@ -1,6 +1,6 @@
 package extensions
 
-import "github.com/iskorotkov/chaos-scheduler/pkg/argov2/templates"
+import "github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 
 type Steps struct{}
 

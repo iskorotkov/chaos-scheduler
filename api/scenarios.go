@@ -2,16 +2,16 @@ package api
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/assemblers/extensions"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/executors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/argov2/importers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/importers"
 	"net/http"
 	"strconv"
 )
@@ -80,7 +80,7 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	exporter := exporters.NewJsonExporter()
 	assembler := createAssembler(cfg)
 
-	workflow, err := argov2.NewWorkflow(argov2.Config{
+	workflow, err := workflows.NewWorkflow(workflows.Config{
 		Importer:  importer,
 		Generator: generator,
 		Config: scenarios.Config{
@@ -92,7 +92,7 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	})
 	if err != nil {
 		logger.Error(err)
-		if err == argov2.TemplatesImportError || err == argov2.WorkflowExportError {
+		if err == workflows.TemplatesImportError || err == workflows.WorkflowExportError {
 			server.InternalError(rw, err)
 		} else {
 			server.BadRequest(rw, err)
