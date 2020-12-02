@@ -34,28 +34,6 @@ type Observer struct {
 	clientset *kubernetes.Clientset
 }
 
-func (o Observer) Deployments() ([]Deployment, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	deployments, err := o.clientset.AppsV1().Deployments(o.namespace).List(ctx, v1.ListOptions{})
-	if err != nil {
-		logger.Error(err)
-		return nil, FetchError
-	}
-
-	res := make([]Deployment, 0)
-	for _, deploy := range deployments.Items {
-		res = append(res, Deployment{
-			Name:              deploy.Name,
-			AvailableReplicas: int(deploy.Status.AvailableReplicas),
-			DesiredReplicas:   int(*deploy.Spec.Replicas),
-		})
-	}
-
-	return res, nil
-}
-
 func (o Observer) Pods() ([]Pod, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
