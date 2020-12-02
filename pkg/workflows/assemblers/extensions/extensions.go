@@ -7,7 +7,7 @@ type Extension interface {
 }
 
 type ActionExtension interface {
-	Apply(action scenarios.Action, stageIndex, actionIndex int) Extension
+	Apply(action scenarios.PlannedAction, stageIndex, actionIndex int) Extension
 }
 
 type StageExtension interface {

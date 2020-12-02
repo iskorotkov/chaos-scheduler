@@ -20,7 +20,7 @@ type ModularAssembler struct {
 }
 
 func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (Workflow, error) {
-	if len(scenario.Stages()) == 0 {
+	if len(scenario.Stages) == 0 {
 		return nil, StagesError
 	}
 
@@ -59,21 +59,21 @@ func NewModularAssembler(template string, ae []extensions.ActionExtension, se []
 	}
 }
 
-func (a ModularAssembler) createTemplatesList(s scenarios.Scenario) ([]interface{}, error) {
+func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]interface{}, error) {
 	actions := make([]interface{}, 0)
 	ids := make([][]string, 0)
 
-	for stageIndex, stage := range s.Stages() {
-		if len(stage.Actions()) == 0 {
+	for stageIndex, stage := range scenario.Stages {
+		if len(stage.Actions) == 0 {
 			return nil, ActionsError
 		}
 
 		stageIds := make([]string, 0)
 
-		for actionIndex, action := range stage.Actions() {
-			executedTemplate, err := executeTemplate(action.Template(), context{
-				Name:     action.Name(),
-				Duration: stage.Duration(),
+		for actionIndex, action := range stage.Actions {
+			executedTemplate, err := executeTemplate(action.Template, context{
+				Name:     action.Name,
+				Duration: stage.Duration,
 				Stage:    stageIndex,
 				Index:    actionIndex,
 			})
@@ -81,7 +81,7 @@ func (a ModularAssembler) createTemplatesList(s scenarios.Scenario) ([]interface
 				return nil, err
 			}
 
-			id := fmt.Sprintf("%s-%d-%d", action.Name(), stageIndex+1, actionIndex+1)
+			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, executedTemplate)
 
 			actions = append(actions, manifestTemplate)

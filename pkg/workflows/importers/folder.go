@@ -12,14 +12,14 @@ type FolderImporter struct {
 	Path string
 }
 
-func (f FolderImporter) Import() ([]scenarios.Template, error) {
+func (f FolderImporter) Import() ([]scenarios.TemplatedAction, error) {
 	files, err := ioutil.ReadDir(f.Path)
 	if err != nil {
 		logger.Error(err)
 		return nil, FolderNotFoundError
 	}
 
-	actions := make([]scenarios.Template, 0)
+	actions := make([]scenarios.TemplatedAction, 0)
 	for _, file := range files {
 		b, err := ioutil.ReadFile(path.Join(f.Path, file.Name()))
 		if err != nil {
@@ -29,8 +29,7 @@ func (f FolderImporter) Import() ([]scenarios.Template, error) {
 
 		filename := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
 
-		meta := Metadata{name: filename}
-		actions = append(actions, item{meta, string(b)})
+		actions = append(actions, scenarios.TemplatedAction{Name: filename, Template: string(b)})
 	}
 
 	return actions, nil

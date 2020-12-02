@@ -6,17 +6,17 @@ import (
 
 type RoundRobin byte
 
-func (r RoundRobin) Generate(actions []Template, config Config) (Scenario, error) {
+func (r RoundRobin) Generate(actions []TemplatedAction, config Config) (Scenario, error) {
 	if len(actions) == 0 {
-		return nil, ZeroActions
+		return Scenario{}, ZeroActions
 	}
 
 	if config.Stages <= 0 {
-		return nil, NonPositiveStagesError
+		return Scenario{}, NonPositiveStagesError
 	}
 
 	if config.Stages > 100 {
-		return nil, TooManyStagesError
+		return Scenario{}, TooManyStagesError
 	}
 
 	stages := make([]Stage, 0, config.Stages)
@@ -24,12 +24,12 @@ func (r RoundRobin) Generate(actions []Template, config Config) (Scenario, error
 	for i := 0; i < config.Stages; i++ {
 		actionTemplate := actions[i%len(actions)]
 
-		newAction := action{name: actionTemplate.Name(), template: actionTemplate.Template()}
-		stage := stage{actions: []Action{newAction}, duration: time.Minute}
+		newAction := PlannedAction{Name: actionTemplate.Name, Template: actionTemplate.Template}
+		stage := Stage{Actions: []PlannedAction{newAction}, Duration: time.Minute}
 		stages = append(stages, stage)
 	}
 
-	return scenario(stages), nil
+	return Scenario{stages}, nil
 }
 
 func NewRoundRobinGenerator() Generator {
