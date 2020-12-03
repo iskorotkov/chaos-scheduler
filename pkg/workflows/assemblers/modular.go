@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"io/ioutil"
-	"strings"
-	"text/template"
 )
 
 type ModularAssembler struct {
@@ -71,18 +69,13 @@ func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]in
 		stageIds := make([]string, 0)
 
 		for actionIndex, action := range stage.Actions {
-			executedTemplate, err := executeTemplate(action.Template, context{
-				Name:     action.Name,
-				Duration: stage.Duration,
-				Stage:    stageIndex,
-				Index:    actionIndex,
-			})
+			manifest, err := marshall.ToYaml(action.Engine)
 			if err != nil {
-				return nil, err
+				return nil, ActionMarshallError
 			}
 
-			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
-			manifestTemplate := templates.NewManifestTemplate(id, executedTemplate)
+			id := fmt.Sprintf("%s-%d-%d", action.Type, stageIndex+1, actionIndex+1)
+			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
 
 			actions = append(actions, manifestTemplate)
 			stageIds = append(stageIds, id)
@@ -124,21 +117,4 @@ func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]in
 	}
 
 	return actions, nil
-}
-
-func executeTemplate(content string, ctx context) (string, error) {
-	t, err := template.New(ctx.Name).Parse(content)
-	if err != nil {
-		logger.Error(err)
-		return "", TemplateParseError
-	}
-
-	b := &strings.Builder{}
-	err = t.Execute(b, ctx)
-	if err != nil {
-		logger.Error(err)
-		return "", TemplateExecuteError
-	}
-
-	return b.String(), nil
 }

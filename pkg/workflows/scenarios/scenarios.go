@@ -2,7 +2,7 @@ package scenarios
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/annotations"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
 	"time"
 )
 
@@ -12,15 +12,9 @@ var (
 	ZeroActions            = errors.New("can't create scenario out of 0 actions")
 )
 
-type TemplatedAction struct {
-	Name        string
-	Annotations annotations.List
-	Template    string
-}
-
 type PlannedAction struct {
-	Name     string
-	Template string
+	Type   engines.ExperimentType
+	Engine engines.Engine
 }
 
 type Stage struct {

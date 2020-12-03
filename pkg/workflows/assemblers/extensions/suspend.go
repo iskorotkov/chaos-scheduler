@@ -2,7 +2,7 @@ package extensions
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
 

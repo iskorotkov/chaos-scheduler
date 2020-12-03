@@ -3,10 +3,11 @@ package workflows
 import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines/factories"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/importers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 )
 
 var (
@@ -16,35 +17,32 @@ var (
 	WorkflowExportError     = errors.New("couldn't export workflow")
 )
 
-type Config struct {
-	Importer  importers.Importer
+type WorkflowParams struct {
 	Generator scenarios.Generator
-	Config    scenarios.Config
+	Config    scenarios.ScenarioParams
 	Assembler assemblers.Assembler
 	Exporter  exporters.Exporter
 }
 
-func NewWorkflow(config Config) (string, error) {
-	templates, err := config.Importer.Import()
-	if err != nil {
-		logger.Error(err)
-		return "", TemplatesImportError
+func NewWorkflow(params WorkflowParams) (string, error) {
+	fs := []engines.Factory{
+		factories.PodDeleteFactory{Namespace: "argo", TargetNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
 	}
 
-	scenarioConfig := scenarios.Config{Stages: config.Config.Stages, Seed: config.Config.Seed}
-	scenario, err := config.Generator.Generate(templates, scenarioConfig)
+	scenarioConfig := scenarios.ScenarioParams{Stages: params.Config.Stages, Seed: params.Config.Seed}
+	scenario, err := params.Generator.Generate(fs, scenarioConfig)
 	if err != nil {
 		logger.Error(err)
 		return "", ScenarioGenerationError
 	}
 
-	workflow, err := config.Assembler.Assemble(scenario)
+	workflow, err := params.Assembler.Assemble(scenario)
 	if err != nil {
 		logger.Error(err)
 		return "", WorkflowAssemblingError
 	}
 
-	str, err := config.Exporter.Export(workflow)
+	str, err := params.Exporter.Export(workflow)
 	if err != nil {
 		logger.Error(err)
 		return "", WorkflowExportError

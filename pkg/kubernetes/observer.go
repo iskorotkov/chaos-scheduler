@@ -20,13 +20,8 @@ var (
 )
 
 type Pod struct {
-	Name string
-}
-
-type Deployment struct {
-	Name              string
-	AvailableReplicas int
-	DesiredReplicas   int
+	Name   string
+	Labels map[string]string
 }
 
 type Observer struct {
@@ -46,7 +41,8 @@ func (o Observer) Pods() ([]Pod, error) {
 
 	res := make([]Pod, 0)
 	for _, pod := range pods.Items {
-		res = append(res, Pod{Name: pod.Name})
+		p := Pod{Name: pod.Name, Labels: pod.Labels}
+		res = append(res, p)
 	}
 
 	return res, nil

@@ -2,7 +2,7 @@ package assemblers
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"time"
 )
 
@@ -12,8 +12,7 @@ var (
 	WorkflowTemplatePropertyError  = errors.New("couldn't find required template property")
 	StagesError                    = errors.New("number of stages must be positive")
 	ActionsError                   = errors.New("number of actions in every stage must be positive")
-	TemplateParseError             = errors.New("couldn't parse template text")
-	TemplateExecuteError           = errors.New("couldn't execute template text")
+	ActionMarshallError            = errors.New("couldn't marshall action to yaml")
 )
 
 type Workflow map[string]interface{}

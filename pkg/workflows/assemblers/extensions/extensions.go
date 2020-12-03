@@ -1,6 +1,6 @@
 package extensions
 
-import "github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
+import "github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 
 type Extension interface {
 	Id() string
