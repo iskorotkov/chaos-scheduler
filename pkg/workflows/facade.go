@@ -26,7 +26,7 @@ type WorkflowParams struct {
 
 func NewWorkflow(params WorkflowParams) (string, error) {
 	fs := []engines.Factory{
-		factories.PodDeleteFactory{Namespace: "argo", TargetNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
+		factories.PodDeleteFactory{Namespace: "litmus", TargetNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
 	}
 
 	scenarioConfig := scenarios.ScenarioParams{Stages: params.Config.Stages, Seed: params.Config.Seed}
