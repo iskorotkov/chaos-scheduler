@@ -17,10 +17,10 @@ type EngineSpec struct {
 }
 
 type EngineMetadata struct {
-	Name        string
-	Namespace   string            `json:"namespace" yaml:"namespace"`
-	Labels      map[string]string `json:"labels" yaml:"labels"`
-	Annotations map[string]string `json:"annotations" yaml:"annotations"`
+	Name        string            `json:"name,omitempty" yaml:"name,omitempty"`
+	Namespace   string            `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
 type Engine struct {

@@ -8,7 +8,7 @@ type EnvVar struct {
 }
 
 type ExperimentComponents struct {
-	Env []EnvVar `json:"env" yaml:"env"`
+	Env []EnvVar `json:"env,omitempty" yaml:"env,omitempty"`
 }
 
 type ExperimentSpec struct {
