@@ -4,14 +4,13 @@ import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/importers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"net/http"
 	"strconv"
 )
@@ -75,15 +74,13 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
-	importer := importers.NewFolderImporter(cfg.TemplatesPath)
 	generator := scenarios.NewRoundRobinGenerator()
 	exporter := exporters.NewJsonExporter()
 	assembler := createAssembler(cfg)
 
-	workflow, err := workflows.NewWorkflow(workflows.Config{
-		Importer:  importer,
+	workflow, err := workflows.NewWorkflow(workflows.WorkflowParams{
 		Generator: generator,
-		Config: scenarios.Config{
+		Config: scenarios.ScenarioParams{
 			Stages: form.Stages,
 			Seed:   form.Seed,
 		},
@@ -91,7 +88,6 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 		Exporter:  exporter,
 	})
 	if err != nil {
-		logger.Error(err)
 		if err == workflows.TemplatesImportError || err == workflows.WorkflowExportError {
 			server.InternalError(rw, err)
 		} else {
