@@ -1,7 +1,7 @@
 package scenarios
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 )
 
 type ScenarioParams struct {
@@ -10,5 +10,5 @@ type ScenarioParams struct {
 }
 
 type Generator interface {
-	Generate(factories []engines.Factory, params ScenarioParams) (Scenario, error)
+	Generate(presetsList presets.List, params ScenarioParams) (Scenario, error)
 }

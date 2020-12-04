@@ -1,14 +1,14 @@
 package scenarios
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"time"
 )
 
 type RoundRobin struct{}
 
-func (r RoundRobin) Generate(factories []engines.Factory, params ScenarioParams) (Scenario, error) {
-	if len(factories) == 0 {
+func (r RoundRobin) Generate(presetsList presets.List, params ScenarioParams) (Scenario, error) {
+	if len(presetsList.ContainerPresets)+len(presetsList.PodPresets) == 0 {
 		return Scenario{}, ZeroActions
 	}
 
@@ -22,13 +22,31 @@ func (r RoundRobin) Generate(factories []engines.Factory, params ScenarioParams)
 
 	stages := make([]Stage, 0, params.Stages)
 
-	for i := 0; i < params.Stages; i++ {
-		factory := factories[i%len(factories)]
-		engine := factory.Create("server")
+	stagesLeft := params.Stages
+	for stagesLeft > 0 {
+		for _, preset := range presetsList.ContainerPresets {
+			if stagesLeft == 0 {
+				break
+			}
 
-		newAction := PlannedAction{Type: factory.Type(), Engine: engine}
-		stage := Stage{Actions: []PlannedAction{newAction}, Duration: time.Minute}
-		stages = append(stages, stage)
+			stagesLeft--
+
+			newAction := PlannedAction{Type: preset.Type(), Engine: preset.Instantiate("app=server", "server")}
+			stage := Stage{Actions: []PlannedAction{newAction}, Duration: time.Minute}
+			stages = append(stages, stage)
+		}
+
+		for _, preset := range presetsList.PodPresets {
+			if stagesLeft == 0 {
+				break
+			}
+
+			stagesLeft--
+
+			newAction := PlannedAction{Type: preset.Type(), Engine: preset.Instantiate("app=server")}
+			stage := Stage{Actions: []PlannedAction{newAction}, Duration: time.Minute}
+			stages = append(stages, stage)
+		}
 	}
 
 	return Scenario{stages}, nil

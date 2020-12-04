@@ -1,11 +1,13 @@
 package templates
 
-import "github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+import (
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+)
 
 type Container struct {
 	Name    string           `yaml:"name" json:"name"`
 	Image   string           `yaml:"image" json:"image"`
-	Env     []engines.EnvVar `yaml:"env" json:"env"`
+	Env     []presets.EnvVar `yaml:"env" json:"env"`
 	Ports   []string         `yaml:"ports" json:"ports"`
 	Command []string         `yaml:"command" json:"command"`
 	Args    []string         `yaml:"args" json:"args"`

@@ -3,7 +3,7 @@ package extensions
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
@@ -23,7 +23,7 @@ func (s StageMonitor) Apply(_ scenarios.Stage, stageIndex int) Extension {
 	return templates.NewContainerTemplate(name, templates.Container{
 		Name:  "stage-monitor",
 		Image: s.image,
-		Env: []engines.EnvVar{
+		Env: []presets.EnvVar{
 			{"TARGET_NAMESPACE", s.targetNs},
 			{"DURATION", "1m"},
 		},

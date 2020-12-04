@@ -2,7 +2,7 @@ package scenarios
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"time"
 )
 
@@ -13,8 +13,8 @@ var (
 )
 
 type PlannedAction struct {
-	Type   engines.ExperimentType
-	Engine engines.Engine
+	Type   presets.ExperimentType
+	Engine presets.Engine
 }
 
 type Stage struct {

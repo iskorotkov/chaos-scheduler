@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/engines/factories"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets/concrete"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 )
 
@@ -25,12 +25,18 @@ type WorkflowParams struct {
 }
 
 func NewWorkflow(params WorkflowParams) (string, error) {
-	fs := []engines.Factory{
-		factories.PodDeleteFactory{Namespace: "litmus", TargetNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
+	presetList := presets.List{
+		PodPresets: []presets.PodEnginePreset{
+			concrete.PodDelete{Namespace: "litmus", AppNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
+		},
+		ContainerPresets: []presets.ContainerEnginePreset{
+			concrete.PodNetworkLatency{Namespace: "litmus", AppNamespace: "chaos-app", NetworkLatency: 300},
+			concrete.PodNetworkLoss{Namespace: "litmus", AppNamespace: "chaos-app", LossPercentage: 100},
+		},
 	}
 
 	scenarioConfig := scenarios.ScenarioParams{Stages: params.Config.Stages, Seed: params.Config.Seed}
-	scenario, err := params.Generator.Generate(fs, scenarioConfig)
+	scenario, err := params.Generator.Generate(presetList, scenarioConfig)
 	if err != nil {
 		logger.Error(err)
 		return "", ScenarioGenerationError
