@@ -2,63 +2,44 @@ package assemblers
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
-	"io/ioutil"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/workflow"
 )
 
 type ModularAssembler struct {
-	WorkflowTemplate   string
 	ActionExtensions   []extensions.ActionExtension
 	StageExtensions    []extensions.StageExtension
 	WorkflowExtensions []extensions.WorkflowExtension
 }
 
-func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (Workflow, error) {
+func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (workflow.Workflow, error) {
 	if len(scenario.Stages) == 0 {
-		return nil, StagesError
+		return workflow.Workflow{}, StagesError
 	}
 
-	workflowTemplate, err := ioutil.ReadFile(a.WorkflowTemplate)
+	ts, err := a.createTemplatesList(scenario)
 	if err != nil {
-		logger.Error(err)
-		return nil, WorkflowTemplateError
+		return workflow.Workflow{}, err
 	}
 
-	workflow, err := marshall.FromYaml(workflowTemplate)
-	if err != nil {
-		logger.Error(err)
-		return nil, WorkflowTemplateUnmarshalError
-	}
+	wf := workflow.NewWorkflow("litmus", "workflow-", "entry", "argo-chaos", ts)
 
-	spec, ok := workflow["spec"].(marshall.Tree)
-	if !ok {
-		logger.Warning("couldn't access property 'spec'")
-		return nil, WorkflowTemplatePropertyError
-	}
-
-	spec["templates"], err = a.createTemplatesList(scenario)
-	if err != nil {
-		return nil, err
-	}
-
-	return Workflow(workflow), nil
+	return wf, nil
 }
 
-func NewModularAssembler(template string, ae []extensions.ActionExtension, se []extensions.StageExtension, we []extensions.WorkflowExtension) Assembler {
+func NewModularAssembler(ext []extensions.ActionExtension, se []extensions.StageExtension, we []extensions.WorkflowExtension) Assembler {
 	return ModularAssembler{
-		WorkflowTemplate:   template,
-		ActionExtensions:   ae,
+		ActionExtensions:   ext,
 		StageExtensions:    se,
 		WorkflowExtensions: we,
 	}
 }
 
-func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]interface{}, error) {
-	actions := make([]interface{}, 0)
+func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]workflow.Template, error) {
+	actions := make([]workflow.Template, 0)
 	ids := make([][]string, 0)
 
 	for stageIndex, stage := range scenario.Stages {
