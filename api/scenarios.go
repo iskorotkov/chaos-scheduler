@@ -5,6 +5,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"github.com/iskorotkov/chaos-scheduler/pkg/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
@@ -20,6 +21,7 @@ import (
 var (
 	FormParseError         = errors.New("couldn't parse form data")
 	ScenarioExecutionError = errors.New("couldn't execute scenario")
+	SeekerCreationFailed   = errors.New("couldn't create seeker instance")
 )
 
 type Form struct {
@@ -76,13 +78,16 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
+	appNS := "chaos-app"
+	chaosNS := "litmus"
+
 	presetList := presets.List{
 		PodPresets: []presets.PodEnginePreset{
-			concrete.PodDelete{Namespace: "litmus", AppNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
+			concrete.PodDelete{Namespace: chaosNS, AppNamespace: appNS, Duration: 60, Interval: 5, Force: false},
 		},
 		ContainerPresets: []presets.ContainerEnginePreset{
-			concrete.PodNetworkLatency{Namespace: "litmus", AppNamespace: "chaos-app", NetworkLatency: 300},
-			concrete.PodNetworkLoss{Namespace: "litmus", AppNamespace: "chaos-app", LossPercentage: 100},
+			concrete.PodNetworkLatency{Namespace: chaosNS, AppNamespace: appNS, NetworkLatency: 300},
+			concrete.PodNetworkLoss{Namespace: chaosNS, AppNamespace: appNS, LossPercentage: 100},
 		},
 	}
 
@@ -92,8 +97,14 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 
+	seeker, err := targets.NewSeeker(appNS, cfg.IsInKubernetes)
+	if err != nil {
+		logger.Error(err)
+		return "", SeekerCreationFailed
+	}
+
 	workflow, err := workflows.NewWorkflow(
-		generators.NewRoundRobinGenerator(presetList),
+		generators.NewRoundRobinGenerator(presetList, seeker),
 		assemblers.NewModularAssembler(extensionsList),
 		exporters.NewJsonExporter(),
 		generators.Params{Stages: form.Stages, Seed: form.Seed},
