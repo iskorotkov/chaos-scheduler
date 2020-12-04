@@ -78,8 +78,8 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
-	appNS := "chaos-app"
-	chaosNS := "litmus"
+	appNS := cfg.AppNS
+	chaosNS := cfg.ChaosNS
 
 	presetList := presets.List{
 		PodPresets: []presets.PodEnginePreset{
@@ -93,7 +93,7 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 
 	extensionsList := extensions.List{
 		ActionExtensions:   nil,
-		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.TargetNamespace)},
+		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS)},
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 

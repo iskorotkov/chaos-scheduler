@@ -9,7 +9,8 @@ import (
 type Config struct {
 	ServerURL         string
 	StageMonitorImage string
-	TargetNamespace   string
+	AppNS             string
+	ChaosNS           string
 	IsInKubernetes    bool
 }
 
@@ -24,10 +25,16 @@ func ParseConfigFromEnv() Config {
 		logger.Warning("stage monitor image wasn't specified; no stage monitor will be created")
 	}
 
-	targetNs := os.Getenv("TARGET_NAMESPACE")
-	if targetNs == "" {
-		targetNs = "default"
+	appNS := os.Getenv("APP_NS")
+	if appNS == "" {
+		appNS = "default"
 		logger.Warning("target namespace wasn't set")
+	}
+
+	chaosNS := os.Getenv("CHAOS_NS")
+	if chaosNS == "" {
+		chaosNS = "default"
+		logger.Warning("infrastructure namespace wasn't set")
 	}
 
 	isInKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
@@ -35,7 +42,8 @@ func ParseConfigFromEnv() Config {
 	return Config{
 		ServerURL:         url,
 		StageMonitorImage: stageMonitorImage,
-		TargetNamespace:   targetNs,
+		AppNS:             appNS,
+		ChaosNS:           chaosNS,
 		IsInKubernetes:    isInKubernetes,
 	}
 }
