@@ -10,7 +10,9 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets/concrete"
 	"net/http"
 	"strconv"
 )
@@ -74,19 +76,28 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
-	generator := scenarios.NewRoundRobinGenerator()
-	exporter := exporters.NewJsonExporter()
-	assembler := createAssembler(cfg)
-
-	workflow, err := workflows.NewWorkflow(workflows.WorkflowParams{
-		Generator: generator,
-		Config: scenarios.ScenarioParams{
-			Stages: form.Stages,
-			Seed:   form.Seed,
+	presetList := presets.List{
+		PodPresets: []presets.PodEnginePreset{
+			concrete.PodDelete{Namespace: "litmus", AppNamespace: "chaos-app", Duration: 60, Interval: 5, Force: false},
 		},
-		Assembler: assembler,
-		Exporter:  exporter,
-	})
+		ContainerPresets: []presets.ContainerEnginePreset{
+			concrete.PodNetworkLatency{Namespace: "litmus", AppNamespace: "chaos-app", NetworkLatency: 300},
+			concrete.PodNetworkLoss{Namespace: "litmus", AppNamespace: "chaos-app", LossPercentage: 100},
+		},
+	}
+
+	extensionsList := extensions.List{
+		ActionExtensions:   nil,
+		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.TargetNamespace)},
+		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
+	}
+
+	workflow, err := workflows.NewWorkflow(
+		generators.NewRoundRobinGenerator(presetList),
+		assemblers.NewModularAssembler(extensionsList),
+		exporters.NewJsonExporter(),
+		generators.Params{Stages: form.Stages, Seed: form.Seed},
+	)
 	if err != nil {
 		if err == workflows.TemplatesImportError || err == workflows.WorkflowExportError {
 			server.InternalError(rw, err)
@@ -98,14 +109,6 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	}
 
 	return workflow, nil
-}
-
-func createAssembler(cfg config.Config) assemblers.Assembler {
-	return assemblers.NewModularAssembler(
-		nil,
-		[]extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.TargetNamespace), extensions.UseSuspend()},
-		[]extensions.WorkflowExtension{extensions.UseSteps()},
-	)
 }
 
 func scenarioCreationPage(rw http.ResponseWriter) {

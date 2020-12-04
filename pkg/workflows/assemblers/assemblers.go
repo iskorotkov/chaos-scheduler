@@ -2,7 +2,7 @@ package assemblers
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/workflow"
 )
 
@@ -13,5 +13,5 @@ var (
 )
 
 type Assembler interface {
-	Assemble(scenario scenarios.Scenario) (workflow.Workflow, error)
+	Assemble(scenario generators.Scenario) (workflow.Workflow, error)
 }

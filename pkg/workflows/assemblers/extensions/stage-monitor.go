@@ -3,8 +3,8 @@ package extensions
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
 
@@ -13,7 +13,7 @@ type StageMonitor struct {
 	targetNs string
 }
 
-func (s StageMonitor) Apply(_ scenarios.Stage, stageIndex int) Extension {
+func (s StageMonitor) Apply(_ generators.Stage, stageIndex int) Extension {
 	if s.image == "" {
 		logger.Warning("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil

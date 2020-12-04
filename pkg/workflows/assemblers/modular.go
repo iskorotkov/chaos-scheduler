@@ -4,18 +4,16 @@ import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/workflow"
 )
 
 type ModularAssembler struct {
-	ActionExtensions   []extensions.ActionExtension
-	StageExtensions    []extensions.StageExtension
-	WorkflowExtensions []extensions.WorkflowExtension
+	Extensions extensions.List
 }
 
-func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (workflow.Workflow, error) {
+func (a ModularAssembler) Assemble(scenario generators.Scenario) (workflow.Workflow, error) {
 	if len(scenario.Stages) == 0 {
 		return workflow.Workflow{}, StagesError
 	}
@@ -30,15 +28,11 @@ func (a ModularAssembler) Assemble(scenario scenarios.Scenario) (workflow.Workfl
 	return wf, nil
 }
 
-func NewModularAssembler(ext []extensions.ActionExtension, se []extensions.StageExtension, we []extensions.WorkflowExtension) Assembler {
-	return ModularAssembler{
-		ActionExtensions:   ext,
-		StageExtensions:    se,
-		WorkflowExtensions: we,
-	}
+func NewModularAssembler(ext extensions.List) Assembler {
+	return ModularAssembler{Extensions: ext}
 }
 
-func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]workflow.Template, error) {
+func (a ModularAssembler) createTemplatesList(scenario generators.Scenario) ([]workflow.Template, error) {
 	actions := make([]workflow.Template, 0)
 	ids := make([][]string, 0)
 
@@ -62,8 +56,8 @@ func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]wo
 			stageIds = append(stageIds, id)
 
 			// Apply action extensions
-			if a.ActionExtensions != nil {
-				for _, ext := range a.ActionExtensions {
+			if a.Extensions.ActionExtensions != nil {
+				for _, ext := range a.Extensions.ActionExtensions {
 					createdExt := ext.Apply(action, stageIndex, actionIndex)
 					if createdExt != nil {
 						actions = append(actions, createdExt)
@@ -74,8 +68,8 @@ func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]wo
 		}
 
 		// Apply stage extensions
-		if a.StageExtensions != nil {
-			for _, ext := range a.StageExtensions {
+		if a.Extensions.StageExtensions != nil {
+			for _, ext := range a.Extensions.StageExtensions {
 				createdExt := ext.Apply(stage, stageIndex)
 				if createdExt != nil {
 					actions = append(actions, createdExt)
@@ -88,8 +82,8 @@ func (a ModularAssembler) createTemplatesList(scenario scenarios.Scenario) ([]wo
 	}
 
 	// Apply workflow extensions
-	if a.WorkflowExtensions != nil {
-		for _, ext := range a.WorkflowExtensions {
+	if a.Extensions.WorkflowExtensions != nil {
+		for _, ext := range a.Extensions.WorkflowExtensions {
 			createdExt := ext.Apply(ids)
 			if createdExt != nil {
 				actions = append(actions, createdExt)

@@ -1,4 +1,4 @@
-package scenarios
+package generators
 
 import (
 	"errors"
@@ -12,13 +12,13 @@ var (
 	ZeroActions            = errors.New("can't create scenario out of 0 actions")
 )
 
-type PlannedAction struct {
+type Action struct {
 	Type   presets.ExperimentType
 	Engine presets.Engine
 }
 
 type Stage struct {
-	Actions  []PlannedAction
+	Actions  []Action
 	Duration time.Duration
 }
 
