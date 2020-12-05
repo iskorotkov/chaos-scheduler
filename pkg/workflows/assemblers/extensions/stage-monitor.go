@@ -24,7 +24,7 @@ func (s StageMonitor) Apply(_ generators.Stage, stageIndex int) Extension {
 		Name:  "stage-monitor",
 		Image: s.image,
 		Env: []presets.EnvVar{
-			{"TARGET_NAMESPACE", s.targetNs},
+			{"APP_NS", s.targetNs},
 			{"DURATION", "1m"},
 		},
 		Ports:   nil,
