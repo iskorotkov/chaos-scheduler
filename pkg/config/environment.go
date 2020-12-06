@@ -7,12 +7,11 @@ import (
 )
 
 type Config struct {
-	ServerURL            string
-	TemplatesPath        string
-	WorkflowTemplatePath string
-	StageMonitorImage    string
-	TargetNamespace      string
-	IsInKubernetes       bool
+	ServerURL         string
+	StageMonitorImage string
+	AppNS             string
+	ChaosNS           string
+	IsInKubernetes    bool
 }
 
 func ParseConfigFromEnv() Config {
@@ -21,35 +20,30 @@ func ParseConfigFromEnv() Config {
 		logger.Critical(errors.New("executor host isn't set"))
 	}
 
-	templates := os.Getenv("TEMPLATES_PATH")
-	if templates == "" {
-		logger.Critical(errors.New("path to templates isn't set"))
-	}
-
-	workflowTemplate := os.Getenv("WORKFLOW_TEMPLATE_PATH")
-	if workflowTemplate == "" {
-		logger.Critical(errors.New("path to workflow template isn't set"))
-	}
-
 	stageMonitorImage := os.Getenv("STAGE_MONITOR_IMAGE")
 	if stageMonitorImage == "" {
 		logger.Warning("stage monitor image wasn't specified; no stage monitor will be created")
 	}
 
-	targetNs := os.Getenv("TARGET_NAMESPACE")
-	if targetNs == "" {
-		targetNs = "default"
+	appNS := os.Getenv("APP_NS")
+	if appNS == "" {
+		appNS = "default"
 		logger.Warning("target namespace wasn't set")
+	}
+
+	chaosNS := os.Getenv("CHAOS_NS")
+	if chaosNS == "" {
+		chaosNS = "default"
+		logger.Warning("infrastructure namespace wasn't set")
 	}
 
 	isInKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 
 	return Config{
-		ServerURL:            url,
-		TemplatesPath:        templates,
-		WorkflowTemplatePath: workflowTemplate,
-		StageMonitorImage:    stageMonitorImage,
-		TargetNamespace:      targetNs,
-		IsInKubernetes:       isInKubernetes,
+		ServerURL:         url,
+		StageMonitorImage: stageMonitorImage,
+		AppNS:             appNS,
+		ChaosNS:           chaosNS,
+		IsInKubernetes:    isInKubernetes,
 	}
 }

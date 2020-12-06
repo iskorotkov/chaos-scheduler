@@ -1,9 +1,0 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  namespace: litmus
-  generateName: argowf-chaos-
-spec:
-  entrypoint: entry
-  serviceAccountName: argo-chaos
-  templates:

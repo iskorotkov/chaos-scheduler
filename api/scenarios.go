@@ -4,14 +4,16 @@ import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/scenarios"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"github.com/iskorotkov/chaos-scheduler/pkg/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/importers"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets/concrete"
 	"net/http"
 	"strconv"
 )
@@ -19,6 +21,7 @@ import (
 var (
 	FormParseError         = errors.New("couldn't parse form data")
 	ScenarioExecutionError = errors.New("couldn't execute scenario")
+	SeekerCreationFailed   = errors.New("couldn't create seeker instance")
 )
 
 type Form struct {
@@ -71,27 +74,42 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 		return
 	}
 
-	server.HTMLPage(rw, "templates/html/scenarios/submission-status.gohtml", nil)
+	server.HTMLPage(rw, "static/html/scenarios/submission-status.gohtml", nil)
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
-	importer := importers.NewFolderImporter(cfg.TemplatesPath)
-	generator := scenarios.NewRoundRobinGenerator()
-	exporter := exporters.NewJsonExporter()
-	assembler := createAssembler(cfg)
+	appNS := cfg.AppNS
+	chaosNS := cfg.ChaosNS
 
-	workflow, err := workflows.NewWorkflow(workflows.Config{
-		Importer:  importer,
-		Generator: generator,
-		Config: scenarios.Config{
-			Stages: form.Stages,
-			Seed:   form.Seed,
+	presetList := presets.List{
+		PodPresets: []presets.PodEnginePreset{
+			concrete.PodDelete{Namespace: chaosNS, AppNamespace: appNS, Duration: 60, Interval: 5, Force: false},
 		},
-		Assembler: assembler,
-		Exporter:  exporter,
-	})
+		ContainerPresets: []presets.ContainerEnginePreset{
+			concrete.PodNetworkLatency{Namespace: chaosNS, AppNamespace: appNS, NetworkLatency: 300},
+			concrete.PodNetworkLoss{Namespace: chaosNS, AppNamespace: appNS, LossPercentage: 100},
+		},
+	}
+
+	extensionsList := extensions.List{
+		ActionExtensions:   nil,
+		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS)},
+		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
+	}
+
+	seeker, err := targets.NewSeeker(appNS, cfg.IsInKubernetes)
 	if err != nil {
 		logger.Error(err)
+		return "", SeekerCreationFailed
+	}
+
+	workflow, err := workflows.NewWorkflow(
+		generators.NewRoundRobinGenerator(presetList, seeker),
+		assemblers.NewModularAssembler(extensionsList),
+		exporters.NewJsonExporter(),
+		generators.Params{Stages: form.Stages, Seed: form.Seed},
+	)
+	if err != nil {
 		if err == workflows.TemplatesImportError || err == workflows.WorkflowExportError {
 			server.InternalError(rw, err)
 		} else {
@@ -104,17 +122,8 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	return workflow, nil
 }
 
-func createAssembler(cfg config.Config) assemblers.Assembler {
-	return assemblers.NewModularAssembler(
-		cfg.WorkflowTemplatePath,
-		nil,
-		[]extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.TargetNamespace), extensions.UseSuspend()},
-		[]extensions.WorkflowExtension{extensions.UseSteps()},
-	)
-}
-
 func scenarioCreationPage(rw http.ResponseWriter) {
-	server.HTMLPage(rw, "templates/html/scenarios/create.gohtml", nil)
+	server.HTMLPage(rw, "static/html/scenarios/create.gohtml", nil)
 }
 
 func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
@@ -123,7 +132,7 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
 		return
 	}
 
-	server.HTMLPage(rw, "templates/html/scenarios/preview.gohtml", struct {
+	server.HTMLPage(rw, "static/html/scenarios/preview.gohtml", struct {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
