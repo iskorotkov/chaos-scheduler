@@ -3,7 +3,6 @@ package targets
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,24 +20,9 @@ var (
 	FetchError     = errors.New("couldn't fetch info from Kubernetes")
 )
 
-type Target struct {
-	Pod         string
-	Deployment  string
-	Containers  []string
-	Labels      map[string]string
-	Annotations map[string]string
-}
-
-func (t Target) MainContainer() string {
-	return t.Containers[0]
-}
-
-func (t Target) Selector() string {
-	return fmt.Sprintf("app=%s", t.Labels["app"])
-}
-
 type Seeker struct {
 	namespace string
+	appLabel  string
 	clientset *kubernetes.Clientset
 }
 
@@ -63,11 +47,12 @@ func (o Seeker) Targets() ([]Target, error) {
 		}
 
 		p := Target{
-			Pod:         pod.Name,
-			Deployment:  deployment,
-			Containers:  containers,
-			Labels:      pod.Labels,
-			Annotations: pod.Annotations,
+			Pod:           pod.Name,
+			Deployment:    deployment,
+			Containers:    containers,
+			Labels:        pod.Labels,
+			SelectorLabel: o.appLabel,
+			Annotations:   pod.Annotations,
 		}
 		res = append(res, p)
 	}
@@ -75,7 +60,7 @@ func (o Seeker) Targets() ([]Target, error) {
 	return res, nil
 }
 
-func NewSeeker(namespace string, isKubernetes bool) (Seeker, error) {
+func NewSeeker(namespace string, appLabel string, isKubernetes bool) (Seeker, error) {
 	var config *rest.Config
 	var err error
 
@@ -99,6 +84,7 @@ func NewSeeker(namespace string, isKubernetes bool) (Seeker, error) {
 
 	return Seeker{
 		namespace: namespace,
+		appLabel:  appLabel,
 		clientset: clientset,
 	}, nil
 }

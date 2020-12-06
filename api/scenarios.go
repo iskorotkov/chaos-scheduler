@@ -97,7 +97,7 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 
-	seeker, err := targets.NewSeeker(appNS, cfg.IsInKubernetes)
+	seeker, err := targets.NewSeeker(appNS, cfg.AppLabel, cfg.IsInKubernetes)
 	if err != nil {
 		logger.Error(err)
 		return "", SeekerCreationFailed
