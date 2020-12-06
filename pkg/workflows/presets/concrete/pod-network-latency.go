@@ -11,6 +11,10 @@ type PodNetworkLatency struct {
 	NetworkLatency int
 }
 
+func (p PodNetworkLatency) Info() presets.Info {
+	return presets.Info{Lethal: false}
+}
+
 func (p PodNetworkLatency) Instantiate(label string, container string) presets.Engine {
 	return presets.NewEngine(presets.EngineParams{
 		Name:        string(p.Type()),

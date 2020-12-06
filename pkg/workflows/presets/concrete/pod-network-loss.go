@@ -11,6 +11,10 @@ type PodNetworkLoss struct {
 	LossPercentage int
 }
 
+func (p PodNetworkLoss) Info() presets.Info {
+	return presets.Info{Lethal: false}
+}
+
 func (p PodNetworkLoss) Instantiate(label string, container string) presets.Engine {
 	return presets.NewEngine(presets.EngineParams{
 		Name:        string(p.Type()),

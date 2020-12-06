@@ -2,6 +2,7 @@ package generators
 
 import (
 	"errors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"time"
 )
@@ -14,6 +15,8 @@ var (
 
 type Action struct {
 	Type   presets.ExperimentType
+	Info   presets.Info
+	Target targets.Target
 	Engine presets.Engine
 }
 

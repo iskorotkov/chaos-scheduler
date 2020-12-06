@@ -53,7 +53,12 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Instantiate(target.Selector(), target.MainContainer())
-			newAction := Action{Type: preset.Type(), Engine: engine}
+			newAction := Action{
+				Type:   preset.Type(),
+				Info:   preset.Info(),
+				Target: target,
+				Engine: engine,
+			}
 
 			stage := Stage{Actions: []Action{newAction}, Duration: time.Minute}
 			stages = append(stages, stage)
@@ -68,7 +73,12 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Instantiate(target.Selector())
-			newAction := Action{Type: preset.Type(), Engine: engine}
+			newAction := Action{
+				Type:   preset.Type(),
+				Info:   preset.Info(),
+				Target: target,
+				Engine: engine,
+			}
 
 			stage := Stage{Actions: []Action{newAction}, Duration: time.Minute}
 			stages = append(stages, stage)

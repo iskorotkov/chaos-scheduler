@@ -13,6 +13,10 @@ type PodDelete struct {
 	Force        bool
 }
 
+func (p PodDelete) Info() presets.Info {
+	return presets.Info{Lethal: true}
+}
+
 func (p PodDelete) Instantiate(label string) presets.Engine {
 	return presets.NewEngine(presets.EngineParams{
 		Name:        string(p.Type()),

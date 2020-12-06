@@ -1,7 +1,12 @@
 package presets
 
+type Info struct {
+	Lethal bool
+}
+
 type EnginePreset interface {
 	Type() ExperimentType
+	Info() Info
 }
 
 type PodEnginePreset interface {
