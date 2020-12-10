@@ -5,7 +5,6 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
-	"github.com/iskorotkov/chaos-scheduler/pkg/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
@@ -14,6 +13,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets/concrete"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"net/http"
 	"strconv"
 )
