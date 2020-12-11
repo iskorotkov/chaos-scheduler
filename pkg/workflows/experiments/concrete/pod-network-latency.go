@@ -3,6 +3,7 @@ package concrete
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"strconv"
+	"time"
 )
 
 type PodNetworkLatency struct {
@@ -15,7 +16,7 @@ func (p PodNetworkLatency) Info() experiments.Info {
 	return experiments.Info{Lethal: false}
 }
 
-func (p PodNetworkLatency) Instantiate(label string, container string) experiments.Engine {
+func (p PodNetworkLatency) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
 		Name:        string(p.Type()),
 		Namespace:   p.Namespace,
@@ -30,9 +31,10 @@ func (p PodNetworkLatency) Instantiate(label string, container string) experimen
 			experiments.NewExperiment(experiments.ExperimentParams{
 				Type: p.Type(),
 				Env: map[string]string{
-					"NETWORK_INTERFACE": "eth0",
-					"TARGET_CONTAINER":  container,
-					"NETWORK_LATENCY":   strconv.Itoa(p.NetworkLatency),
+					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
+					"NETWORK_INTERFACE":    "eth0",
+					"TARGET_CONTAINER":     container,
+					"NETWORK_LATENCY":      strconv.Itoa(p.NetworkLatency),
 				},
 			}),
 		},

@@ -88,7 +88,7 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) {
 	presetList := experiments.List{
 		PodPresets: []experiments.PodEnginePreset{
-			concrete.PodDelete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Duration: 60, Interval: 5, Force: false},
+			concrete.PodDelete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Interval: 1, Force: false},
 		},
 		ContainerPresets: []experiments.ContainerEnginePreset{
 			concrete.PodNetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},
@@ -98,7 +98,7 @@ func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) 
 
 	extensionsList := extensions.List{
 		ActionExtensions:   nil,
-		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS)},
+		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval)},
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 
@@ -109,7 +109,7 @@ func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) 
 	}
 
 	g := generators.NewRoundRobinGenerator(presetList, seeker)
-	s, err := g.Generate(generators.Params{Stages: form.Stages, Seed: form.Seed})
+	s, err := g.Generate(generators.Params{Stages: form.Stages, Seed: form.Seed, StageDuration: cfg.StageDuration})
 	if err != nil {
 		logger.Error(err)
 

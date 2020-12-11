@@ -6,7 +6,6 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
-	"time"
 )
 
 var (
@@ -52,7 +51,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), target.MainContainer())
+			engine := preset.Instantiate(target.Selector(), target.MainContainer(), params.StageDuration)
 			newAction := Action{
 				Type:   preset.Type(),
 				Info:   preset.Info(),
@@ -60,7 +59,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 				Engine: engine,
 			}
 
-			stage := Stage{Actions: []Action{newAction}, Duration: time.Minute}
+			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
 			stages = append(stages, stage)
 		}
 
@@ -72,7 +71,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector())
+			engine := preset.Instantiate(target.Selector(), params.StageDuration)
 			newAction := Action{
 				Type:   preset.Type(),
 				Info:   preset.Info(),
@@ -80,7 +79,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 				Engine: engine,
 			}
 
-			stage := Stage{Actions: []Action{newAction}, Duration: time.Minute}
+			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
 			stages = append(stages, stage)
 		}
 	}

@@ -24,14 +24,19 @@ func SetLevel(level string) {
 	switch level {
 	case "0", "debug":
 		currentLevel = levelDebug
+		log.Println("log level set to debug")
 	case "1", "info":
 		currentLevel = levelInfo
+		log.Println("log level set to info")
 	case "2", "warning":
 		currentLevel = levelWarning
+		log.Println("log level set to warning")
 	case "3", "error":
 		currentLevel = levelError
+		log.Println("log level set to error")
 	case "4", "critical":
 		currentLevel = levelCritical
+		log.Println("log level set to critical")
 	default:
 		Warning("couldn't parse log level")
 	}

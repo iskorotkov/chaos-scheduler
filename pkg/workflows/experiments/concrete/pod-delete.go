@@ -3,12 +3,12 @@ package concrete
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"strconv"
+	"time"
 )
 
 type PodDelete struct {
 	Namespace    string
 	AppNamespace string
-	Duration     int
 	Interval     int
 	Force        bool
 }
@@ -17,7 +17,7 @@ func (p PodDelete) Info() experiments.Info {
 	return experiments.Info{Lethal: true}
 }
 
-func (p PodDelete) Instantiate(label string) experiments.Engine {
+func (p PodDelete) Instantiate(label string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
 		Name:        string(p.Type()),
 		Namespace:   p.Namespace,
@@ -30,7 +30,7 @@ func (p PodDelete) Instantiate(label string) experiments.Engine {
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{Type: p.Type(), Env: map[string]string{
-				"TOTAL_CHAOS_DURATION": strconv.Itoa(p.Duration),
+				"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 				"CHAOS_INTERVAL":       strconv.Itoa(p.Interval),
 				"FORCE":                strconv.FormatBool(p.Force),
 			}}),

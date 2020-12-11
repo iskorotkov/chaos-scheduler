@@ -7,11 +7,13 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	v1 "k8s.io/api/core/v1"
 	"strings"
+	"time"
 )
 
 type StageMonitor struct {
-	image    string
-	targetNs string
+	image         string
+	targetNs      string
+	stageInterval time.Duration
 }
 
 func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) []templates.Template {
@@ -36,17 +38,14 @@ func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) []templates.
 		Image: s.image,
 		Env: []v1.EnvVar{
 			{Name: "APP_NS", Value: s.targetNs},
-			{Name: "DURATION", Value: "1m"},
+			{Name: "DURATION", Value: (stage.Duration + s.stageInterval).String()},
 			{Name: "CRASH_TOLERANCE", Value: crashTolerance},
 		},
-		Ports:   nil,
-		Command: nil,
-		Args:    nil,
 	})
 
 	return []templates.Template{containerTemplate}
 }
 
-func UseStageMonitor(image string, targetNs string) StageExtension {
-	return StageMonitor{image: image, targetNs: targetNs}
+func UseStageMonitor(image string, targetNs string, bufferTime time.Duration) StageExtension {
+	return StageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime}
 }
