@@ -10,12 +10,12 @@ import (
 )
 
 func main() {
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
-
-	http.HandleFunc("/", pages.Homepage)
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./web/js"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./web/css"))))
 
 	cfg := config.ParseConfigFromEnv()
+
+	http.HandleFunc("/", pages.Homepage)
 	http.HandleFunc("/scenarios", server.WithConfig(pages.Scenarios, cfg))
 
 	fmt.Println("Open http://127.0.0.1:8811 to work with scheduler")
