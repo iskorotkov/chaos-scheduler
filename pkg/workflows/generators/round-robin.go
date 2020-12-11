@@ -3,8 +3,8 @@ package generators
 import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
 	"time"
 )
