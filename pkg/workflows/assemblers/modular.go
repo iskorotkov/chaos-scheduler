@@ -2,10 +2,10 @@ package assemblers
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"gopkg.in/yaml.v2"
 )
 
 type ModularAssembler struct {
@@ -43,7 +43,7 @@ func (a ModularAssembler) createTemplatesList(scenario generators.Scenario) ([]t
 		stageIds := make([]string, 0)
 
 		for actionIndex, action := range stage.Actions {
-			manifest, err := marshall.ToYaml(action.Engine)
+			manifest, err := yaml.Marshal(action.Engine)
 			if err != nil {
 				return nil, ActionMarshallError
 			}

@@ -1,8 +1,8 @@
 package exporters
 
 import (
+	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/marshall"
 )
 
 type JsonExporter byte
@@ -12,13 +12,13 @@ func (j JsonExporter) Export(workflow Definition) (string, error) {
 		Workflow Definition `json:"workflow"`
 	}{workflow}
 
-	json, err := marshall.ToJson(req)
+	marshalled, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {
 		logger.Error(err)
 		return "", JsonMarshallError
 	}
 
-	return string(json), nil
+	return string(marshalled), nil
 }
 
 func NewJsonExporter() Exporter {
