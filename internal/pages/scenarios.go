@@ -74,7 +74,7 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 		return
 	}
 
-	server.HTMLPage(rw, "static/html/scenarios/submission-status.gohtml", nil)
+	server.HTMLPage(rw, "web/html/scenarios/submission-status.gohtml", nil)
 }
 
 func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
@@ -123,7 +123,7 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 }
 
 func scenarioCreationPage(rw http.ResponseWriter) {
-	server.HTMLPage(rw, "static/html/scenarios/create.gohtml", nil)
+	server.HTMLPage(rw, "web/html/scenarios/create.gohtml", nil)
 }
 
 func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
@@ -132,7 +132,7 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
 		return
 	}
 
-	server.HTMLPage(rw, "static/html/scenarios/preview.gohtml", struct {
+	server.HTMLPage(rw, "web/html/scenarios/preview.gohtml", struct {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
