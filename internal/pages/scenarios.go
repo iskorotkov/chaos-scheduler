@@ -1,19 +1,19 @@
 package pages
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/concrete"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"net/http"
 	"strconv"
 )
@@ -21,7 +21,9 @@ import (
 var (
 	FormParseError         = errors.New("couldn't parse form data")
 	ScenarioExecutionError = errors.New("couldn't execute scenario")
-	SeekerCreationFailed   = errors.New("couldn't create seeker instance")
+	MarshalError           = errors.New("couldn't marshall workflow to readable format")
+	ScenarioParamsError    = errors.New("couldn't create scenario with given parameters")
+	ScenarioGeneratorError = errors.New("couldn't generate scenario due to unknown reason")
 )
 
 type Form struct {
@@ -61,13 +63,19 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 		return
 	}
 
-	workflow, err := generateWorkflow(rw, form, cfg)
+	wf, err := generateWorkflow(form, cfg)
 	if err != nil {
+		if err == ScenarioParamsError {
+			server.BadRequest(rw, err)
+		} else {
+			server.InternalError(rw, err)
+		}
+
 		return
 	}
 
 	executor := executors.NewRestExecutor(cfg.ServerURL)
-	err = executor.Execute(workflow)
+	wf, err = executor.Execute(wf)
 	if err != nil {
 		logger.Error(err)
 		server.InternalError(rw, ScenarioExecutionError)
@@ -77,7 +85,7 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 	server.HTMLPage(rw, "web/html/scenarios/submission-status.gohtml", nil)
 }
 
-func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (string, error) {
+func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) {
 	appNS := cfg.AppNS
 	chaosNS := cfg.ChaosNS
 
@@ -100,26 +108,29 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	seeker, err := targets.NewSeeker(appNS, cfg.AppLabel, cfg.IsInKubernetes)
 	if err != nil {
 		logger.Error(err)
-		return "", SeekerCreationFailed
+		return templates.Workflow{}, ScenarioGeneratorError
 	}
 
-	workflow, err := workflows.NewWorkflow(
-		generators.NewRoundRobinGenerator(presetList, seeker),
-		assemblers.NewModularAssembler(extensionsList),
-		exporters.NewJsonExporter(),
-		generators.Params{Stages: form.Stages, Seed: form.Seed},
-	)
+	g := generators.NewRoundRobinGenerator(presetList, seeker)
+	s, err := g.Generate(generators.Params{Stages: form.Stages, Seed: form.Seed})
 	if err != nil {
-		if err == workflows.TemplatesImportError || err == workflows.WorkflowExportError {
-			server.InternalError(rw, err)
-		} else {
-			server.BadRequest(rw, err)
+		logger.Error(err)
+
+		if err == generators.NonPositiveStagesError || err == generators.TooManyStagesError {
+			return templates.Workflow{}, ScenarioParamsError
 		}
 
-		return "", err
+		return templates.Workflow{}, ScenarioGeneratorError
 	}
 
-	return workflow, nil
+	a := assemblers.NewModularAssembler(extensionsList)
+	wf, err := a.Assemble(s)
+	if err != nil {
+		logger.Error(err)
+		return templates.Workflow{}, ScenarioGeneratorError
+	}
+
+	return wf, nil
 }
 
 func scenarioCreationPage(rw http.ResponseWriter) {
@@ -127,8 +138,21 @@ func scenarioCreationPage(rw http.ResponseWriter) {
 }
 
 func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
-	workflow, err := generateWorkflow(rw, form, cfg)
+	wf, err := generateWorkflow(form, cfg)
 	if err != nil {
+		if err == ScenarioParamsError {
+			server.BadRequest(rw, err)
+		} else {
+			server.InternalError(rw, err)
+		}
+
+		return
+	}
+
+	marshaled, err := json.MarshalIndent(wf, "", "  ")
+	if err != nil {
+		logger.Error(err)
+		server.BadRequest(rw, MarshalError)
 		return
 	}
 
@@ -136,7 +160,7 @@ func scenarioPreviewPage(rw http.ResponseWriter, cfg config.Config, form Form) {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
-	}{workflow, form.Seed, form.Stages})
+	}{string(marshaled), form.Seed, form.Stages})
 }
 
 func parseForm(r *http.Request) (Form, error) {
