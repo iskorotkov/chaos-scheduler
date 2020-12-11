@@ -3,7 +3,7 @@ package generators
 import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
 	"time"
@@ -14,7 +14,7 @@ var (
 )
 
 type RoundRobin struct {
-	Presets presets.List
+	Presets experiments.List
 	Seeker  targets.Seeker
 }
 
@@ -88,7 +88,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobinGenerator(presetsList presets.List, seeker targets.Seeker) RoundRobin {
+func NewRoundRobinGenerator(presetsList experiments.List, seeker targets.Seeker) RoundRobin {
 	return RoundRobin{Presets: presetsList, Seeker: seeker}
 }
 

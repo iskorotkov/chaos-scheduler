@@ -1,4 +1,4 @@
-package presets
+package experiments
 
 type Info struct {
 	Lethal bool

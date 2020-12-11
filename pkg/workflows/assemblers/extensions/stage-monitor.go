@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	v1 "k8s.io/api/core/v1"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ type StageMonitor struct {
 	targetNs string
 }
 
-func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) Extension {
+func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) []templates.Template {
 	if s.image == "" {
 		logger.Warning("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil
@@ -31,18 +31,20 @@ func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) Extension {
 	name := fmt.Sprintf("stage-monitor-%d", stageIndex+1)
 	crashTolerance := strings.Join(podsToKill, ";")
 
-	return templates.NewContainerTemplate(name, templates.Container{
+	containerTemplate := templates.NewContainerTemplate(name, templates.Container{
 		Name:  "stage-monitor",
 		Image: s.image,
-		Env: []presets.EnvVar{
-			{"APP_NS", s.targetNs},
-			{"DURATION", "1m"},
-			{"CRASH_TOLERANCE", crashTolerance},
+		Env: []v1.EnvVar{
+			{Name: "APP_NS", Value: s.targetNs},
+			{Name: "DURATION", Value: "1m"},
+			{Name: "CRASH_TOLERANCE", Value: crashTolerance},
 		},
 		Ports:   nil,
 		Command: nil,
 		Args:    nil,
 	})
+
+	return []templates.Template{containerTemplate}
 }
 
 func UseStageMonitor(image string, targetNs string) StageExtension {

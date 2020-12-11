@@ -2,7 +2,7 @@ package generators
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"time"
 )
@@ -14,10 +14,10 @@ var (
 )
 
 type Action struct {
-	Type   presets.ExperimentType
-	Info   presets.Info
+	Type   experiments.ExperimentType
+	Info   experiments.Info
 	Target targets.Target
-	Engine presets.Engine
+	Engine experiments.Engine
 }
 
 type Stage struct {

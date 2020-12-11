@@ -1,27 +1,15 @@
 package templates
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	v1 "k8s.io/api/core/v1"
 )
 
-type Container struct {
-	Name    string           `yaml:"name" json:"name"`
-	Image   string           `yaml:"image" json:"image"`
-	Env     []presets.EnvVar `yaml:"env" json:"env"`
-	Ports   []string         `yaml:"ports" json:"ports"`
-	Command []string         `yaml:"command" json:"command"`
-	Args    []string         `yaml:"args" json:"args"`
-}
+type Container v1.Container
 
-type ContainerTemplate struct {
-	Name      string    `yaml:"name" json:"name"`
-	Container Container `yaml:"container" json:"container"`
-}
-
-func (c ContainerTemplate) Id() string {
-	return c.Name
-}
-
-func NewContainerTemplate(name string, container Container) ContainerTemplate {
-	return ContainerTemplate{name, container}
+func NewContainerTemplate(name string, container Container) Template {
+	c := v1.Container(container)
+	return Template{
+		Name:      name,
+		Container: &c,
+	}
 }

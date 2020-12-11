@@ -1,7 +1,7 @@
 package concrete
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"strconv"
 )
 
@@ -11,23 +11,23 @@ type PodNetworkLatency struct {
 	NetworkLatency int
 }
 
-func (p PodNetworkLatency) Info() presets.Info {
-	return presets.Info{Lethal: false}
+func (p PodNetworkLatency) Info() experiments.Info {
+	return experiments.Info{Lethal: false}
 }
 
-func (p PodNetworkLatency) Instantiate(label string, container string) presets.Engine {
-	return presets.NewEngine(presets.EngineParams{
+func (p PodNetworkLatency) Instantiate(label string, container string) experiments.Engine {
+	return experiments.NewEngine(experiments.EngineParams{
 		Name:        string(p.Type()),
 		Namespace:   p.Namespace,
 		Labels:      nil,
 		Annotations: nil,
-		AppInfo: presets.AppInfo{
+		AppInfo: experiments.AppInfo{
 			AppNS:    p.AppNamespace,
 			AppLabel: label,
 			AppKind:  "deployment",
 		},
-		Experiments: []presets.Experiment{
-			presets.NewExperiment(presets.ExperimentParams{
+		Experiments: []experiments.Experiment{
+			experiments.NewExperiment(experiments.ExperimentParams{
 				Type: p.Type(),
 				Env: map[string]string{
 					"NETWORK_INTERFACE": "eth0",
@@ -39,6 +39,6 @@ func (p PodNetworkLatency) Instantiate(label string, container string) presets.E
 	})
 }
 
-func (p PodNetworkLatency) Type() presets.ExperimentType {
+func (p PodNetworkLatency) Type() experiments.ExperimentType {
 	return "pod-network-latency"
 }

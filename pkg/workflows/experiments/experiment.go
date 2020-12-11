@@ -1,4 +1,4 @@
-package presets
+package experiments
 
 type ExperimentType string
 

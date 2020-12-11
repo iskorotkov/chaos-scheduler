@@ -1,31 +1,24 @@
 package templates
 
-type Step struct {
-	Name     string `yaml:"name" json:"name"`
-	Template string `yaml:"template" json:"template"`
-}
+import (
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+)
 
-type StepsTemplate struct {
-	Name  string   `yaml:"name" json:"name"`
-	Steps [][]Step `yaml:"steps" json:"steps"`
-}
-
-func (s StepsTemplate) Id() string {
-	return s.Name
-}
-
-func NewStepsTemplate(ids [][]string) StepsTemplate {
-	res := StepsTemplate{"entry", make([][]Step, 0)}
+func NewStepsTemplate(ids [][]string) Template {
+	parallel := make([]v1alpha1.ParallelSteps, 0)
 
 	for _, stage := range ids {
-		newStage := make([]Step, 0)
+		newStage := make([]v1alpha1.WorkflowStep, 0)
 
 		for _, id := range stage {
-			newStage = append(newStage, Step{id, id})
+			newStage = append(newStage, v1alpha1.WorkflowStep{Name: id, Template: id})
 		}
 
-		res.Steps = append(res.Steps, newStage)
+		parallel = append(parallel, v1alpha1.ParallelSteps{Steps: newStage})
 	}
 
-	return res
+	return Template{
+		Name:  "entry",
+		Steps: parallel,
+	}
 }

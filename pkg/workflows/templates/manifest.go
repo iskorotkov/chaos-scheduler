@@ -1,19 +1,15 @@
 package templates
 
-type Resource struct {
-	Action   string `yaml:"action" json:"action"`
-	Manifest string `yaml:"manifest" json:"manifest"`
-}
+import (
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+)
 
-type ManifestTemplate struct {
-	Name     string   `yaml:"name" json:"name"`
-	Resource Resource `yaml:"resource" json:"resource"`
-}
-
-func (m ManifestTemplate) Id() string {
-	return m.Name
-}
-
-func NewManifestTemplate(name string, manifest string) ManifestTemplate {
-	return ManifestTemplate{name, Resource{"apply", manifest}}
+func NewManifestTemplate(name string, manifest string) Template {
+	return Template{
+		Name: name,
+		Resource: &v1alpha1.ResourceTemplate{
+			Action:   "apply",
+			Manifest: manifest,
+		},
+	}
 }

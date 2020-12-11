@@ -9,10 +9,10 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/concrete"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/exporters"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/presets/concrete"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"net/http"
 	"strconv"
@@ -81,11 +81,11 @@ func generateWorkflow(rw http.ResponseWriter, form Form, cfg config.Config) (str
 	appNS := cfg.AppNS
 	chaosNS := cfg.ChaosNS
 
-	presetList := presets.List{
-		PodPresets: []presets.PodEnginePreset{
+	presetList := experiments.List{
+		PodPresets: []experiments.PodEnginePreset{
 			concrete.PodDelete{Namespace: chaosNS, AppNamespace: appNS, Duration: 60, Interval: 5, Force: false},
 		},
-		ContainerPresets: []presets.ContainerEnginePreset{
+		ContainerPresets: []experiments.ContainerEnginePreset{
 			concrete.PodNetworkLatency{Namespace: chaosNS, AppNamespace: appNS, NetworkLatency: 300},
 			concrete.PodNetworkLoss{Namespace: chaosNS, AppNamespace: appNS, LossPercentage: 100},
 		},

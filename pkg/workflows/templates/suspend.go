@@ -1,23 +1,15 @@
 package templates
 
 import (
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"time"
 )
 
-type SuspendSection struct {
-	Duration string `yaml:"duration" json:"duration"`
-}
-
-type SuspendTemplate struct {
-	Name    string         `yaml:"name" json:"name"`
-	Suspend SuspendSection `yaml:"suspend" json:"suspend"`
-}
-
-func (s SuspendTemplate) Id() string {
-	return s.Name
-}
-
-func NewSuspendTemplate(name string, duration time.Duration) SuspendTemplate {
-	suspendFor := SuspendSection{Duration: duration.String()}
-	return SuspendTemplate{name, suspendFor}
+func NewSuspendTemplate(name string, duration time.Duration) Template {
+	return Template{
+		Name: name,
+		Suspend: &v1alpha1.SuspendTemplate{
+			Duration: duration.String(),
+		},
+	}
 }
