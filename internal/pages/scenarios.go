@@ -74,7 +74,7 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 		return
 	}
 
-	executor := executors.NewRestExecutor(cfg.ServerURL)
+	executor := executors.NewGRPCExecutor(cfg.ServerURL)
 	wf, err = executor.Execute(wf)
 	if err != nil {
 		logger.Error(err)
@@ -86,16 +86,13 @@ func submissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 }
 
 func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) {
-	appNS := cfg.AppNS
-	chaosNS := cfg.ChaosNS
-
 	presetList := experiments.List{
 		PodPresets: []experiments.PodEnginePreset{
-			concrete.PodDelete{Namespace: chaosNS, AppNamespace: appNS, Duration: 60, Interval: 5, Force: false},
+			concrete.PodDelete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Duration: 60, Interval: 5, Force: false},
 		},
 		ContainerPresets: []experiments.ContainerEnginePreset{
-			concrete.PodNetworkLatency{Namespace: chaosNS, AppNamespace: appNS, NetworkLatency: 300},
-			concrete.PodNetworkLoss{Namespace: chaosNS, AppNamespace: appNS, LossPercentage: 100},
+			concrete.PodNetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},
+			concrete.PodNetworkLoss{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, LossPercentage: 100},
 		},
 	}
 
@@ -105,7 +102,7 @@ func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) 
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 
-	seeker, err := targets.NewSeeker(appNS, cfg.AppLabel, cfg.IsInKubernetes)
+	seeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, cfg.IsInKubernetes)
 	if err != nil {
 		logger.Error(err)
 		return templates.Workflow{}, ScenarioGeneratorError
