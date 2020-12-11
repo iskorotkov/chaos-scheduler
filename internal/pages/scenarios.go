@@ -1,8 +1,8 @@
-package api
+package pages
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/config"
+	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/config"
+	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"net/http"
 )
 

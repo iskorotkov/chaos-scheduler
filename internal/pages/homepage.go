@@ -1,4 +1,4 @@
-package api
+package pages
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
