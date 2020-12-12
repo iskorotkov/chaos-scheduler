@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
@@ -34,5 +35,13 @@ func SubmissionStatusPage(rw http.ResponseWriter, r *http.Request, cfg config.Co
 		return
 	}
 
-	server.HTMLPage(rw, "web/html/scenarios/submission-status.gohtml", nil)
+	server.HTMLPage(rw, "web/html/scenarios/submission-status.gohtml", struct {
+		Link      string
+		Name      string
+		Namespace string
+	}{
+		Link:      fmt.Sprintf("http://%s/workflows/%s/%s", cfg.ServerURL, wf.Namespace, wf.Name),
+		Name:      wf.Name,
+		Namespace: wf.Namespace,
+	})
 }
