@@ -33,9 +33,6 @@ func statusPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogge
 		Namespace: namespace,
 	}
 
-	logger.Infow("workflow created",
-		"info", params)
-
 	handler := server.PageHandler("web/html/scenarios/view.gohtml", params, logger.Named("page"))
 	handler(w, r)
 }
