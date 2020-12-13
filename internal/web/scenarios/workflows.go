@@ -1,4 +1,4 @@
-package pages
+package scenarios
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
@@ -12,7 +12,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
 
-func generateWorkflow(form Form, cfg config.Config) (templates.Workflow, error) {
+func generateWorkflow(form Form, cfg *config.Config) (templates.Workflow, error) {
 	presetList := experiments.List{
 		PodPresets: []experiments.PodEnginePreset{
 			concrete.PodDelete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Interval: 1, Force: false},

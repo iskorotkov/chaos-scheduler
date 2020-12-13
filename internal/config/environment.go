@@ -19,7 +19,7 @@ type Config struct {
 	StageInterval     time.Duration
 }
 
-func ParseConfigFromEnv() Config {
+func ParseConfigFromEnv() *Config {
 	logger.SetLevel(os.Getenv("LOGGING_LEVEL"))
 
 	url := os.Getenv("SERVER_URL")
@@ -64,7 +64,7 @@ func ParseConfigFromEnv() Config {
 		logger.Warning(fmt.Sprintf("stage interval isn't set; using default value of %s", stageInterval.String()))
 	}
 
-	return Config{
+	return &Config{
 		ServerURL:         url,
 		StageMonitorImage: stageMonitorImage,
 		AppNS:             appNS,

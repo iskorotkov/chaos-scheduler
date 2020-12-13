@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/argoproj/argo v2.5.2+incompatible
+	github.com/go-chi/chi v1.5.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect

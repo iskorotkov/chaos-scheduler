@@ -1,4 +1,4 @@
-package pages
+package scenarios
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
@@ -11,7 +11,7 @@ type Form struct {
 	Stages int
 }
 
-func ReadForm(r *http.Request) (Form, error) {
+func parseScenarioParams(r *http.Request) (Form, error) {
 	stages, err := strconv.ParseInt(r.FormValue("stages"), 10, 32)
 	if err != nil {
 		logger.Error(err)

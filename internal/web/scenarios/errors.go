@@ -1,4 +1,4 @@
-package pages
+package scenarios
 
 import "errors"
 
@@ -8,4 +8,5 @@ var (
 	MarshalError           = errors.New("couldn't marshall workflow to readable format")
 	ScenarioParamsError    = errors.New("couldn't create scenario with given parameters")
 	ScenarioGeneratorError = errors.New("couldn't generate scenario due to unknown reason")
+	ConfigError            = errors.New("couldn't get config from request context")
 )
