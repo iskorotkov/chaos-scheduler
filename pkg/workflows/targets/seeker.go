@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"os"
 	"strings"
 	"time"
 )
@@ -57,7 +58,8 @@ func (s Seeker) Targets() ([]Target, error) {
 	return res, nil
 }
 
-func NewSeeker(namespace string, appLabel string, isKubernetes bool, logger *zap.SugaredLogger) (Seeker, error) {
+func NewSeeker(namespace string, appLabel string, logger *zap.SugaredLogger) (Seeker, error) {
+	isKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
 	clientset, err := k8s.NewClient(isKubernetes, logger.Named("k8s client"))
 	if err != nil {
 		logger.Error(err)

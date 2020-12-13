@@ -14,7 +14,18 @@ import (
 )
 
 func main() {
-	logger, err := zap.NewDevelopment()
+	cfg, err := config.FromEnvironment()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var logger *zap.Logger
+	if cfg.Development {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction()
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -22,7 +33,8 @@ func main() {
 	sugar := logger.Sugar()
 	defer syncLogger(sugar)
 
-	cfg := config.ParseConfigFromEnv(sugar.Named("config"))
+	sugar.Infow("get config from environment",
+		"config", cfg)
 
 	r := chi.NewRouter()
 	useDefaultMiddleware(r)

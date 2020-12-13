@@ -44,7 +44,7 @@ func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger
 		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 
-	seeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, cfg.IsInKubernetes, logger.Named("targets"))
+	seeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, logger.Named("targets"))
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
