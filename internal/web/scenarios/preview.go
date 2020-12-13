@@ -3,33 +3,27 @@ package scenarios
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"go.uber.org/zap"
 	"net/http"
 )
 
-func Preview(w http.ResponseWriter, r *http.Request) {
-	form, err := parseScenarioParams(r)
-	if err != nil {
-		logger.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	cfg, ok := r.Context().Value("config").(*config.Config)
+func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+	entry := r.Context().Value("config")
+	cfg, ok := entry.(*config.Config)
 	if !ok {
-		logger.Error(ConfigError)
-		http.Error(w, ConfigError.Error(), http.StatusInternalServerError)
+		msg := "couldn't get config from request context"
+		logger.Error(msg,
+			"config", entry)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	wf, err := generateWorkflow(form, cfg)
+	wf, params, err := createWorkflowFromForm(r, cfg, logger)
 	if err != nil {
-		if err == ScenarioParamsError {
-			logger.Error(err)
+		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			logger.Error(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -38,18 +32,18 @@ func Preview(w http.ResponseWriter, r *http.Request) {
 
 	marshaled, err := json.MarshalIndent(wf, "", "  ")
 	if err != nil {
-		logger.Error(err)
-		logger.Error(MarshalError)
-		http.Error(w, MarshalError.Error(), http.StatusBadRequest)
+		logger.Errorw(err.Error(),
+			"workflow", wf)
+		http.Error(w, "couldn't marshall workflow to readable format", http.StatusBadRequest)
 		return
 	}
 
-	params := struct {
+	data := struct {
 		GeneratedWorkflow string
 		Seed              int64
 		Stages            int
-	}{string(marshaled), form.Seed, form.Stages}
+	}{string(marshaled), params.Seed, params.Stages}
 
-	handler := server.Page("web/html/scenarios/preview.gohtml", params)
+	handler := server.PageHandler("web/html/scenarios/preview.gohtml", data, logger.Named("page"))
 	handler(w, r)
 }

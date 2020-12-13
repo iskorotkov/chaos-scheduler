@@ -3,14 +3,14 @@ package executors
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type RestExecutor struct {
-	Url string
+	url    string
+	logger *zap.SugaredLogger
 }
 
 func (r RestExecutor) Execute(wf templates.Workflow) (templates.Workflow, error) {
@@ -20,24 +20,29 @@ func (r RestExecutor) Execute(wf templates.Workflow) (templates.Workflow, error)
 
 	marshalled, err := json.MarshalIndent(req, "", "  ")
 	if err != nil {
-		logger.Error(err)
+		r.logger.Errorw(err.Error(),
+			"url", r.url)
 		return templates.Workflow{}, MarshalError
 	}
 
-	response, err := http.Post(r.Url, "application/yaml", bytes.NewReader(marshalled))
+	response, err := http.Post(r.url, "application/yaml", bytes.NewReader(marshalled))
 	if err != nil {
-		logger.Error(err)
+		r.logger.Error(err.Error(),
+			"url", r.url,
+			"workflow", wf)
 		return templates.Workflow{}, ConnectionError
 	}
 
 	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
-		logger.Warning(fmt.Sprintf("executor service returned status '%s'", response.Status))
+		r.logger.Warnw("executor service returned invalid status code",
+			"code", response.Status)
 		return templates.Workflow{}, ResponseError
 	}
 
 	return templates.Workflow{}, nil
 }
 
-func NewRestExecutor(url string) RestExecutor {
-	return RestExecutor{Url: url}
+//goland:noinspection GoUnusedExportedFunction
+func NewRestExecutor(url string, logger *zap.SugaredLogger) RestExecutor {
+	return RestExecutor{url: url, logger: logger}
 }

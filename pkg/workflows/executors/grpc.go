@@ -4,24 +4,26 @@ import (
 	"context"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
 )
 
 type GRPCExecutor struct {
-	url string
+	url    string
+	logger *zap.SugaredLogger
 }
 
-func NewGRPCExecutor(url string) GRPCExecutor {
-	return GRPCExecutor{url: url}
+func NewGRPCExecutor(url string, logger *zap.SugaredLogger) GRPCExecutor {
+	return GRPCExecutor{url: url, logger: logger}
 }
 
 func (g GRPCExecutor) Execute(wf templates.Workflow) (templates.Workflow, error) {
 	conn, err := grpc.Dial(g.url, grpc.WithInsecure())
 	if err != nil {
-		logger.Error(err)
+		g.logger.Errorw(err.Error(),
+			"url", g.url)
 		return templates.Workflow{}, ConnectionError
 	}
 
@@ -36,7 +38,8 @@ func (g GRPCExecutor) Execute(wf templates.Workflow) (templates.Workflow, error)
 		Workflow:  &argoWf,
 	})
 	if err != nil {
-		logger.Error(err)
+		g.logger.Errorw(err.Error(),
+			"workflow", wf)
 		return templates.Workflow{}, ResponseError
 	}
 

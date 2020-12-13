@@ -3,11 +3,12 @@ package home
 import (
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"go.uber.org/zap"
 	"net/http"
 )
 
-func Router() http.Handler {
+func Router(l *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/", server.Page("web/html/home/home.gohtml", nil))
+	r.Get("/", server.WithLogger(view, l.Named("get")))
 	return r
 }

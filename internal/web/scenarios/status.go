@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"go.uber.org/zap"
 	"net/http"
 )
 
-func Status(w http.ResponseWriter, r *http.Request) {
-	cfg, ok := r.Context().Value("config").(*config.Config)
+func status(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+	entry := r.Context().Value("config")
+	cfg, ok := entry.(*config.Config)
 	if !ok {
-		logger.Error(ConfigError)
-		http.Error(w, ConfigError.Error(), http.StatusInternalServerError)
+		msg := "couldn't get config from request context"
+		logger.Errorw(msg,
+			"config", entry)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -30,6 +33,9 @@ func Status(w http.ResponseWriter, r *http.Request) {
 		Namespace: namespace,
 	}
 
-	handler := server.Page("web/html/scenarios/view.gohtml", params)
+	logger.Infow("workflow created",
+		"info", params)
+
+	handler := server.PageHandler("web/html/scenarios/view.gohtml", params, logger.Named("page"))
 	handler(w, r)
 }

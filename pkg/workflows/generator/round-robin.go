@@ -1,10 +1,10 @@
-package generators
+package generator
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
+	"go.uber.org/zap"
 	"math/rand"
 )
 
@@ -13,12 +13,13 @@ var (
 )
 
 type RoundRobin struct {
-	Presets experiments.List
-	Seeker  targets.Seeker
+	presets experiments.List
+	seeker  targets.Seeker
+	logger  *zap.SugaredLogger
 }
 
 func (r RoundRobin) Generate(params Params) (Scenario, error) {
-	if len(r.Presets.ContainerPresets)+len(r.Presets.PodPresets) == 0 {
+	if len(r.presets.ContainerPresets)+len(r.presets.PodPresets) == 0 {
 		return Scenario{}, ZeroActions
 	}
 
@@ -33,9 +34,9 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	src := rand.NewSource(params.Seed)
 	rnd := rand.New(src)
 
-	targetsList, err := r.Seeker.Targets()
+	targetsList, err := r.seeker.Targets()
 	if err != nil {
-		logger.Error(err)
+		r.logger.Error(err.Error())
 		return Scenario{}, TargetsError
 	}
 
@@ -43,7 +44,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 	stagesLeft := params.Stages
 	for stagesLeft > 0 {
-		for _, preset := range r.Presets.ContainerPresets {
+		for _, preset := range r.presets.ContainerPresets {
 			if stagesLeft == 0 {
 				break
 			}
@@ -63,7 +64,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stages = append(stages, stage)
 		}
 
-		for _, preset := range r.Presets.PodPresets {
+		for _, preset := range r.presets.PodPresets {
 			if stagesLeft == 0 {
 				break
 			}
@@ -87,8 +88,8 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobinGenerator(presetsList experiments.List, seeker targets.Seeker) RoundRobin {
-	return RoundRobin{Presets: presetsList, Seeker: seeker}
+func NewRoundRobin(presetsList experiments.List, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
+	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
 }
 
 func selectTarget(ts []targets.Target, rnd *rand.Rand) targets.Target {

@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,7 +15,7 @@ var (
 	ClientsetError = errors.New("couldn't create clientset from config")
 )
 
-func NewClient(isKubernetes bool) (*kubernetes.Clientset, error) {
+func NewClient(isKubernetes bool, logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
 	var config *rest.Config
 	var err error
 
@@ -27,13 +27,13 @@ func NewClient(isKubernetes bool) (*kubernetes.Clientset, error) {
 	}
 
 	if err != nil {
-		logger.Error(err)
+		logger.Error(err.Error())
 		return nil, ConfigError
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(err.Error())
 		return nil, ClientsetError
 	}
 

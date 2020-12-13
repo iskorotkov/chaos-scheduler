@@ -1,22 +1,25 @@
 package server
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"go.uber.org/zap"
 	"html/template"
 	"net/http"
 )
 
-func Page(path string, data interface{}) http.HandlerFunc {
+func PageHandler(path string, data interface{}, logger *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles(path)
 		if err != nil {
-			logger.Error(err)
+			logger.Errorw(err.Error(),
+				"path", path)
 			return
 		}
 
 		err = t.Execute(w, data)
 		if err != nil {
-			logger.Error(err)
+			logger.Errorw(err.Error(),
+				"path", path,
+				"data", data)
 			return
 		}
 	}

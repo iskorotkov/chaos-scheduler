@@ -7,40 +7,52 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/internal/web/home"
 	"github.com/iskorotkov/chaos-scheduler/internal/web/scenarios"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"go.uber.org/zap"
+	"log"
 	"net/http"
 	"time"
 )
 
 func main() {
-	cfg := config.ParseConfigFromEnv()
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	r := newRouter(cfg)
+	sugar := logger.Sugar()
+	defer syncLogger(sugar)
 
-	logger.Critical(http.ListenAndServe(":8811", r))
-}
+	cfg := config.ParseConfigFromEnv(sugar.Named("config"))
 
-func newRouter(cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
-
 	useDefaultMiddleware(r)
 
 	r.Use(configCtx(cfg))
 
-	serveStaticFiles(r)
+	mapRoutes(r, sugar)
 
-	r.Mount("/", home.Router())
-	r.Mount("/scenarios", scenarios.Router())
-
-	return r
+	err = http.ListenAndServe(":8811", r)
+	if err != nil {
+		sugar.Fatal(err.Error())
+	}
 }
 
-func serveStaticFiles(r *chi.Mux) {
+func mapRoutes(r chi.Router, logger *zap.SugaredLogger) {
 	r.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./web/js"))))
 	r.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./web/css"))))
+
+	r.Mount("/", home.Router(logger.Named("home")))
+	r.Mount("/scenarios", scenarios.Router(logger.Named("scenarios")))
 }
 
-func useDefaultMiddleware(r *chi.Mux) {
+func syncLogger(logger *zap.SugaredLogger) {
+	err := logger.Sync()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func useDefaultMiddleware(r chi.Router) {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)

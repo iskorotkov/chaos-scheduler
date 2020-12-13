@@ -3,10 +3,7 @@ package scenarios
 import "errors"
 
 var (
-	FormParseError         = errors.New("couldn't parse form data")
-	ScenarioExecutionError = errors.New("couldn't execute scenario")
-	MarshalError           = errors.New("couldn't marshall workflow to readable format")
-	ScenarioParamsError    = errors.New("couldn't create scenario with given parameters")
-	ScenarioGeneratorError = errors.New("couldn't generate scenario due to unknown reason")
-	ConfigError            = errors.New("couldn't get config from request context")
+	formParseError         = errors.New("couldn't parse form data")
+	scenarioParamsError    = errors.New("couldn't create scenario with given parameters")
+	scenarioGeneratorError = errors.New("couldn't generate scenario due to unknown reason")
 )

@@ -3,7 +3,7 @@ package assemblers
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"gopkg.in/yaml.v2"
 )
@@ -12,7 +12,7 @@ type ModularAssembler struct {
 	Extensions extensions.List
 }
 
-func (a ModularAssembler) Assemble(scenario generators.Scenario) (templates.Workflow, error) {
+func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workflow, error) {
 	if len(scenario.Stages) == 0 {
 		return templates.Workflow{}, StagesError
 	}
@@ -31,7 +31,7 @@ func NewModularAssembler(ext extensions.List) Assembler {
 	return ModularAssembler{Extensions: ext}
 }
 
-func (a ModularAssembler) createTemplatesList(scenario generators.Scenario) ([]templates.Template, error) {
+func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 	ids := make([][]string, 0)
 

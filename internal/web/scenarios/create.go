@@ -3,45 +3,38 @@ package scenarios
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
+	"go.uber.org/zap"
 	"net/http"
 )
 
-func CreatePost(w http.ResponseWriter, r *http.Request) {
-	form, err := parseScenarioParams(r)
-	if err != nil {
-		logger.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	cfg, ok := r.Context().Value("config").(*config.Config)
+func createAction(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+	entry := r.Context().Value("config")
+	cfg, ok := entry.(*config.Config)
 	if !ok {
-		logger.Error(ConfigError)
-		http.Error(w, ConfigError.Error(), http.StatusInternalServerError)
+		msg := "couldn't get config from request context"
+		logger.Error(msg,
+			"config", entry)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	wf, err := generateWorkflow(form, cfg)
+	wf, _, err := createWorkflowFromForm(r, cfg, logger)
 	if err != nil {
-		if err == ScenarioParamsError {
-			logger.Error(err)
+		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		} else {
-			logger.Error(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-
-		return
 	}
 
-	executor := executors.NewGRPCExecutor(cfg.ServerURL)
+	executor := executors.NewGRPCExecutor(cfg.ServerURL, logger.Named("execution"))
 	wf, err = executor.Execute(wf)
 	if err != nil {
-		logger.Error(err)
-		logger.Error(ScenarioExecutionError)
-		http.Error(w, ScenarioExecutionError.Error(), http.StatusInternalServerError)
+		logger.Errorw(err.Error(),
+			"config", cfg)
+		http.Error(w, "couldn't execute scenario", http.StatusInternalServerError)
 		return
 	}
 

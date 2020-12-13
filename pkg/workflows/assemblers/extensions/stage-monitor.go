@@ -2,9 +2,9 @@ package extensions
 
 import (
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generators"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 	"time"
@@ -14,11 +14,12 @@ type StageMonitor struct {
 	image         string
 	targetNs      string
 	stageInterval time.Duration
+	logger        *zap.SugaredLogger
 }
 
-func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) []templates.Template {
+func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.Template {
 	if s.image == "" {
-		logger.Warning("stage monitor image wasn't specified; stage monitor creation skipped")
+		s.logger.Warn("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil
 	}
 
@@ -46,6 +47,6 @@ func (s StageMonitor) Apply(stage generators.Stage, stageIndex int) []templates.
 	return []templates.Template{containerTemplate}
 }
 
-func UseStageMonitor(image string, targetNs string, bufferTime time.Duration) StageExtension {
-	return StageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime}
+func UseStageMonitor(image string, targetNs string, bufferTime time.Duration, logger *zap.SugaredLogger) StageExtension {
+	return StageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime, logger: logger}
 }

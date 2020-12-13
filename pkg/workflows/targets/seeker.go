@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
-	"github.com/iskorotkov/chaos-scheduler/pkg/logger"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"strings"
@@ -20,15 +20,16 @@ type Seeker struct {
 	namespace string
 	appLabel  string
 	clientset *kubernetes.Clientset
+	logger    *zap.SugaredLogger
 }
 
-func (o Seeker) Targets() ([]Target, error) {
+func (s Seeker) Targets() ([]Target, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	pods, err := o.clientset.CoreV1().Pods(o.namespace).List(ctx, v1.ListOptions{})
+	pods, err := s.clientset.CoreV1().Pods(s.namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
-		logger.Error(err)
+		s.logger.Error(err)
 		return nil, FetchError
 	}
 
@@ -47,7 +48,7 @@ func (o Seeker) Targets() ([]Target, error) {
 			Deployment:    deployment,
 			Containers:    containers,
 			Labels:        pod.Labels,
-			SelectorLabel: o.appLabel,
+			SelectorLabel: s.appLabel,
 			Annotations:   pod.Annotations,
 		}
 		res = append(res, p)
@@ -56,8 +57,8 @@ func (o Seeker) Targets() ([]Target, error) {
 	return res, nil
 }
 
-func NewSeeker(namespace string, appLabel string, isKubernetes bool) (Seeker, error) {
-	clientset, err := k8s.NewClient(isKubernetes)
+func NewSeeker(namespace string, appLabel string, isKubernetes bool, logger *zap.SugaredLogger) (Seeker, error) {
+	clientset, err := k8s.NewClient(isKubernetes, logger.Named("k8s client"))
 	if err != nil {
 		logger.Error(err)
 		return Seeker{}, ClientsetError
@@ -67,5 +68,6 @@ func NewSeeker(namespace string, appLabel string, isKubernetes bool) (Seeker, er
 		namespace: namespace,
 		appLabel:  appLabel,
 		clientset: clientset,
+		logger:    logger,
 	}, nil
 }
