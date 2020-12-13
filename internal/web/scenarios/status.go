@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func status(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+func statusPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	entry := r.Context().Value("config")
 	cfg, ok := entry.(*config.Config)
 	if !ok {

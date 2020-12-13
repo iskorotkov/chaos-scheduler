@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+func previewPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	entry := r.Context().Value("config")
 	cfg, ok := entry.(*config.Config)
 	if !ok {

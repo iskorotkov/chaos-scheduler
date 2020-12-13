@@ -9,6 +9,6 @@ import (
 
 func Router(l *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/", server.WithLogger(view, l.Named("get")))
+	r.Get("/", server.WithLogger(viewPage, l.Named("get")))
 	return r
 }
