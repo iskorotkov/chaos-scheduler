@@ -75,6 +75,11 @@ func (m Monitor) Start(name string, namespace string, output chan<- *WorkflowUpd
 		}
 
 		output <- (*WorkflowUpdate)(event)
+
+		phase := event.Object.Status.Phase
+		if phase != "Running" && phase != "Pending" {
+			break
+		}
 	}
 
 	return nil
