@@ -3,7 +3,7 @@ package scenarios
 import (
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/monitor"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/watcher"
 	"github.com/iskorotkov/chaos-scheduler/pkg/ws"
 	"go.uber.org/zap"
 	"net/http"
@@ -39,15 +39,15 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		return
 	}
 
-	m := monitor.NewMonitor(cfg.ServerURL, logger.Named("monitor"))
+	m := watcher.NewMonitor(cfg.ServerURL, logger.Named("monitor"))
 
-	updates := make(chan *monitor.WorkflowUpdate)
+	events := make(chan *watcher.Event)
 
 	go func() {
 		// Read all remaining events
 		defer func() {
 			for {
-				if update := <-updates; update == nil {
+				if event := <-events; event == nil {
 					break
 				}
 			}
@@ -61,25 +61,25 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		}()
 
 		for {
-			update := <-updates
-			if update == nil {
+			event := <-events
+			if event == nil {
 				break
 			}
 
-			if err := socket.Write(update); err != nil {
+			if err := socket.Write(event); err != nil {
 				logger.Error(err.Error())
 				break
 			}
 		}
 
-		logger.Info("all workflow updates were processed")
+		logger.Info("all workflow events were processed")
 	}()
 
 	go func() {
-		if err := m.Start(req.Name, req.Namespace, updates); err != nil {
+		if err := m.Start(req.Name, req.Namespace, events); err != nil {
 			logger.Error(err.Error())
 		}
 
-		logger.Info("all workflow updates were sent")
+		logger.Info("all workflow events were sent")
 	}()
 }

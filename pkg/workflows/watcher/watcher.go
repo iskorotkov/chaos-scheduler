@@ -1,4 +1,4 @@
-package monitor
+package watcher
 
 import (
 	"context"
@@ -17,32 +17,32 @@ var (
 	StreamError     = errors.New("couldn't read workflow update")
 )
 
-type WorkflowUpdate workflow.WorkflowWatchEvent
+type Event workflow.WorkflowWatchEvent
 
-type Monitor struct {
+type Watcher struct {
 	url    string
 	logger *zap.SugaredLogger
 }
 
-func NewMonitor(url string, logger *zap.SugaredLogger) Monitor {
-	return Monitor{url: url, logger: logger}
+func NewMonitor(url string, logger *zap.SugaredLogger) Watcher {
+	return Watcher{url: url, logger: logger}
 }
 
-func (m Monitor) Start(name string, namespace string, output chan<- *WorkflowUpdate) error {
-	m.logger.Info("opening monitor gRPC connection")
+func (w Watcher) Start(name string, namespace string, output chan<- *Event) error {
+	w.logger.Info("opening watcher gRPC connection")
 
-	conn, err := grpc.Dial(m.url, grpc.WithInsecure())
+	conn, err := grpc.Dial(w.url, grpc.WithInsecure())
 	if err != nil {
-		m.logger.Errorw(err.Error(),
-			"url", m.url)
+		w.logger.Errorw(err.Error(),
+			"url", w.url)
 		return ConnectionError
 	}
 
 	defer func() {
-		m.logger.Info("closing monitor gRPC connection")
+		w.logger.Info("closing watcher gRPC connection")
 		err := conn.Close()
 		if err != nil {
-			m.logger.Error(err.Error())
+			w.logger.Error(err.Error())
 		}
 	}()
 
@@ -53,7 +53,7 @@ func (m Monitor) Start(name string, namespace string, output chan<- *WorkflowUpd
 	request := &workflow.WatchWorkflowsRequest{Namespace: namespace, ListOptions: options}
 	service, err := client.WatchWorkflows(context.Background(), request)
 	if err != nil {
-		m.logger.Errorw(err.Error(),
+		w.logger.Errorw(err.Error(),
 			"selector", selector)
 		return RequestError
 	}
@@ -67,14 +67,14 @@ func (m Monitor) Start(name string, namespace string, output chan<- *WorkflowUpd
 		}
 
 		if err != nil {
-			m.logger.Errorw(err.Error(),
+			w.logger.Errorw(err.Error(),
 				"event", event,
 				"selector", selector,
 				"namespace", namespace)
 			return StreamError
 		}
 
-		output <- (*WorkflowUpdate)(event)
+		output <- (*Event)(event)
 
 		phase := event.Object.Status.Phase
 		if phase != "Running" && phase != "Pending" {
