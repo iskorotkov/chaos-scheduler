@@ -48,55 +48,60 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go func() {
-		if err := socket.WaitForClose(clientLeft); err != nil {
-			logger.Error(err.Error())
-		}
+	go waitForWebsocketClosing(socket, clientLeft, cancel, logger)
+	go establishWebsocketConnection(socket, events, clientLeft, logger)
+	go startMonitoring(ctx, m, req, events, logger)
+}
 
-		defer cancel()
-	}()
+func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Event, clientLeft chan struct{}, logger *zap.SugaredLogger) {
+	defer readRemainingEvents(events)
+	defer closeWebsocket(socket, logger)
 
-	go func() {
-		// Read all remaining events
-		defer func() {
-			for {
-				if event := <-events; event == nil {
-					break
-				}
-			}
-		}()
-
-		// Close socket
-		defer func() {
-			if err := socket.Close(); err != nil {
-				logger.Error(err.Error())
-			}
-
-			logger.Info("all workflow events were processed")
-		}()
-
-		for {
-			select {
-			case event := <-events:
-				if event == nil {
-					return
-				}
-
-				if err := socket.Write(event); err != nil {
-					logger.Error(err.Error())
-					return
-				}
-			case <-clientLeft:
+	for {
+		select {
+		case event := <-events:
+			if event == nil {
 				return
 			}
-		}
-	}()
 
-	go func() {
-		if err := m.Start(ctx, req.Name, req.Namespace, events); err != nil {
-			logger.Error(err.Error())
+			if err := socket.Write(event); err != nil && err != ws.DeadlineExceededError {
+				logger.Error(err.Error())
+				return
+			}
+		case <-clientLeft:
+			return
 		}
+	}
+}
 
-		logger.Info("all workflow events were sent")
-	}()
+func closeWebsocket(socket ws.Websocket, logger *zap.SugaredLogger) {
+	if err := socket.Close(); err != nil && err != ws.DeadlineExceededError {
+		logger.Error(err.Error())
+	}
+
+	logger.Info("all workflow events were processed")
+}
+
+func readRemainingEvents(events chan *watcher.Event) {
+	for {
+		if event := <-events; event == nil {
+			break
+		}
+	}
+}
+
+func waitForWebsocketClosing(socket ws.Websocket, clientLeft chan struct{}, cancel context.CancelFunc, logger *zap.SugaredLogger) {
+	defer cancel()
+
+	if _, err := socket.WaitForClose(clientLeft); err != nil {
+		logger.Error(err.Error())
+	}
+}
+
+func startMonitoring(ctx context.Context, m watcher.Watcher, req request, events chan *watcher.Event, logger *zap.SugaredLogger) {
+	if err := m.Start(ctx, req.Name, req.Namespace, events); err != nil {
+		logger.Error(err.Error())
+	}
+
+	logger.Info("all workflow events were sent")
 }
