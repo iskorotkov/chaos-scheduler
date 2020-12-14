@@ -2,19 +2,23 @@ package ws
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"go.uber.org/zap"
 	"net"
 	"net/http"
+	"os"
+	"time"
 )
 
 type Websocket struct {
-	conn   net.Conn
-	logger *zap.SugaredLogger
+	conn    net.Conn
+	timeout time.Duration
+	logger  *zap.SugaredLogger
 }
 
-func NewWebsocket(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) (Websocket, error) {
+func NewWebsocket(w http.ResponseWriter, r *http.Request, timeout time.Duration, logger *zap.SugaredLogger) (Websocket, error) {
 	logger.Info("opening websocket connection")
 
 	conn, _, _, err := ws.UpgradeHTTP(r, w)
@@ -23,7 +27,7 @@ func NewWebsocket(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLog
 		return Websocket{}, ConnectionError
 	}
 
-	return Websocket{conn: conn, logger: logger}, nil
+	return Websocket{conn: conn, timeout: timeout, logger: logger}, nil
 }
 
 func (w Websocket) Read(request interface{}) error {
@@ -32,6 +36,11 @@ func (w Websocket) Read(request interface{}) error {
 
 	header, err := reader.NextFrame()
 	if err != nil {
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+			w.logger.Info("websocket connection deadline exceeded")
+			return DeadlineExceededError
+		}
+
 		w.logger.Error(err)
 		return ReadError
 	}
@@ -44,6 +53,10 @@ func (w Websocket) Read(request interface{}) error {
 	if err := decoder.Decode(&request); err != nil {
 		w.logger.Error(err)
 		return DecodeError
+	}
+
+	if err := w.setDeadline(time.Now().Add(w.timeout)); err != nil {
+		return err
 	}
 
 	return nil
@@ -59,8 +72,50 @@ func (w Websocket) Write(data interface{}) error {
 	}
 
 	if err := writer.Flush(); err != nil {
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+			w.logger.Info("websocket connection deadline exceeded")
+			return DeadlineExceededError
+		}
+
 		w.logger.Error(err.Error())
 		return FlushError
+	}
+
+	if err := w.setDeadline(time.Now().Add(w.timeout)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w Websocket) WaitForClose(ch chan<- struct{}) error {
+	defer func() {
+		ch <- struct{}{}
+		close(ch)
+	}()
+
+	for {
+		header, err := ws.ReadHeader(w.conn)
+		if err != nil {
+			if errors.Is(err, os.ErrDeadlineExceeded) {
+				w.logger.Info("websocket connection deadline exceeded")
+				return DeadlineExceededError
+			}
+
+			w.logger.Error(err.Error())
+			return WaitError
+		}
+
+		if header.OpCode == ws.OpClose {
+			return nil
+		}
+	}
+}
+
+func (w Websocket) setDeadline(t time.Time) error {
+	if err := w.conn.SetDeadline(t); err != nil {
+		w.logger.Error(err.Error())
+		return DeadlineSettingError
 	}
 
 	return nil

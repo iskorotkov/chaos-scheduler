@@ -7,6 +7,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/ws"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type request struct {
@@ -32,7 +33,7 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		http.Error(w, msg, http.StatusInternalServerError)
 	}
 
-	socket, err := ws.NewWebsocket(w, r, logger.Named("websocket"))
+	socket, err := ws.NewWebsocket(w, r, time.Hour*2, logger.Named("websocket"))
 	if err != nil {
 		logger.Error(err.Error())
 		http.Error(w, "couldn't create websocket connection", http.StatusInternalServerError)
@@ -42,6 +43,13 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	m := watcher.NewMonitor(cfg.ServerURL, logger.Named("monitor"))
 
 	events := make(chan *watcher.Event)
+	clientLeft := make(chan struct{})
+
+	go func() {
+		if err := socket.WaitForClose(clientLeft); err != nil {
+			logger.Error(err.Error())
+		}
+	}()
 
 	go func() {
 		// Read all remaining events
@@ -60,15 +68,20 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 			}
 		}()
 
+	loop:
 		for {
-			event := <-events
-			if event == nil {
-				break
-			}
+			select {
+			case event := <-events:
+				if event == nil {
+					break
+				}
 
-			if err := socket.Write(event); err != nil {
-				logger.Error(err.Error())
-				break
+				if err := socket.Write(event); err != nil {
+					logger.Error(err.Error())
+					break
+				}
+			case <-clientLeft:
+				break loop
 			}
 		}
 
