@@ -1,11 +1,13 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"go.uber.org/zap"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -13,12 +15,12 @@ import (
 )
 
 type Websocket struct {
-	conn    net.Conn
-	timeout time.Duration
-	logger  *zap.SugaredLogger
+	conn   net.Conn
+	Closed <-chan CloseReason
+	logger *zap.SugaredLogger
 }
 
-func NewWebsocket(w http.ResponseWriter, r *http.Request, timeout time.Duration, logger *zap.SugaredLogger) (Websocket, error) {
+func NewWebsocket(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) (Websocket, error) {
 	logger.Info("opening websocket connection")
 
 	conn, _, _, err := ws.UpgradeHTTP(r, w)
@@ -27,10 +29,31 @@ func NewWebsocket(w http.ResponseWriter, r *http.Request, timeout time.Duration,
 		return Websocket{}, ConnectionError
 	}
 
-	return Websocket{conn: conn, timeout: timeout, logger: logger}, nil
+	ch := make(chan CloseReason, 1)
+
+	socket := Websocket{conn: conn, Closed: ch, logger: logger}
+
+	go func() {
+		defer close(ch)
+		ch <- socket.waitForClosing()
+	}()
+
+	return socket, nil
 }
 
-func (w Websocket) Read(request interface{}) error {
+func (w Websocket) Read(ctx context.Context, data interface{}) error {
+	if ctx.Err() != nil {
+		if ctx.Err() == context.Canceled {
+			return ContextCancelledError
+		} else {
+			return DeadlineExceededError
+		}
+	}
+
+	if err := w.setDeadline(ctx); err != nil {
+		return err
+	}
+
 	reader := wsutil.NewReader(w.conn, ws.StateServerSide)
 	decoder := json.NewDecoder(reader)
 
@@ -47,22 +70,30 @@ func (w Websocket) Read(request interface{}) error {
 
 	if header.OpCode == ws.OpClose {
 		w.logger.Error("couldn't read message from websocket due to EOF")
-		return EOF
+		return EOFError
 	}
 
-	if err := decoder.Decode(&request); err != nil {
+	if err := decoder.Decode(&data); err != nil {
 		w.logger.Error(err)
 		return DecodeError
-	}
-
-	if err := w.setDeadline(time.Now().Add(w.timeout)); err != nil {
-		return err
 	}
 
 	return nil
 }
 
-func (w Websocket) Write(data interface{}) error {
+func (w Websocket) Write(ctx context.Context, data interface{}) error {
+	if ctx.Err() != nil {
+		if ctx.Err() == context.Canceled {
+			return ContextCancelledError
+		} else {
+			return DeadlineExceededError
+		}
+	}
+
+	if err := w.setDeadline(ctx); err != nil {
+		return err
+	}
+
 	writer := wsutil.NewWriter(w.conn, ws.StateServerSide, ws.OpText)
 	encoder := json.NewEncoder(writer)
 
@@ -79,54 +110,6 @@ func (w Websocket) Write(data interface{}) error {
 
 		w.logger.Error(err.Error())
 		return FlushError
-	}
-
-	if err := w.setDeadline(time.Now().Add(w.timeout)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (w Websocket) Closed() <-chan CloseReason {
-	ch := make(chan CloseReason, 1)
-
-	go func() {
-		defer close(ch)
-		ch <- w.waitForClosing()
-	}()
-
-	return ch
-}
-
-func (w Websocket) waitForClosing() CloseReason {
-	for {
-		header, err := ws.ReadHeader(w.conn)
-		if err != nil {
-			if errors.Is(err, os.ErrDeadlineExceeded) {
-				w.logger.Info("websocket connection deadline exceeded")
-				return DeadlineExceeded
-			}
-
-			if _, ok := err.(*net.OpError); ok {
-				w.logger.Info("websocket was closed on the server")
-				return ClosedOnServer
-			}
-
-			w.logger.Error(err.Error())
-			return ErrorOccurred
-		}
-
-		if header.OpCode == ws.OpClose {
-			return ClosedOnClient
-		}
-	}
-}
-
-func (w Websocket) setDeadline(t time.Time) error {
-	if err := w.conn.SetDeadline(t); err != nil {
-		w.logger.Error(err.Error())
-		return DeadlineSettingError
 	}
 
 	return nil
@@ -147,4 +130,44 @@ func (w Websocket) Close() error {
 	}
 
 	return nil
+}
+
+func (w Websocket) setDeadline(ctx context.Context) error {
+	t, ok := ctx.Deadline()
+	if !ok {
+		t = time.Time{}
+	}
+
+	if err := w.conn.SetDeadline(t); err != nil {
+		w.logger.Error(err)
+		return DeadlineSettingError
+	}
+
+	return nil
+}
+
+func (w Websocket) waitForClosing() CloseReason {
+	for {
+		header, err := ws.ReadHeader(w.conn)
+		if err != nil {
+			if errors.Is(err, os.ErrDeadlineExceeded) {
+				return ReasonDeadlineExceeded
+			}
+
+			if _, ok := err.(*net.OpError); ok {
+				return ReasonClosedOnServer
+			}
+
+			if err == io.EOF {
+				return ReasonEOF
+			}
+
+			w.logger.Warn(err.Error())
+			return ReasonErrorOccurred
+		}
+
+		if header.OpCode == ws.OpClose {
+			return ReasonClosedOnClient
+		}
+	}
 }

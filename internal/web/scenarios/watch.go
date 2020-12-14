@@ -34,7 +34,7 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		http.Error(w, msg, http.StatusInternalServerError)
 	}
 
-	socket, err := ws.NewWebsocket(w, r, time.Hour*2, logger.Named("websocket"))
+	socket, err := ws.NewWebsocket(w, r, logger.Named("websocket"))
 	if err != nil {
 		logger.Error(err.Error())
 		http.Error(w, "couldn't create websocket connection", http.StatusInternalServerError)
@@ -45,19 +45,26 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 
 	events := make(chan *watcher.Event)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	monitorCtx, monitorCancel := context.WithTimeout(context.Background(), time.Hour)
+	wsCtx, wsCancel := context.WithTimeout(context.Background(), time.Hour)
 
-	go establishWebsocketConnection(socket, events, cancel, logger)
-	go startMonitoring(ctx, m, req, events, logger)
+	go func() {
+		defer readRemainingEvents(events)
+		defer closeWebsocket(socket, logger)
+
+		defer monitorCancel()
+		defer wsCancel()
+
+		sendEvents(wsCtx, socket, events, logger)
+	}()
+
+	go func() {
+		defer monitorCancel()
+		readEvents(monitorCtx, m, req, events, logger)
+	}()
 }
 
-func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Event, cancel context.CancelFunc, logger *zap.SugaredLogger) {
-	defer readRemainingEvents(events)
-	defer closeWebsocket(socket, logger)
-	defer cancel()
-
-	closed := socket.Closed()
-
+func sendEvents(ctx context.Context, socket ws.Websocket, events chan *watcher.Event, logger *zap.SugaredLogger) {
 	for {
 		select {
 		case event := <-events:
@@ -65,11 +72,11 @@ func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Even
 				return
 			}
 
-			if err := socket.Write(event); err != nil && err != ws.DeadlineExceededError {
+			if err := socket.Write(ctx, event); err != nil && err != ws.DeadlineExceededError && err != ws.ContextCancelledError {
 				logger.Error(err.Error())
 				return
 			}
-		case <-closed:
+		case <-socket.Closed:
 			return
 		}
 	}
@@ -83,7 +90,7 @@ func closeWebsocket(socket ws.Websocket, logger *zap.SugaredLogger) {
 	logger.Info("all workflow events were processed")
 }
 
-func readRemainingEvents(events chan *watcher.Event) {
+func readRemainingEvents(events <-chan *watcher.Event) {
 	for {
 		if event := <-events; event == nil {
 			break
@@ -91,7 +98,7 @@ func readRemainingEvents(events chan *watcher.Event) {
 	}
 }
 
-func startMonitoring(ctx context.Context, m watcher.Watcher, req request, events chan *watcher.Event, logger *zap.SugaredLogger) {
+func readEvents(ctx context.Context, m watcher.Watcher, req request, events chan<- *watcher.Event, logger *zap.SugaredLogger) {
 	if err := m.Start(ctx, req.Name, req.Namespace, events); err != nil {
 		logger.Error(err.Error())
 	}
