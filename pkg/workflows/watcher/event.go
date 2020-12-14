@@ -11,14 +11,14 @@ type Step struct {
 	Name       string    `json:"name,omitempty"`
 	Type       string    `json:"type,omitempty"`
 	Phase      string    `json:"phase,omitempty"`
-	StartedAt  time.Time `json:"started_at,omitempty"`
-	FinishedAt time.Time `json:"finished_at,omitempty"`
+	StartedAt  time.Time `json:"startedAt,omitempty"`
+	FinishedAt time.Time `json:"finishedAt,omitempty"`
 }
 
 type Stage struct {
 	Phase      string    `json:"phase,omitempty"`
-	StartedAt  time.Time `json:"started_at,omitempty"`
-	FinishedAt time.Time `json:"finished_at,omitempty"`
+	StartedAt  time.Time `json:"startedAt,omitempty"`
+	FinishedAt time.Time `json:"finishedAt,omitempty"`
 	Steps      []Step    `json:"steps,omitempty"`
 }
 
@@ -28,8 +28,8 @@ type Event struct {
 	Type       string            `json:"type,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`
 	Phase      string            `json:"phase,omitempty"`
-	StartedAt  time.Time         `json:"started_at,omitempty"`
-	FinishedAt time.Time         `json:"finished_at,omitempty"`
+	StartedAt  time.Time         `json:"startedAt,omitempty"`
+	FinishedAt time.Time         `json:"finishedAt,omitempty"`
 	Stages     []Stage           `json:"stages,omitempty"`
 }
 
