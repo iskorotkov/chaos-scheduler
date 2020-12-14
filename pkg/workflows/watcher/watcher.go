@@ -17,8 +17,6 @@ var (
 	StreamError     = errors.New("couldn't read workflow update")
 )
 
-type Event workflow.WorkflowWatchEvent
-
 type Watcher struct {
 	url    string
 	logger *zap.SugaredLogger
@@ -74,7 +72,7 @@ func (w Watcher) Start(name string, namespace string, output chan<- *Event) erro
 			return StreamError
 		}
 
-		output <- (*Event)(event)
+		output <- newEvent(event)
 
 		phase := event.Object.Status.Phase
 		if phase != "Running" && phase != "Pending" {
