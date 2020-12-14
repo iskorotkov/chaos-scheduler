@@ -26,7 +26,7 @@ func NewMonitor(url string, logger *zap.SugaredLogger) Watcher {
 	return Watcher{url: url, logger: logger}
 }
 
-func (w Watcher) Start(name string, namespace string, output chan<- *Event) error {
+func (w Watcher) Start(ctx context.Context, name string, namespace string, output chan<- *Event) error {
 	w.logger.Info("opening watcher gRPC connection")
 
 	conn, err := grpc.Dial(w.url, grpc.WithInsecure())
@@ -49,7 +49,7 @@ func (w Watcher) Start(name string, namespace string, output chan<- *Event) erro
 	selector := fmt.Sprintf("metadata.name=%s", name)
 	options := &v1.ListOptions{FieldSelector: selector}
 	request := &workflow.WatchWorkflowsRequest{Namespace: namespace, ListOptions: options}
-	service, err := client.WatchWorkflows(context.Background(), request)
+	service, err := client.WatchWorkflows(ctx, request)
 	if err != nil {
 		w.logger.Errorw(err.Error(),
 			"selector", selector)
@@ -60,13 +60,12 @@ func (w Watcher) Start(name string, namespace string, output chan<- *Event) erro
 
 	for {
 		event, err := service.Recv()
-		if err == io.EOF {
+		if err == io.EOF || ctx.Err() != nil {
 			break
 		}
 
 		if err != nil {
 			w.logger.Errorw(err.Error(),
-				"event", event,
 				"selector", selector,
 				"namespace", namespace)
 			return StreamError

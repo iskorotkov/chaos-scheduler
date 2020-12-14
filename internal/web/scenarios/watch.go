@@ -1,6 +1,7 @@
 package scenarios
 
 import (
+	"context"
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/watcher"
@@ -45,10 +46,14 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	events := make(chan *watcher.Event)
 	clientLeft := make(chan struct{})
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	go func() {
 		if err := socket.WaitForClose(clientLeft); err != nil {
 			logger.Error(err.Error())
 		}
+
+		defer cancel()
 	}()
 
 	go func() {
@@ -66,30 +71,29 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 			if err := socket.Close(); err != nil {
 				logger.Error(err.Error())
 			}
+
+			logger.Info("all workflow events were processed")
 		}()
 
-	loop:
 		for {
 			select {
 			case event := <-events:
 				if event == nil {
-					break
+					return
 				}
 
 				if err := socket.Write(event); err != nil {
 					logger.Error(err.Error())
-					break
+					return
 				}
 			case <-clientLeft:
-				break loop
+				return
 			}
 		}
-
-		logger.Info("all workflow events were processed")
 	}()
 
 	go func() {
-		if err := m.Start(req.Name, req.Namespace, events); err != nil {
+		if err := m.Start(ctx, req.Name, req.Namespace, events); err != nil {
 			logger.Error(err.Error())
 		}
 
