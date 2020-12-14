@@ -88,31 +88,37 @@ func (w Websocket) Write(data interface{}) error {
 	return nil
 }
 
-func (w Websocket) WaitForClose(ch chan<- struct{}) (CloseReason, error) {
-	defer func() {
-		ch <- struct{}{}
-		close(ch)
+func (w Websocket) Closed() <-chan CloseReason {
+	ch := make(chan CloseReason, 1)
+
+	go func() {
+		defer close(ch)
+		ch <- w.waitForClosing()
 	}()
 
+	return ch
+}
+
+func (w Websocket) waitForClosing() CloseReason {
 	for {
 		header, err := ws.ReadHeader(w.conn)
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				w.logger.Info("websocket connection deadline exceeded")
-				return DeadlineExceeded, nil
+				return DeadlineExceeded
 			}
 
 			if _, ok := err.(*net.OpError); ok {
 				w.logger.Info("websocket was closed on the server")
-				return ClosedOnServer, nil
+				return ClosedOnServer
 			}
 
 			w.logger.Error(err.Error())
-			return ErrorOccurred, WaitError
+			return ErrorOccurred
 		}
 
 		if header.OpCode == ws.OpClose {
-			return ClosedOnClient, nil
+			return ClosedOnClient
 		}
 	}
 }

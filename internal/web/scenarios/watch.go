@@ -44,18 +44,19 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	m := watcher.NewMonitor(cfg.ServerURL, logger.Named("monitor"))
 
 	events := make(chan *watcher.Event)
-	clientLeft := make(chan struct{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go waitForWebsocketClosing(socket, clientLeft, cancel, logger)
-	go establishWebsocketConnection(socket, events, clientLeft, logger)
+	go establishWebsocketConnection(socket, events, cancel, logger)
 	go startMonitoring(ctx, m, req, events, logger)
 }
 
-func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Event, clientLeft chan struct{}, logger *zap.SugaredLogger) {
+func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Event, cancel context.CancelFunc, logger *zap.SugaredLogger) {
 	defer readRemainingEvents(events)
 	defer closeWebsocket(socket, logger)
+	defer cancel()
+
+	closed := socket.Closed()
 
 	for {
 		select {
@@ -68,7 +69,7 @@ func establishWebsocketConnection(socket ws.Websocket, events chan *watcher.Even
 				logger.Error(err.Error())
 				return
 			}
-		case <-clientLeft:
+		case <-closed:
 			return
 		}
 	}
@@ -87,14 +88,6 @@ func readRemainingEvents(events chan *watcher.Event) {
 		if event := <-events; event == nil {
 			break
 		}
-	}
-}
-
-func waitForWebsocketClosing(socket ws.Websocket, clientLeft chan struct{}, cancel context.CancelFunc, logger *zap.SugaredLogger) {
-	defer cancel()
-
-	if _, err := socket.WaitForClose(clientLeft); err != nil {
-		logger.Error(err.Error())
 	}
 }
 
