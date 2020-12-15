@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/internal/web/files"
 	"github.com/iskorotkov/chaos-scheduler/internal/web/home"
 	"github.com/iskorotkov/chaos-scheduler/internal/web/scenarios"
 	"go.uber.org/zap"
@@ -50,11 +51,11 @@ func main() {
 }
 
 func mapRoutes(r chi.Router, logger *zap.SugaredLogger) {
-	r.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./web/js"))))
-	r.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./web/css"))))
-
 	r.Mount("/", home.Router(logger.Named("home")))
 	r.Mount("/scenarios", scenarios.Router(logger.Named("scenarios")))
+
+	r.Get("/js/*", files.ServeFolder("./web/js"))
+	r.Get("/css/*", files.ServeFolder("./web/css"))
 }
 
 func syncLogger(logger *zap.SugaredLogger) {

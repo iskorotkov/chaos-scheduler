@@ -6,6 +6,9 @@ require (
 	github.com/argoproj/argo v2.5.2+incompatible
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/go-chi/chi v1.5.1
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.0.4
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

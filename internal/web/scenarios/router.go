@@ -15,7 +15,9 @@ func Router(logger *zap.SugaredLogger) http.Handler {
 	r.Get("/create", server.WithLogger(createPage, logger.Named("create")))
 	r.Post("/create", server.WithLogger(createAction, logger.Named("create")))
 
-	r.Get("/view/{namespace}/{name}", server.WithLogger(statusPage, logger.Named("view")))
+	r.Get("/view/{namespace}/{name}", server.WithLogger(viewPage, logger.Named("view")))
+
+	r.Get("/watch/{namespace}/{name}", server.WithLogger(watchWS, logger.Named("watch")))
 
 	return r
 }
