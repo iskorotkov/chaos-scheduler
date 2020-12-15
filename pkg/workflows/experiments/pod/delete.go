@@ -1,4 +1,4 @@
-package concrete
+package pod
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-type PodDelete struct {
+type Delete struct {
 	Namespace    string
 	AppNamespace string
 	Interval     int
 	Force        bool
 }
 
-func (p PodDelete) Info() experiments.Info {
+func (p Delete) Info() experiments.Info {
 	return experiments.Info{Lethal: true}
 }
 
-func (p PodDelete) Instantiate(label string, duration time.Duration) experiments.Engine {
+func (p Delete) Instantiate(label string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
 		Name:        string(p.Type()),
 		Namespace:   p.Namespace,
@@ -38,6 +38,6 @@ func (p PodDelete) Instantiate(label string, duration time.Duration) experiments
 	})
 }
 
-func (p PodDelete) Type() experiments.ExperimentType {
+func (p Delete) Type() experiments.ExperimentType {
 	return "pod-delete"
 }

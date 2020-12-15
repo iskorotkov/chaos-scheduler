@@ -1,4 +1,4 @@
-package concrete
+package container
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-type PodNetworkLatency struct {
+type NetworkLoss struct {
 	Namespace      string
 	AppNamespace   string
-	NetworkLatency int
+	LossPercentage int
 }
 
-func (p PodNetworkLatency) Info() experiments.Info {
+func (p NetworkLoss) Info() experiments.Info {
 	return experiments.Info{Lethal: false}
 }
 
-func (p PodNetworkLatency) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
+func (p NetworkLoss) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
 		Name:        string(p.Type()),
 		Namespace:   p.Namespace,
@@ -31,16 +31,16 @@ func (p PodNetworkLatency) Instantiate(label string, container string, duration 
 			experiments.NewExperiment(experiments.ExperimentParams{
 				Type: p.Type(),
 				Env: map[string]string{
-					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
-					"NETWORK_INTERFACE":    "eth0",
-					"TARGET_CONTAINER":     container,
-					"NETWORK_LATENCY":      strconv.Itoa(p.NetworkLatency),
+					"TOTAL_CHAOS_DURATION":           strconv.Itoa(int(duration.Seconds())),
+					"NETWORK_INTERFACE":              "eth0",
+					"TARGET_CONTAINER":               container,
+					"NETWORK_PACKET_LOSS_PERCENTAGE": strconv.Itoa(p.LossPercentage),
 				},
 			}),
 		},
 	})
 }
 
-func (p PodNetworkLatency) Type() experiments.ExperimentType {
-	return "pod-network-latency"
+func (p NetworkLoss) Type() experiments.ExperimentType {
+	return "pod-network-loss"
 }
