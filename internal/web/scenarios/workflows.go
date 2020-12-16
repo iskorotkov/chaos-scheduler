@@ -6,6 +6,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/container"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/node"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/pod"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
@@ -29,12 +30,8 @@ func createWorkflowFromForm(r *http.Request, cfg *config.Config, logger *zap.Sug
 }
 
 func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
-	presetList := experiments.List{
-		PodPresets: []experiments.PodEnginePreset{
-			pod.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 100},
-			pod.Delete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Interval: 1, Force: false},
-		},
-		ContainerPresets: []experiments.ContainerEnginePreset{
+	presetList := experiments.PresetsList{
+		ContainerPresets: []experiments.ContainerPreset{
 			container.NetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},
 			container.NetworkLoss{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, LossPercentage: 100},
 			container.NetworkCorruption{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, CorruptionPercentage: 100},
@@ -42,6 +39,16 @@ func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger
 			container.CPUHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Cores: 1},
 			container.MemoryHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, MemoryConsumption: 1000},
 			container.DiskFill{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, FillPercentage: 100},
+		},
+		PodPresets: []experiments.PodPreset{
+			pod.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 100},
+			pod.Delete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Interval: 1, Force: false},
+		},
+		NodePreset: []experiments.NodePreset{
+			node.CPUHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Cores: 2},
+			node.MemoryHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, MemoryPercentage: 90},
+			node.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 100},
+			node.Restart{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS},
 		},
 	}
 

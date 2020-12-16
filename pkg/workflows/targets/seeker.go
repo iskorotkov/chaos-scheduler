@@ -46,6 +46,7 @@ func (s Seeker) Targets() ([]Target, error) {
 
 		p := Target{
 			Pod:           pod.Name,
+			Node:          pod.Spec.NodeName,
 			Deployment:    deployment,
 			Containers:    containers,
 			Labels:        pod.Labels,

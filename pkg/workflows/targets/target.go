@@ -5,6 +5,7 @@ import "fmt"
 type Target struct {
 	Pod           string
 	Deployment    string
+	Node          string
 	Containers    []string
 	Labels        map[string]string
 	Annotations   map[string]string

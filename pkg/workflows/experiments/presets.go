@@ -11,17 +11,23 @@ type EnginePreset interface {
 	Info() Info
 }
 
-type PodEnginePreset interface {
+type PodPreset interface {
 	EnginePreset
 	Instantiate(label string, duration time.Duration) Engine
 }
 
-type ContainerEnginePreset interface {
+type ContainerPreset interface {
 	EnginePreset
 	Instantiate(label string, container string, duration time.Duration) Engine
 }
 
-type List struct {
-	PodPresets       []PodEnginePreset
-	ContainerPresets []ContainerEnginePreset
+type NodePreset interface {
+	EnginePreset
+	Instantiate(label string, node string, duration time.Duration) Engine
+}
+
+type PresetsList struct {
+	ContainerPresets []ContainerPreset
+	PodPresets       []PodPreset
+	NodePreset       []NodePreset
 }

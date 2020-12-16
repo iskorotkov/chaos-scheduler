@@ -13,7 +13,7 @@ var (
 )
 
 type RoundRobin struct {
-	presets experiments.List
+	presets experiments.PresetsList
 	seeker  targets.Seeker
 	logger  *zap.SugaredLogger
 }
@@ -83,12 +83,32 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
 			stages = append(stages, stage)
 		}
+
+		for _, preset := range r.presets.NodePreset {
+			if stagesLeft == 0 {
+				break
+			}
+
+			stagesLeft--
+
+			target := selectTarget(targetsList, rnd)
+			engine := preset.Instantiate(target.Selector(), target.Node, params.StageDuration)
+			newAction := Action{
+				Type:   preset.Type(),
+				Info:   preset.Info(),
+				Target: target,
+				Engine: engine,
+			}
+
+			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
+			stages = append(stages, stage)
+		}
 	}
 
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobin(presetsList experiments.List, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
+func NewRoundRobin(presetsList experiments.PresetsList, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
 	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
 }
 
