@@ -2,6 +2,7 @@ package container
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -12,8 +13,15 @@ type MemoryHog struct {
 	MemoryConsumption int
 }
 
+func (m MemoryHog) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return m.Instantiate(target.Selector(), target.MainContainer(), duration)
+}
+
 func (m MemoryHog) Info() experiments.Info {
-	return experiments.Info{Lethal: false}
+	return experiments.Info{
+		Name:   "pod-memory-hog",
+		Lethal: false,
+	}
 }
 
 func (m MemoryHog) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
@@ -22,7 +30,7 @@ func (m MemoryHog) Instantiate(label string, container string, duration time.Dur
 	}
 
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(m.Type()),
+		Name:        m.Info().Name,
 		Namespace:   m.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -33,7 +41,7 @@ func (m MemoryHog) Instantiate(label string, container string, duration time.Dur
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: m.Type(),
+				Name: m.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_CONTAINER":     container,
@@ -42,8 +50,4 @@ func (m MemoryHog) Instantiate(label string, container string, duration time.Dur
 			}),
 		},
 	})
-}
-
-func (m MemoryHog) Type() experiments.ExperimentType {
-	return "pod-memory-hog"
 }

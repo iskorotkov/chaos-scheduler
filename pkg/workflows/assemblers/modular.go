@@ -48,7 +48,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 				return nil, ActionMarshallError
 			}
 
-			id := fmt.Sprintf("%s-%d-%d", action.Type, stageIndex+1, actionIndex+1)
+			id := fmt.Sprintf("%s-%d-%d", action.Info.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
 
 			actions = append(actions, manifestTemplate)

@@ -30,7 +30,7 @@ func createWorkflowFromForm(r *http.Request, cfg *config.Config, logger *zap.Sug
 }
 
 func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
-	presetList := experiments.PresetsList{
+	presetList := generator.PresetsList{
 		ContainerPresets: []experiments.ContainerPreset{
 			container.NetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},
 			container.NetworkLoss{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, LossPercentage: 100},

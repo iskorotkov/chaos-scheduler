@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -11,17 +12,20 @@ type Restart struct {
 	AppNamespace string
 }
 
-func (r Restart) Type() experiments.ExperimentType {
-	return "node-restart"
+func (r Restart) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return r.Instantiate(target.Selector(), target.Node, duration)
 }
 
 func (r Restart) Info() experiments.Info {
-	return experiments.Info{Lethal: true}
+	return experiments.Info{
+		Name:   "node-restart",
+		Lethal: true,
+	}
 }
 
 func (r Restart) Instantiate(label string, node string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(r.Type()),
+		Name:        r.Info().Name,
 		Namespace:   r.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -32,7 +36,7 @@ func (r Restart) Instantiate(label string, node string, duration time.Duration) 
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: r.Type(),
+				Name: r.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_NODE":          node,

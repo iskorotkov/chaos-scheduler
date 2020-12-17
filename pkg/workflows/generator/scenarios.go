@@ -14,7 +14,6 @@ var (
 )
 
 type Action struct {
-	Type   experiments.ExperimentType
 	Info   experiments.Info
 	Target targets.Target
 	Engine experiments.Engine

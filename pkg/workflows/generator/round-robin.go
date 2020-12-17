@@ -1,21 +1,22 @@
 package generator
 
 import (
-	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
 )
 
-var (
-	TargetsError = errors.New("couldn't get list of targets")
-)
-
 type RoundRobin struct {
-	presets experiments.PresetsList
+	presets PresetsList
 	seeker  targets.Seeker
 	logger  *zap.SugaredLogger
+}
+
+type PresetsList struct {
+	ContainerPresets []experiments.ContainerPreset
+	PodPresets       []experiments.PodPreset
+	NodePreset       []experiments.NodePreset
 }
 
 func (r RoundRobin) Generate(params Params) (Scenario, error) {
@@ -54,7 +55,6 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Instantiate(target.Selector(), target.MainContainer(), params.StageDuration)
 			newAction := Action{
-				Type:   preset.Type(),
 				Info:   preset.Info(),
 				Target: target,
 				Engine: engine,
@@ -74,7 +74,6 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Instantiate(target.Selector(), params.StageDuration)
 			newAction := Action{
-				Type:   preset.Type(),
 				Info:   preset.Info(),
 				Target: target,
 				Engine: engine,
@@ -94,7 +93,6 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Instantiate(target.Selector(), target.Node, params.StageDuration)
 			newAction := Action{
-				Type:   preset.Type(),
 				Info:   preset.Info(),
 				Target: target,
 				Engine: engine,
@@ -108,7 +106,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobin(presetsList experiments.PresetsList, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
+func NewRoundRobin(presetsList PresetsList, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
 	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
 }
 

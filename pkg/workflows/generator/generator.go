@@ -1,6 +1,13 @@
 package generator
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	TargetsError = errors.New("couldn't get list of targets")
+)
 
 type Params struct {
 	Stages        int

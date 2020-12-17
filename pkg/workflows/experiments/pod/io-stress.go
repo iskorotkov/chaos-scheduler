@@ -2,6 +2,7 @@ package pod
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -12,8 +13,15 @@ type IOStress struct {
 	UtilizationPercentage int
 }
 
+func (i IOStress) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return i.Instantiate(target.Selector(), duration)
+}
+
 func (i IOStress) Info() experiments.Info {
-	return experiments.Info{Lethal: false}
+	return experiments.Info{
+		Name:   "pod-io-stress",
+		Lethal: false,
+	}
 }
 
 func (i IOStress) Instantiate(label string, duration time.Duration) experiments.Engine {
@@ -22,7 +30,7 @@ func (i IOStress) Instantiate(label string, duration time.Duration) experiments.
 	}
 
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(i.Type()),
+		Name:        i.Info().Name,
 		Namespace:   i.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -33,7 +41,7 @@ func (i IOStress) Instantiate(label string, duration time.Duration) experiments.
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: i.Type(),
+				Name: i.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION":              strconv.Itoa(int(duration.Seconds())),
 					"FILESYSTEM_UTILIZATION_PERCENTAGE": strconv.Itoa(i.UtilizationPercentage),
@@ -41,8 +49,4 @@ func (i IOStress) Instantiate(label string, duration time.Duration) experiments.
 			}),
 		},
 	})
-}
-
-func (i IOStress) Type() experiments.ExperimentType {
-	return "pod-io-stress"
 }

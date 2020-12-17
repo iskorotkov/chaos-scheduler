@@ -2,6 +2,7 @@ package container
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -12,13 +13,20 @@ type NetworkLatency struct {
 	NetworkLatency int
 }
 
+func (p NetworkLatency) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return p.Instantiate(target.Selector(), target.MainContainer(), duration)
+}
+
 func (p NetworkLatency) Info() experiments.Info {
-	return experiments.Info{Lethal: false}
+	return experiments.Info{
+		Name:   "pod-network-latency",
+		Lethal: false,
+	}
 }
 
 func (p NetworkLatency) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(p.Type()),
+		Name:        p.Info().Name,
 		Namespace:   p.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -29,7 +37,7 @@ func (p NetworkLatency) Instantiate(label string, container string, duration tim
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: p.Type(),
+				Name: p.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"NETWORK_INTERFACE":    "eth0",
@@ -39,8 +47,4 @@ func (p NetworkLatency) Instantiate(label string, container string, duration tim
 			}),
 		},
 	})
-}
-
-func (p NetworkLatency) Type() experiments.ExperimentType {
-	return "pod-network-latency"
 }
