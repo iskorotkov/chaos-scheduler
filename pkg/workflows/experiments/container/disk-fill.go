@@ -14,7 +14,7 @@ type DiskFill struct {
 }
 
 func (d DiskFill) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return d.Instantiate(target.Selector(), target.MainContainer(), duration)
+	return d.Instantiate(target.AppLabel, target.MainContainer, duration)
 }
 
 func (d DiskFill) Info() experiments.Info {

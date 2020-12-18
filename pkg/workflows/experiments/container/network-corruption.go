@@ -14,7 +14,7 @@ type NetworkCorruption struct {
 }
 
 func (n NetworkCorruption) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return n.Instantiate(target.Selector(), target.MainContainer(), duration)
+	return n.Instantiate(target.AppLabel, target.MainContainer, duration)
 }
 
 func (n NetworkCorruption) Info() experiments.Info {

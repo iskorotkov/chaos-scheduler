@@ -53,7 +53,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), target.MainContainer(), params.StageDuration)
+			engine := preset.Instantiate(target.AppLabel, target.MainContainer, params.StageDuration)
 			newAction := Action{
 				Info:   preset.Info(),
 				Target: target,
@@ -72,7 +72,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), params.StageDuration)
+			engine := preset.Instantiate(target.AppLabel, params.StageDuration)
 			newAction := Action{
 				Info:   preset.Info(),
 				Target: target,
@@ -91,7 +91,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), target.Node, params.StageDuration)
+			engine := preset.Instantiate(target.AppLabel, target.Node, params.StageDuration)
 			newAction := Action{
 				Info:   preset.Info(),
 				Target: target,
@@ -106,7 +106,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobin(presetsList PresetsList, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
+func NewRoundRobin(presetsList PresetsList, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
 	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
 }
 

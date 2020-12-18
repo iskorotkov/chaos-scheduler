@@ -26,7 +26,7 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	podsToKill := make([]string, 0)
 	for _, action := range stage.Actions {
 		if action.Info.Lethal {
-			podTolerance := fmt.Sprintf("%s=%d", action.Target.Selector(), -1)
+			podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)
 			podsToKill = append(podsToKill, podTolerance)
 		}
 	}

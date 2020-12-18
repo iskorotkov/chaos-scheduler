@@ -14,7 +14,7 @@ type NetworkLoss struct {
 }
 
 func (p NetworkLoss) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return p.Instantiate(target.Selector(), target.MainContainer(), duration)
+	return p.Instantiate(target.AppLabel, target.MainContainer, duration)
 }
 
 func (p NetworkLoss) Info() experiments.Info {

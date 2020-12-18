@@ -14,7 +14,7 @@ type CPUHog struct {
 }
 
 func (c CPUHog) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return c.Instantiate(target.Selector(), target.MainContainer(), duration)
+	return c.Instantiate(target.AppLabel, target.MainContainer, duration)
 }
 
 func (c CPUHog) Info() experiments.Info {

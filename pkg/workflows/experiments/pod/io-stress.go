@@ -14,7 +14,7 @@ type IOStress struct {
 }
 
 func (i IOStress) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return i.Instantiate(target.Selector(), duration)
+	return i.Instantiate(target.AppLabel, duration)
 }
 
 func (i IOStress) Info() experiments.Info {

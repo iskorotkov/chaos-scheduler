@@ -14,7 +14,7 @@ type MemoryHog struct {
 }
 
 func (m MemoryHog) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return m.Instantiate(target.Selector(), target.Node, duration)
+	return m.Instantiate(target.AppLabel, target.Node, duration)
 }
 
 func (m MemoryHog) Info() experiments.Info {

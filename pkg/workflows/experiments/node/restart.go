@@ -13,7 +13,7 @@ type Restart struct {
 }
 
 func (r Restart) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return r.Instantiate(target.Selector(), target.Node, duration)
+	return r.Instantiate(target.AppLabel, target.Node, duration)
 }
 
 func (r Restart) Info() experiments.Info {

@@ -15,7 +15,7 @@ type Delete struct {
 }
 
 func (p Delete) Engine(target targets.Target, duration time.Duration) experiments.Engine {
-	return p.Instantiate(target.Selector(), duration)
+	return p.Instantiate(target.AppLabel, duration)
 }
 
 func (p Delete) Info() experiments.Info {
