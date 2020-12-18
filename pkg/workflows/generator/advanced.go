@@ -1,61 +1,78 @@
 package generator
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
 	"time"
 )
 
-type Scale int
-
-type Severity int
-
-type Cost float32
-
-const (
-	ScaleContainer Scale = iota
-	ScalePod
-	ScaleDeploymentPart
-	ScaleDeployment
-	ScaleNode
-)
-
-const (
-	SeverityNonCritical Severity = iota
-	SeverityCritical
-	SeverityLethal
-)
-
-type Budget struct {
-	MaxExperiments int
-	MaxPoints      Cost
-}
-
-type Modifiers struct {
-	ByScale    map[Scale]Cost
-	BySeverity map[Severity]Cost
-}
-
-type Failure interface {
-	Info() experiments.Info
-	Scale() Scale
-	Severity() Severity
-	Engine(t targets.Target, d time.Duration) experiments.Engine
-}
-
 type AdvancedGenerator struct {
-	stageDuration time.Duration
-	retries       int
-	failures      []Failure
-	seeker        targets.Seeker
-	budget        Budget
-	modifiers     Modifiers
-	logger        *zap.SugaredLogger
+	retries   int
+	failures  []Failure
+	seeker    targets.Seeker
+	budget    Budget
+	modifiers Modifiers
+	logger    *zap.SugaredLogger
 }
 
-type PhaseParams struct {
+type Option func(a *AdvancedGenerator)
+
+func NewAdvancedGenerator(failures []Failure, seeker targets.Seeker, logger *zap.SugaredLogger, opts ...Option) *AdvancedGenerator {
+	a := &AdvancedGenerator{
+		failures: failures,
+		seeker:   seeker,
+		logger:   logger,
+	}
+
+	WithRetries(3)(a)
+
+	WithBudget(Budget{
+		MaxExperiments: 3,
+		MaxPoints:      12,
+	})(a)
+
+	WithModifiers(Modifiers{
+		ByScale: map[Scale]Cost{
+			ScaleContainer:      1,
+			ScalePod:            1,
+			ScaleDeploymentPart: 1.5,
+			ScaleDeployment:     2,
+			ScaleNode:           4,
+		},
+		BySeverity: map[Severity]Cost{
+			SeverityNonCritical: 1,
+			SeverityCritical:    1.5,
+			SeverityLethal:      2,
+		},
+	})(a)
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	return a
+}
+
+func WithRetries(retries int) Option {
+	return func(a *AdvancedGenerator) {
+		a.retries = retries
+	}
+}
+
+func WithModifiers(modifiers Modifiers) Option {
+	return func(a *AdvancedGenerator) {
+		a.modifiers = modifiers
+	}
+}
+
+func WithBudget(budget Budget) Option {
+	return func(a *AdvancedGenerator) {
+		a.budget = budget
+	}
+}
+
+type phaseParams struct {
 	Stages        int
 	StageDuration time.Duration
 }
@@ -68,16 +85,30 @@ func (a AdvancedGenerator) Generate(params Params) (Scenario, error) {
 		return Scenario{}, TargetsError
 	}
 
-	stages := make([]Stage, 0)
+	isolatedFailures := a.addIsolatedFailures(t, r, phaseParams{
+		Stages:        params.Stages,
+		StageDuration: params.StageDuration,
+	})
 
-	stages = append(stages, a.addIsolatedFailures(t, r, params)...)
-	stages = append(stages, a.addCascadeFailures(t, r, params)...)
-	stages = append(stages, a.addComplexFailures(t, r, params)...)
+	cascadeFailures := a.addCascadeFailures(t, r, phaseParams{
+		Stages:        params.Stages,
+		StageDuration: params.StageDuration,
+	})
+
+	complexFailures := a.addComplexFailures(t, r, phaseParams{
+		Stages:        params.Stages,
+		StageDuration: params.StageDuration,
+	})
+
+	stages := make([]Stage, 0)
+	stages = append(stages, isolatedFailures...)
+	stages = append(stages, cascadeFailures...)
+	stages = append(stages, complexFailures...)
 
 	return Scenario{Stages: stages}, nil
 }
 
-func (a AdvancedGenerator) addIsolatedFailures(t []targets.Target, r *rand.Rand, params Params) []Stage {
+func (a AdvancedGenerator) addIsolatedFailures(t []targets.Target, r *rand.Rand, params phaseParams) []Stage {
 	stages := make([]Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
@@ -85,21 +116,21 @@ func (a AdvancedGenerator) addIsolatedFailures(t []targets.Target, r *rand.Rand,
 		target := a.selectTarget(t, r)
 
 		actions := []Action{{
-			Info:   failure.Info(),
+			Info:   failure.Preset.Info(),
 			Target: target,
-			Engine: failure.Engine(target, a.stageDuration),
+			Engine: failure.Preset.Engine(target, params.StageDuration),
 		}}
 
 		stages = append(stages, Stage{
 			Actions:  actions,
-			Duration: a.stageDuration,
+			Duration: params.StageDuration,
 		})
 	}
 
 	return stages
 }
 
-func (a AdvancedGenerator) addCascadeFailures(t []targets.Target, r *rand.Rand, params Params) []Stage {
+func (a AdvancedGenerator) addCascadeFailures(t []targets.Target, r *rand.Rand, params phaseParams) []Stage {
 	stages := make([]Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
@@ -122,22 +153,22 @@ func (a AdvancedGenerator) addCascadeFailures(t []targets.Target, r *rand.Rand, 
 			target := a.selectTarget(t, r)
 
 			actions = append(actions, Action{
-				Info:   failure.Info(),
+				Info:   failure.Preset.Info(),
 				Target: target,
-				Engine: failure.Engine(target, a.stageDuration),
+				Engine: failure.Preset.Engine(target, params.StageDuration),
 			})
 		}
 
 		stages = append(stages, Stage{
 			Actions:  actions,
-			Duration: a.stageDuration,
+			Duration: params.StageDuration,
 		})
 	}
 
 	return stages
 }
 
-func (a AdvancedGenerator) addComplexFailures(t []targets.Target, r *rand.Rand, params Params) []Stage {
+func (a AdvancedGenerator) addComplexFailures(t []targets.Target, r *rand.Rand, params phaseParams) []Stage {
 	stages := make([]Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
@@ -155,9 +186,9 @@ func (a AdvancedGenerator) addComplexFailures(t []targets.Target, r *rand.Rand, 
 				points -= cost
 
 				actions = append(actions, Action{
-					Info:   failure.Info(),
+					Info:   failure.Preset.Info(),
 					Target: target,
-					Engine: failure.Engine(target, a.stageDuration),
+					Engine: failure.Preset.Engine(target, params.StageDuration),
 				})
 			} else {
 				if retries <= 0 {
@@ -173,15 +204,15 @@ func (a AdvancedGenerator) addComplexFailures(t []targets.Target, r *rand.Rand, 
 			target := a.selectTarget(t, r)
 
 			actions = append(actions, Action{
-				Info:   failure.Info(),
+				Info:   failure.Preset.Info(),
 				Target: target,
-				Engine: failure.Engine(target, a.stageDuration),
+				Engine: failure.Preset.Engine(target, params.StageDuration),
 			})
 		}
 
 		stages = append(stages, Stage{
 			Actions:  actions,
-			Duration: a.stageDuration,
+			Duration: params.StageDuration,
 		})
 	}
 
@@ -194,12 +225,12 @@ func (a AdvancedGenerator) pickRandomFailure(r *rand.Rand) Failure {
 }
 
 func (a AdvancedGenerator) calculateCost(f Failure) Cost {
-	severity, ok := a.modifiers.BySeverity[f.Severity()]
+	severity, ok := a.modifiers.BySeverity[f.Severity]
 	if !ok {
 		severity = 1
 	}
 
-	scale, ok := a.modifiers.ByScale[f.Scale()]
+	scale, ok := a.modifiers.ByScale[f.Scale]
 	if !ok {
 		scale = 1
 	}
