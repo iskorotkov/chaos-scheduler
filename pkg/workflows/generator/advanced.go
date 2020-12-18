@@ -138,18 +138,18 @@ func (a AdvancedGenerator) addCascadeFailures(t []targets.Target, r *rand.Rand, 
 
 		points := a.budget.MaxPoints
 		failure := a.pickRandomFailure(r)
+		cost := a.calculateCost(failure)
 
 		for i := 0; i < a.retries; i++ {
-			cost := a.calculateCost(failure)
 			if cost <= points {
-				points -= cost
 				break
 			}
 
 			failure = a.pickRandomFailure(r)
+			cost = a.calculateCost(failure)
 		}
 
-		for len(actions) <= a.budget.MaxExperiments {
+		for len(actions) < a.budget.MaxExperiments {
 			target := a.selectTarget(t, r)
 
 			actions = append(actions, Action{
@@ -157,6 +157,11 @@ func (a AdvancedGenerator) addCascadeFailures(t []targets.Target, r *rand.Rand, 
 				Target: target,
 				Engine: failure.Preset.Engine(target, params.StageDuration),
 			})
+
+			points -= cost
+			if cost > points {
+				break
+			}
 		}
 
 		stages = append(stages, Stage{
@@ -176,7 +181,7 @@ func (a AdvancedGenerator) addComplexFailures(t []targets.Target, r *rand.Rand, 
 
 		points := a.budget.MaxPoints
 		retries := a.retries
-		for len(actions) <= a.budget.MaxExperiments {
+		for len(actions) < a.budget.MaxExperiments {
 			failure := a.pickRandomFailure(r)
 			target := a.selectTarget(t, r)
 
