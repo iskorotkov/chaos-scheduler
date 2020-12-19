@@ -41,6 +41,11 @@ func addComplexFailures(a *Generator, targetsList []targets.Target, r *rand.Rand
 				retries--
 			}
 		}
+
+		stages = append(stages, generator.Stage{
+			Actions:  actions,
+			Duration: params.StageDuration,
+		})
 	}
 
 	return stages
