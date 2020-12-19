@@ -24,23 +24,28 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	}
 
 	podsToKill := make([]string, 0)
+	ignoredPods := make([]string, 0)
+
 	for _, action := range stage.Actions {
 		if action.Info.Lethal {
-			podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)
-			podsToKill = append(podsToKill, podTolerance)
+			if action.Info.AffectingNode {
+				ignoredPods = append(ignoredPods, action.Target.Node)
+			} else {
+				podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)
+				podsToKill = append(podsToKill, podTolerance)
+			}
 		}
 	}
 
 	name := fmt.Sprintf("stage-monitor-%d", stageIndex+1)
-	crashTolerance := strings.Join(podsToKill, ";")
-
 	containerTemplate := templates.NewContainerTemplate(name, templates.Container{
 		Name:  "stage-monitor",
 		Image: s.image,
 		Env: []v1.EnvVar{
 			{Name: "APP_NS", Value: s.targetNs},
 			{Name: "DURATION", Value: (stage.Duration + s.stageInterval).String()},
-			{Name: "CRASH_TOLERANCE", Value: crashTolerance},
+			{Name: "CRASH_TOLERANCE", Value: strings.Join(podsToKill, ";")},
+			{Name: "IGNORED_PODS", Value: strings.Join(ignoredPods, ";")},
 		},
 	})
 
