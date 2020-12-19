@@ -19,8 +19,9 @@ func (p NetworkLoss) Engine(target targets.Target, duration time.Duration) exper
 
 func (p NetworkLoss) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-network-loss",
-		Lethal: false,
+		Name:          "pod-network-loss",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 

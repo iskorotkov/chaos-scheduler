@@ -19,8 +19,9 @@ func (m MemoryHog) Engine(target targets.Target, duration time.Duration) experim
 
 func (m MemoryHog) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "node-memory-hog",
-		Lethal: false,
+		Name:          "node-memory-hog",
+		Lethal:        false,
+		AffectingNode: true,
 	}
 }
 

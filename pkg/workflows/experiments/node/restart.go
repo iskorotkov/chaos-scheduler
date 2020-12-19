@@ -18,8 +18,9 @@ func (r Restart) Engine(target targets.Target, duration time.Duration) experimen
 
 func (r Restart) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "node-restart",
-		Lethal: true,
+		Name:          "node-restart",
+		Lethal:        true,
+		AffectingNode: true,
 	}
 }
 

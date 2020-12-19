@@ -19,8 +19,9 @@ func (d DiskFill) Engine(target targets.Target, duration time.Duration) experime
 
 func (d DiskFill) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "disk-fill",
-		Lethal: false,
+		Name:          "disk-fill",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 

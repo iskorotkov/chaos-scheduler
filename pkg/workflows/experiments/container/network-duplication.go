@@ -19,8 +19,9 @@ func (n NetworkDuplication) Engine(target targets.Target, duration time.Duration
 
 func (n NetworkDuplication) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-network-duplication",
-		Lethal: false,
+		Name:          "pod-network-duplication",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 

@@ -8,19 +8,13 @@ import (
 )
 
 type RoundRobin struct {
-	presets PresetsList
+	presets []experiments.Preset
 	seeker  targets.Seeker
 	logger  *zap.SugaredLogger
 }
 
-type PresetsList struct {
-	ContainerPresets []experiments.ContainerPreset
-	PodPresets       []experiments.PodPreset
-	NodePreset       []experiments.NodePreset
-}
-
 func (r RoundRobin) Generate(params Params) (Scenario, error) {
-	if len(r.presets.ContainerPresets)+len(r.presets.PodPresets) == 0 {
+	if len(r.presets) == 0 {
 		return Scenario{}, ZeroActions
 	}
 
@@ -45,7 +39,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 	stagesLeft := params.Stages
 	for stagesLeft > 0 {
-		for _, preset := range r.presets.ContainerPresets {
+		for _, preset := range r.presets {
 			if stagesLeft == 0 {
 				break
 			}
@@ -53,45 +47,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.AppLabel, target.MainContainer, params.StageDuration)
-			newAction := Action{
-				Info:   preset.Info(),
-				Target: target,
-				Engine: engine,
-			}
-
-			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
-			stages = append(stages, stage)
-		}
-
-		for _, preset := range r.presets.PodPresets {
-			if stagesLeft == 0 {
-				break
-			}
-
-			stagesLeft--
-
-			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.AppLabel, params.StageDuration)
-			newAction := Action{
-				Info:   preset.Info(),
-				Target: target,
-				Engine: engine,
-			}
-
-			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
-			stages = append(stages, stage)
-		}
-
-		for _, preset := range r.presets.NodePreset {
-			if stagesLeft == 0 {
-				break
-			}
-
-			stagesLeft--
-
-			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.AppLabel, target.Node, params.StageDuration)
+			engine := preset.Engine(target, params.StageDuration)
 			newAction := Action{
 				Info:   preset.Info(),
 				Target: target,
@@ -106,8 +62,8 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobin(presetsList PresetsList, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
-	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
+func NewRoundRobin(presets []experiments.Preset, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
+	return RoundRobin{presets: presets, seeker: seeker, logger: logger}
 }
 
 func selectTarget(ts []targets.Target, rnd *rand.Rand) targets.Target {

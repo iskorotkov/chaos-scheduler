@@ -19,8 +19,9 @@ func (n NetworkCorruption) Engine(target targets.Target, duration time.Duration)
 
 func (n NetworkCorruption) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-network-corruption",
-		Lethal: false,
+		Name:          "pod-network-corruption",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 

@@ -19,8 +19,9 @@ func (p NetworkLatency) Engine(target targets.Target, duration time.Duration) ex
 
 func (p NetworkLatency) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-network-latency",
-		Lethal: false,
+		Name:          "pod-network-latency",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 

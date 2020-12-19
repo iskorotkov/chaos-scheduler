@@ -20,8 +20,9 @@ func (p Delete) Engine(target targets.Target, duration time.Duration) experiment
 
 func (p Delete) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-delete",
-		Lethal: true,
+		Name:          "pod-delete",
+		Lethal:        true,
+		AffectingNode: false,
 	}
 }
 

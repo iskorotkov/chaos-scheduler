@@ -19,8 +19,9 @@ func (i IOStress) Engine(target targets.Target, duration time.Duration) experime
 
 func (i IOStress) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "node-io-stress",
-		Lethal: false,
+		Name:          "node-io-stress",
+		Lethal:        false,
+		AffectingNode: true,
 	}
 }
 

@@ -19,8 +19,9 @@ func (c CPUHog) Engine(target targets.Target, duration time.Duration) experiment
 
 func (c CPUHog) Info() experiments.Info {
 	return experiments.Info{
-		Name:   "pod-cpu-hog",
-		Lethal: false,
+		Name:          "pod-cpu-hog",
+		Lethal:        false,
+		AffectingNode: false,
 	}
 }
 
