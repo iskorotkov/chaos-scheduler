@@ -7,19 +7,17 @@ import (
 )
 
 func addCascadeFailures(a *Generator, targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
-	phaseFailures := make([]Failure, len(a.failures))
-	copy(phaseFailures, a.failures)
+	phaseFailures := a.failures
 
 	stages := make([]generator.Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
-		stageTargets := make([]targets.Target, len(targetsList))
-		copy(stageTargets, targetsList)
+		stageTargets := targetsList
 
 		actions := make([]generator.Action, 0)
 		points := a.budget.MaxPoints
 
-		failure := popRandomFailure(phaseFailures, r)
+		failure := randomFailure(phaseFailures, r)
 		cost := calculateCost(a.modifiers, failure)
 
 		for i := 0; i < a.retries; i++ {
@@ -27,7 +25,7 @@ func addCascadeFailures(a *Generator, targetsList []targets.Target, r *rand.Rand
 				break
 			}
 
-			failure := popRandomFailure(phaseFailures, r)
+			failure := randomFailure(phaseFailures, r)
 			cost = calculateCost(a.modifiers, failure)
 		}
 
@@ -36,7 +34,7 @@ func addCascadeFailures(a *Generator, targetsList []targets.Target, r *rand.Rand
 				break
 			}
 
-			target := popRandomTarget(stageTargets, r)
+			target := randomTarget(stageTargets, r)
 
 			actions = append(actions, generator.Action{
 				Info:   failure.Preset.Info(),

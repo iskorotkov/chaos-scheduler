@@ -10,19 +10,16 @@ func addComplexFailures(a *Generator, targetsList []targets.Target, r *rand.Rand
 	stages := make([]generator.Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
-		stageFailures := make([]Failure, len(a.failures))
-		copy(stageFailures, a.failures)
-
-		stageTargets := make([]targets.Target, len(targetsList))
-		copy(stageTargets, targetsList)
+		stageFailures := a.failures
+		stageTargets := targetsList
 
 		actions := make([]generator.Action, 0)
 
 		points := a.budget.MaxPoints
 		retries := a.retries
 		for len(actions) < a.budget.MaxFailures {
-			failure := popRandomFailure(stageFailures, r)
-			target := popRandomTarget(stageTargets, r)
+			failure := randomFailure(stageFailures, r)
+			target := randomTarget(stageTargets, r)
 			cost := calculateCost(a.modifiers, failure)
 
 			if cost <= points {

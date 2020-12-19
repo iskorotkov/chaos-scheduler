@@ -7,14 +7,11 @@ import (
 )
 
 func addIsolatedFailures(a *Generator, targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
-	phaseFailures := make([]Failure, len(a.failures))
-	copy(phaseFailures, a.failures)
-
 	stages := make([]generator.Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
-		failure := popRandomFailure(phaseFailures, r)
-		target := popRandomTarget(targetsList, r)
+		failure := randomFailure(a.failures, r)
+		target := randomTarget(targetsList, r)
 
 		actions := []generator.Action{{
 			Info:   failure.Preset.Info(),
