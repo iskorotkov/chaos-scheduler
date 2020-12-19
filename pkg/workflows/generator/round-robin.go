@@ -15,7 +15,7 @@ type RoundRobin struct {
 
 func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	if len(r.presets) == 0 {
-		return Scenario{}, ZeroActions
+		return Scenario{}, ZeroFailures
 	}
 
 	if params.Stages <= 0 {

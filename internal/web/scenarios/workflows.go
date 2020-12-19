@@ -7,7 +7,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/container"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/node"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/pod"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator/advanced"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
@@ -33,23 +33,26 @@ func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
-		return templates.Workflow{}, scenarioGeneratorError
+		return templates.Workflow{}, targetsSeekerError
 	}
 
 	f := failures(cfg)
-	g := generator.NewAdvancedGenerator(f, seeker, logger.Named("generator"))
-	s, err := g.Generate(generator.Params{Stages: params.Stages, Seed: params.Seed, StageDuration: cfg.StageDuration})
+	g, err := advanced.NewGenerator(f, seeker, logger.Named("generator"))
+	if err != nil {
+		logger.Errorw(err.Error(),
+			"failures", f)
+
+		return templates.Workflow{}, scenarioParamsError
+	}
+
+	s, err := g.Generate(params.Stages, params.Seed, cfg.StageDuration)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"params", params,
 			"config", cfg,
 			"failures", f)
 
-		if err == generator.NonPositiveStagesError || err == generator.TooManyStagesError {
-			return templates.Workflow{}, scenarioParamsError
-		} else {
-			return templates.Workflow{}, scenarioGeneratorError
-		}
+		return templates.Workflow{}, scenarioParamsError
 	}
 
 	ext := assemblerExtensions(cfg, logger)
@@ -58,7 +61,7 @@ func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"extensions", ext)
-		return templates.Workflow{}, scenarioGeneratorError
+		return templates.Workflow{}, workflowGenerationError
 	}
 
 	return wf, nil
@@ -72,92 +75,92 @@ func assemblerExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensio
 	}
 }
 
-func failures(cfg *config.Config) []generator.Failure {
-	return []generator.Failure{
+func failures(cfg *config.Config) []advanced.Failure {
+	return []advanced.Failure{
 		{
 			Preset:   container.NetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityNonCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityNonCritical,
 		},
 		{
 			Preset:   container.NetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 3000},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.NetworkLoss{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, LossPercentage: 10},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityNonCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityNonCritical,
 		},
 		{
 			Preset:   container.NetworkLoss{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, LossPercentage: 90},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.NetworkCorruption{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, CorruptionPercentage: 10},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityNonCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityNonCritical,
 		},
 		{
 			Preset:   container.NetworkCorruption{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, CorruptionPercentage: 90},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.NetworkDuplication{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, DuplicationPercentage: 10},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityNonCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityNonCritical,
 		},
 		{
 			Preset:   container.NetworkDuplication{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, DuplicationPercentage: 90},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.CPUHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Cores: 1},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.MemoryHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, MemoryConsumption: 1000},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   container.DiskFill{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, FillPercentage: 90},
-			Scale:    generator.ScaleContainer,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleContainer,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   pod.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 90},
-			Scale:    generator.ScalePod,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScalePod,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   pod.Delete{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Interval: 1, Force: false},
-			Scale:    generator.ScalePod,
-			Severity: generator.SeverityLethal,
+			Scale:    advanced.ScalePod,
+			Severity: advanced.SeverityLethal,
 		},
 		{
 			Preset:   node.CPUHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, Cores: 2},
-			Scale:    generator.ScaleNode,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleNode,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   node.MemoryHog{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, MemoryPercentage: 90},
-			Scale:    generator.ScaleNode,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleNode,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   node.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 90},
-			Scale:    generator.ScaleNode,
-			Severity: generator.SeverityCritical,
+			Scale:    advanced.ScaleNode,
+			Severity: advanced.SeverityCritical,
 		},
 		{
 			Preset:   node.Restart{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS},
-			Scale:    generator.ScaleNode,
-			Severity: generator.SeverityLethal,
+			Scale:    advanced.ScaleNode,
+			Severity: advanced.SeverityLethal,
 		},
 	}
 }

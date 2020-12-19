@@ -1,12 +1,7 @@
 package generator
 
 import (
-	"errors"
 	"time"
-)
-
-var (
-	TargetsError = errors.New("couldn't get list of targets")
 )
 
 type Params struct {

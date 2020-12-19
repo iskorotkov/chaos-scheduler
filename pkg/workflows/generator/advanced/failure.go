@@ -1,4 +1,4 @@
-package generator
+package advanced
 
 import "github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 

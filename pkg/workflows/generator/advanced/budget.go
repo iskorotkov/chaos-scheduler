@@ -1,4 +1,4 @@
-package generator
+package advanced
 
 type Scale int
 
@@ -21,11 +21,25 @@ const (
 )
 
 type Budget struct {
-	MaxExperiments int
-	MaxPoints      Cost
+	MaxFailures int
+	MaxPoints   Cost
 }
 
 type Modifiers struct {
 	ByScale    map[Scale]Cost
 	BySeverity map[Severity]Cost
+}
+
+func calculateCost(modifiers Modifiers, f Failure) Cost {
+	severity, ok := modifiers.BySeverity[f.Severity]
+	if !ok {
+		severity = 1
+	}
+
+	scale, ok := modifiers.ByScale[f.Scale]
+	if !ok {
+		scale = 1
+	}
+
+	return severity * scale
 }
