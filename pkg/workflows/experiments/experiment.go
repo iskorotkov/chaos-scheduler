@@ -1,6 +1,6 @@
 package experiments
 
-type ExperimentType string
+type ExperimentName string
 
 type EnvVar struct {
 	Name  string `yaml:"name" json:"name"`
@@ -16,12 +16,12 @@ type ExperimentSpec struct {
 }
 
 type Experiment struct {
-	Name ExperimentType `json:"name" yaml:"name"`
+	Name string         `json:"name" yaml:"name"`
 	Spec ExperimentSpec `json:"spec" yaml:"spec"`
 }
 
 type ExperimentParams struct {
-	Type ExperimentType
+	Name string
 	Env  map[string]string
 }
 
@@ -32,7 +32,7 @@ func NewExperiment(params ExperimentParams) Experiment {
 	}
 
 	return Experiment{
-		Name: params.Type,
+		Name: params.Name,
 		Spec: ExperimentSpec{
 			Components: ExperimentComponents{
 				Env: envVarList,

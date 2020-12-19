@@ -1,26 +1,21 @@
 package generator
 
 import (
-	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
 )
 
-var (
-	TargetsError = errors.New("couldn't get list of targets")
-)
-
 type RoundRobin struct {
-	presets experiments.PresetsList
+	presets []experiments.Preset
 	seeker  targets.Seeker
 	logger  *zap.SugaredLogger
 }
 
 func (r RoundRobin) Generate(params Params) (Scenario, error) {
-	if len(r.presets.ContainerPresets)+len(r.presets.PodPresets) == 0 {
-		return Scenario{}, ZeroActions
+	if len(r.presets) == 0 {
+		return Scenario{}, ZeroFailures
 	}
 
 	if params.Stages <= 0 {
@@ -44,7 +39,7 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 	stagesLeft := params.Stages
 	for stagesLeft > 0 {
-		for _, preset := range r.presets.ContainerPresets {
+		for _, preset := range r.presets {
 			if stagesLeft == 0 {
 				break
 			}
@@ -52,49 +47,8 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), target.MainContainer(), params.StageDuration)
+			engine := preset.Engine(target, params.StageDuration)
 			newAction := Action{
-				Type:   preset.Type(),
-				Info:   preset.Info(),
-				Target: target,
-				Engine: engine,
-			}
-
-			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
-			stages = append(stages, stage)
-		}
-
-		for _, preset := range r.presets.PodPresets {
-			if stagesLeft == 0 {
-				break
-			}
-
-			stagesLeft--
-
-			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), params.StageDuration)
-			newAction := Action{
-				Type:   preset.Type(),
-				Info:   preset.Info(),
-				Target: target,
-				Engine: engine,
-			}
-
-			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
-			stages = append(stages, stage)
-		}
-
-		for _, preset := range r.presets.NodePreset {
-			if stagesLeft == 0 {
-				break
-			}
-
-			stagesLeft--
-
-			target := selectTarget(targetsList, rnd)
-			engine := preset.Instantiate(target.Selector(), target.Node, params.StageDuration)
-			newAction := Action{
-				Type:   preset.Type(),
 				Info:   preset.Info(),
 				Target: target,
 				Engine: engine,
@@ -108,8 +62,8 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	return Scenario{stages}, nil
 }
 
-func NewRoundRobin(presetsList experiments.PresetsList, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
-	return RoundRobin{presets: presetsList, seeker: seeker, logger: logger}
+func NewRoundRobin(presets []experiments.Preset, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
+	return RoundRobin{presets: presets, seeker: seeker, logger: logger}
 }
 
 func selectTarget(ts []targets.Target, rnd *rand.Rand) targets.Target {

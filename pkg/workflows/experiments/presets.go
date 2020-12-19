@@ -1,33 +1,17 @@
 package experiments
 
-import "time"
+import (
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
+	"time"
+)
 
 type Info struct {
-	Lethal bool
+	Name          string
+	Lethal        bool
+	AffectingNode bool
 }
 
-type EnginePreset interface {
-	Type() ExperimentType
+type Preset interface {
 	Info() Info
-}
-
-type PodPreset interface {
-	EnginePreset
-	Instantiate(label string, duration time.Duration) Engine
-}
-
-type ContainerPreset interface {
-	EnginePreset
-	Instantiate(label string, container string, duration time.Duration) Engine
-}
-
-type NodePreset interface {
-	EnginePreset
-	Instantiate(label string, node string, duration time.Duration) Engine
-}
-
-type PresetsList struct {
-	ContainerPresets []ContainerPreset
-	PodPresets       []PodPreset
-	NodePreset       []NodePreset
+	Engine(target targets.Target, duration time.Duration) Engine
 }

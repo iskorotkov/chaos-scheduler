@@ -1,6 +1,8 @@
 package generator
 
-import "time"
+import (
+	"time"
+)
 
 type Params struct {
 	Stages        int

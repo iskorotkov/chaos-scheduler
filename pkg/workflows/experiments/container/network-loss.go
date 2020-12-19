@@ -2,6 +2,7 @@ package container
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -12,13 +13,21 @@ type NetworkLoss struct {
 	LossPercentage int
 }
 
+func (p NetworkLoss) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return p.Instantiate(target.AppLabel, target.MainContainer, duration)
+}
+
 func (p NetworkLoss) Info() experiments.Info {
-	return experiments.Info{Lethal: false}
+	return experiments.Info{
+		Name:          "pod-network-loss",
+		Lethal:        false,
+		AffectingNode: false,
+	}
 }
 
 func (p NetworkLoss) Instantiate(label string, container string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(p.Type()),
+		Name:        p.Info().Name,
 		Namespace:   p.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -29,7 +38,7 @@ func (p NetworkLoss) Instantiate(label string, container string, duration time.D
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: p.Type(),
+				Name: p.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION":           strconv.Itoa(int(duration.Seconds())),
 					"NETWORK_INTERFACE":              "eth0",
@@ -39,8 +48,4 @@ func (p NetworkLoss) Instantiate(label string, container string, duration time.D
 			}),
 		},
 	})
-}
-
-func (p NetworkLoss) Type() experiments.ExperimentType {
-	return "pod-network-loss"
 }

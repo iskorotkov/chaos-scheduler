@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -12,12 +13,16 @@ type MemoryHog struct {
 	MemoryPercentage int
 }
 
-func (m MemoryHog) Type() experiments.ExperimentType {
-	return "node-memory-hog"
+func (m MemoryHog) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return m.Instantiate(target.AppLabel, target.Node, duration)
 }
 
 func (m MemoryHog) Info() experiments.Info {
-	return experiments.Info{Lethal: false}
+	return experiments.Info{
+		Name:          "node-memory-hog",
+		Lethal:        false,
+		AffectingNode: true,
+	}
 }
 
 func (m MemoryHog) Instantiate(label string, node string, duration time.Duration) experiments.Engine {
@@ -26,7 +31,7 @@ func (m MemoryHog) Instantiate(label string, node string, duration time.Duration
 	}
 
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(m.Type()),
+		Name:        m.Info().Name,
 		Namespace:   m.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -37,7 +42,7 @@ func (m MemoryHog) Instantiate(label string, node string, duration time.Duration
 		},
 		Experiments: []experiments.Experiment{
 			experiments.NewExperiment(experiments.ExperimentParams{
-				Type: m.Type(),
+				Name: m.Info().Name,
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_NODES":         node,

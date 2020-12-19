@@ -2,6 +2,7 @@ package pod
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
 )
@@ -13,13 +14,21 @@ type Delete struct {
 	Force        bool
 }
 
+func (p Delete) Engine(target targets.Target, duration time.Duration) experiments.Engine {
+	return p.Instantiate(target.AppLabel, duration)
+}
+
 func (p Delete) Info() experiments.Info {
-	return experiments.Info{Lethal: true}
+	return experiments.Info{
+		Name:          "pod-delete",
+		Lethal:        true,
+		AffectingNode: false,
+	}
 }
 
 func (p Delete) Instantiate(label string, duration time.Duration) experiments.Engine {
 	return experiments.NewEngine(experiments.EngineParams{
-		Name:        string(p.Type()),
+		Name:        p.Info().Name,
 		Namespace:   p.Namespace,
 		Labels:      nil,
 		Annotations: nil,
@@ -29,15 +38,14 @@ func (p Delete) Instantiate(label string, duration time.Duration) experiments.En
 			AppKind:  "deployment",
 		},
 		Experiments: []experiments.Experiment{
-			experiments.NewExperiment(experiments.ExperimentParams{Type: p.Type(), Env: map[string]string{
-				"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
-				"CHAOS_INTERVAL":       strconv.Itoa(p.Interval),
-				"FORCE":                strconv.FormatBool(p.Force),
-			}}),
+			experiments.NewExperiment(experiments.ExperimentParams{
+				Name: p.Info().Name,
+				Env: map[string]string{
+					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
+					"CHAOS_INTERVAL":       strconv.Itoa(p.Interval),
+					"FORCE":                strconv.FormatBool(p.Force),
+				},
+			}),
 		},
 	})
-}
-
-func (p Delete) Type() experiments.ExperimentType {
-	return "pod-delete"
 }
