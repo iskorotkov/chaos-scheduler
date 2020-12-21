@@ -57,7 +57,7 @@ func (s KubernetesSeeker) Targets() ([]Target, error) {
 
 func NewSeeker(namespace string, appLabel string, logger *zap.SugaredLogger) (KubernetesSeeker, error) {
 	isKubernetes := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
-	clientset, err := k8s.NewClient(isKubernetes, logger.Named("k8s client"))
+	clientset, err := k8s.NewClient(isKubernetes, logger.Named("k8s"))
 	if err != nil {
 		logger.Error(err)
 		return KubernetesSeeker{}, ClientsetError
