@@ -1,14 +1,13 @@
-package scenarios
+package workflows
 
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-func previewPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	entry := r.Context().Value("config")
 	cfg, ok := entry.(*config.Config)
 	if !ok {
@@ -30,20 +29,15 @@ func previewPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogg
 		return
 	}
 
-	marshaled, err := json.MarshalIndent(wf, "", "  ")
+	data := workflow{Workflow: wf, Params: params}
+
+	w.Header().Add("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(data)
 	if err != nil {
 		logger.Errorw(err.Error(),
-			"workflow", wf)
-		http.Error(w, "couldn't marshall workflow to readable format", http.StatusBadRequest)
+			"data", data)
+		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
 		return
 	}
-
-	data := struct {
-		GeneratedWorkflow string
-		Seed              int64
-		Stages            int
-	}{string(marshaled), params.Seed, params.Stages}
-
-	handler := server.PageHandler("web/html/scenarios/preview.gohtml", data, logger.Named("page"))
-	handler(w, r)
 }

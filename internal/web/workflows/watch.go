@@ -1,4 +1,4 @@
-package scenarios
+package workflows
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package scenarios
+package workflows
 
 import (
 	"go.uber.org/zap"
@@ -6,25 +6,25 @@ import (
 	"strconv"
 )
 
-type form struct {
+type workflowParams struct {
 	Seed   int64
 	Stages int
 }
 
-func parseScenarioParams(r *http.Request, logger *zap.SugaredLogger) (form, error) {
+func parseWorkflowParams(r *http.Request, logger *zap.SugaredLogger) (workflowParams, error) {
 	stages, err := strconv.ParseInt(r.FormValue("stages"), 10, 32)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"stages", r.FormValue("stages"))
-		return form{}, formParseError
+		return workflowParams{}, formParseError
 	}
 
 	seed, err := strconv.ParseInt(r.FormValue("seed"), 10, 64)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"seed", r.FormValue("seed"))
-		return form{}, formParseError
+		return workflowParams{}, formParseError
 	}
 
-	return form{Seed: seed, Stages: int(stages)}, err
+	return workflowParams{Seed: seed, Stages: int(stages)}, err
 }

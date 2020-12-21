@@ -1,4 +1,4 @@
-package scenarios
+package workflows
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
@@ -14,21 +14,26 @@ import (
 	"net/http"
 )
 
-func createWorkflowFromForm(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, form, error) {
-	f, err := parseScenarioParams(r, logger.Named("params"))
+type workflow struct {
+	Workflow templates.Workflow `json:"workflow"`
+	Params   workflowParams     `json:"params"`
+}
+
+func createWorkflowFromForm(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, workflowParams, error) {
+	f, err := parseWorkflowParams(r, logger.Named("params"))
 	if err != nil {
-		return templates.Workflow{}, form{}, err
+		return templates.Workflow{}, workflowParams{}, err
 	}
 
 	wf, err := generateWorkflow(f, cfg, logger.Named("workflow"))
 	if err != nil {
-		return templates.Workflow{}, form{}, err
+		return templates.Workflow{}, workflowParams{}, err
 	}
 
 	return wf, f, nil
 }
 
-func generateWorkflow(params form, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
+func generateWorkflow(params workflowParams, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
 	seeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, logger.Named("targets"))
 	if err != nil {
 		logger.Errorw(err.Error(),

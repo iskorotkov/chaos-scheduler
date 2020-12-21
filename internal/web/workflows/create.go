@@ -1,15 +1,14 @@
-package scenarios
+package workflows
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-func createAction(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
+func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	entry := r.Context().Value("config")
 	cfg, ok := entry.(*config.Config)
 	if !ok {
@@ -20,7 +19,7 @@ func createAction(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLog
 		return
 	}
 
-	wf, _, err := createWorkflowFromForm(r, cfg, logger)
+	wf, params, err := createWorkflowFromForm(r, cfg, logger)
 	if err != nil {
 		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -43,10 +42,15 @@ func createAction(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLog
 		"name", wf.Name,
 		"namespace", wf.Namespace)
 
-	path := fmt.Sprintf("/scenarios/view/%s/%s", wf.Namespace, wf.Name)
-	http.Redirect(w, r, path, http.StatusSeeOther)
-}
+	data := workflow{Workflow: wf, Params: params}
 
-func createPage(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
-	server.PageHandler("web/html/scenarios/create.gohtml", nil, logger.Named("page"))(w, r)
+	w.Header().Add("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(data)
+	if err != nil {
+		logger.Errorw(err.Error(),
+			"data", data)
+		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
+		return
+	}
 }

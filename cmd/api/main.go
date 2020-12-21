@@ -4,10 +4,9 @@ import (
 	"context"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/internal/web/files"
-	"github.com/iskorotkov/chaos-scheduler/internal/web/home"
-	"github.com/iskorotkov/chaos-scheduler/internal/web/scenarios"
+	"github.com/iskorotkov/chaos-scheduler/internal/web/workflows"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -39,8 +38,8 @@ func main() {
 
 	r := chi.NewRouter()
 	useDefaultMiddleware(r)
-
-	r.Use(configCtx(cfg))
+	useCors(r)
+	useConfig(r, cfg)
 
 	mapRoutes(r, sugar)
 
@@ -50,12 +49,16 @@ func main() {
 	}
 }
 
-func mapRoutes(r chi.Router, logger *zap.SugaredLogger) {
-	r.Mount("/", home.Router(logger.Named("home")))
-	r.Mount("/scenarios", scenarios.Router(logger.Named("scenarios")))
+func useConfig(r *chi.Mux, cfg *config.Config) {
+	r.Use(configCtx(cfg))
+}
 
-	r.Get("/js/*", files.ServeFolder("./web/js"))
-	r.Get("/css/*", files.ServeFolder("./web/css"))
+func mapRoutes(r chi.Router, logger *zap.SugaredLogger) {
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/v1", func(r chi.Router) {
+			r.Mount("/workflows", workflows.Router(logger.Named("workflows")))
+		})
+	})
 }
 
 func syncLogger(logger *zap.SugaredLogger) {
@@ -63,6 +66,12 @@ func syncLogger(logger *zap.SugaredLogger) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+}
+
+func useCors(r chi.Router) {
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+	}))
 }
 
 func useDefaultMiddleware(r chi.Router) {
