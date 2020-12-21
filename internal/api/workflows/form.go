@@ -7,8 +7,8 @@ import (
 )
 
 type workflowParams struct {
-	Seed   int64
-	Stages int
+	Seed   int64 `json:"seed"`
+	Stages int   `json:"stages"`
 }
 
 func parseWorkflowParams(r *http.Request, logger *zap.SugaredLogger) (workflowParams, error) {

@@ -7,16 +7,16 @@ import (
 )
 
 type Action struct {
-	Info   experiments.Info
-	Target targets.Target
-	Engine experiments.Engine
+	Info   experiments.Info   `json:"info"`
+	Target targets.Target     `json:"target"`
+	Engine experiments.Engine `json:"engine"`
 }
 
 type Stage struct {
-	Actions  []Action
-	Duration time.Duration
+	Actions  []Action      `json:"actions"`
+	Duration time.Duration `json:"duration"`
 }
 
 type Scenario struct {
-	Stages []Stage
+	Stages []Stage `json:"stages"`
 }

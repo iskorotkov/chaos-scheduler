@@ -6,9 +6,9 @@ import (
 )
 
 type Info struct {
-	Name          string
-	Lethal        bool
-	AffectingNode bool
+	Name          string `json:"name"`
+	Lethal        bool   `json:"lethal"`
+	AffectingNode bool   `json:"affectingNode"`
 }
 
 type Preset interface {

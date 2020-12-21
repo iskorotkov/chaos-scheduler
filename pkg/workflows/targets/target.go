@@ -1,12 +1,12 @@
 package targets
 
 type Target struct {
-	Pod           string
-	Deployment    string
-	Node          string
-	MainContainer string
-	Containers    []string
-	AppLabel      string
-	Labels        map[string]string
-	Annotations   map[string]string
+	Pod           string            `json:"pod"`
+	Deployment    string            `json:"deployment"`
+	Node          string            `json:"node"`
+	MainContainer string            `json:"mainContainer"`
+	Containers    []string          `json:"containers"`
+	AppLabel      string            `json:"appLabel"`
+	Labels        map[string]string `json:"labels"`
+	Annotations   map[string]string `json:"annotations"`
 }
