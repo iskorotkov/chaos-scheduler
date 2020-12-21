@@ -2,6 +2,7 @@ package workflows
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"go.uber.org/zap"
@@ -19,18 +20,19 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 		return
 	}
 
-	wf, params, err := createWorkflowFromForm(r, cfg, logger)
+	workflow, err := generateWorkflow(r, cfg, logger)
 	if err != nil {
 		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+
+		return
 	}
 
 	executor := executors.NewGRPCExecutor(cfg.ServerURL, logger.Named("execution"))
-	wf, err = executor.Execute(wf)
+	workflow.Workflow, err = executor.Execute(workflow.Workflow)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
@@ -39,12 +41,15 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	}
 
 	logger.Infow("workflow created",
-		"name", wf.Name,
-		"namespace", wf.Namespace)
-
-	data := workflow{Workflow: wf, Params: params}
+		"name", workflow.Workflow.Name,
+		"namespace", workflow.Workflow.Namespace)
 
 	w.Header().Add("Content-Type", "application/json")
+
+	url := fmt.Sprintf("%s/%s/%s", r.URL.Path, workflow.Workflow.Namespace, workflow.Workflow.Name)
+	data := struct {
+		URL string `json:"url"`
+	}{url}
 
 	err = json.NewEncoder(w).Encode(data)
 	if err != nil {

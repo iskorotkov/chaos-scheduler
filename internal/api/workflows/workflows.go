@@ -7,6 +7,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/container"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/node"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments/pod"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator/advanced"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
@@ -14,65 +15,61 @@ import (
 	"net/http"
 )
 
-type workflow struct {
+type generatedWorkflow struct {
 	Workflow templates.Workflow `json:"workflow"`
+	Scenario generator.Scenario `json:"scenario"`
 	Params   workflowParams     `json:"params"`
 }
 
-func createWorkflowFromForm(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, workflowParams, error) {
-	f, err := parseWorkflowParams(r, logger.Named("params"))
+func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generatedWorkflow, error) {
+	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
 	if err != nil {
-		return templates.Workflow{}, workflowParams{}, err
+		return generatedWorkflow{}, err
 	}
 
-	wf, err := generateWorkflow(f, cfg, logger.Named("workflow"))
-	if err != nil {
-		return templates.Workflow{}, workflowParams{}, err
-	}
-
-	return wf, f, nil
-}
-
-func generateWorkflow(params workflowParams, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
-	seeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, logger.Named("targets"))
+	targetSeeker, err := targets.NewSeeker(cfg.AppNS, cfg.AppLabel, logger.Named("targets"))
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
-		return templates.Workflow{}, targetsSeekerError
+		return generatedWorkflow{}, targetsSeekerError
 	}
 
-	f := failures(cfg)
-	g, err := advanced.NewGenerator(f, seeker, logger.Named("generator"))
+	failures := enabledFailures(cfg)
+
+	scenarioGenerator, err := advanced.NewGenerator(failures, targetSeeker, logger.Named("generator"))
 	if err != nil {
 		logger.Errorw(err.Error(),
-			"failures", f)
-
-		return templates.Workflow{}, scenarioParamsError
+			"failures", failures)
+		return generatedWorkflow{}, scenarioParamsError
 	}
 
-	s, err := g.Generate(params.Stages, params.Seed, cfg.StageDuration)
+	scenario, err := scenarioGenerator.Generate(workflowParams.Stages, workflowParams.Seed, cfg.StageDuration)
 	if err != nil {
 		logger.Errorw(err.Error(),
-			"params", params,
+			"params", workflowParams,
 			"config", cfg,
-			"failures", f)
-
-		return templates.Workflow{}, scenarioParamsError
+			"failures", failures)
+		return generatedWorkflow{}, scenarioParamsError
 	}
 
-	ext := assemblerExtensions(cfg, logger)
+	ext := enabledExtensions(cfg, logger)
 	a := assemblers.NewModularAssembler(ext)
-	wf, err := a.Assemble(s)
+
+	workflow, err := a.Assemble(scenario)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"extensions", ext)
-		return templates.Workflow{}, workflowGenerationError
+		return generatedWorkflow{}, workflowGenerationError
 	}
 
-	return wf, nil
+	return generatedWorkflow{
+		Workflow: workflow,
+		Scenario: scenario,
+		Params:   workflowParams,
+	}, nil
 }
 
-func assemblerExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensions.List {
+func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensions.List {
 	return extensions.List{
 		ActionExtensions:   nil,
 		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
@@ -80,7 +77,7 @@ func assemblerExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensio
 	}
 }
 
-func failures(cfg *config.Config) []advanced.Failure {
+func enabledFailures(cfg *config.Config) []advanced.Failure {
 	return []advanced.Failure{
 		{
 			Preset:   container.NetworkLatency{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, NetworkLatency: 300},

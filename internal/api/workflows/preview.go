@@ -18,7 +18,7 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		return
 	}
 
-	wf, params, err := createWorkflowFromForm(r, cfg, logger)
+	workflow, err := generateWorkflow(r, cfg, logger)
 	if err != nil {
 		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -29,14 +29,12 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		return
 	}
 
-	data := workflow{Workflow: wf, Params: params}
-
 	w.Header().Add("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(data)
+	err = json.NewEncoder(w).Encode(workflow)
 	if err != nil {
 		logger.Errorw(err.Error(),
-			"data", data)
+			"data", workflow)
 		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
 		return
 	}
