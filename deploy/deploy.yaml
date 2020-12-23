@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chaos-framework
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-framework-sa
+  namespace: chaos-framework
+  labels:
+    app: chaos-framework
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chaos-framework-cr
+  labels:
+    app: chaos-framework
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "pods"]
+    verbs: [ "get","list","watch" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chaos-framework-crb
+  labels:
+    app: chaos-framework
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chaos-framework-cr
+subjects:
+  - kind: ServiceAccount
+    name: chaos-framework-sa
+    namespace: chaos-framework
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos-scheduler-api
+  namespace: chaos-framework
+spec:
+  selector:
+    matchLabels:
+      app: chaos-scheduler-api
+  template:
+    metadata:
+      labels:
+        app: chaos-scheduler-api
+    spec:
+      serviceAccountName: chaos-framework-sa
+      containers:
+        - name: chaos-scheduler-api
+          image: iskorotkov/chaos-scheduler-api:v0.5.0-alpha.1
+          env:
+            - name: SERVER_URL
+              value: argo-server.argo.svc:2746
+            - name: STAGE_MONITOR_IMAGE
+              value: iskorotkov/chaos-pods-monitor:v0.4.0-alpha.1
+            - name: APP_NS
+              value: chaos-app
+            - name: CHAOS_NS
+              value: litmus
+            - name: APP_LABEL
+              value: app
+            - name: STAGE_DURATION
+              value: 30s
+            - name: STAGE_INTERVAL
+              value: 30s
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chaos-scheduler-api
+  namespace: chaos-framework
+spec:
+  selector:
+    app: chaos-scheduler-api
+  ports:
+    - name: web
+      port: 8811
+      targetPort: 8811
+      protocol: TCP
+  type: ClusterIP
