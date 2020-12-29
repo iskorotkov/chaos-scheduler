@@ -3,6 +3,7 @@ package workflows
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -18,7 +19,7 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		return
 	}
 
-	workflow, err := generateWorkflow(r, cfg, logger)
+	scenario, err := generateScenario(r, cfg, logger.Named("scenario-generation"))
 	if err != nil {
 		if err == formParseError || err == scenarioParamsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -31,10 +32,14 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 
 	w.Header().Add("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(workflow)
+	data := struct {
+		Scenario generator.Scenario `json:"scenario"`
+	}{Scenario: scenario}
+
+	err = json.NewEncoder(w).Encode(data)
 	if err != nil {
 		logger.Errorw(err.Error(),
-			"data", workflow)
+			"data", data)
 		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
 		return
 	}

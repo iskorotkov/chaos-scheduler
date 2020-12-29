@@ -2,7 +2,6 @@ package workflows
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
 	"go.uber.org/zap"
@@ -32,7 +31,7 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	}
 
 	executor := executors.NewGRPCExecutor(cfg.ArgoServer, logger.Named("execution"))
-	workflow.Workflow, err = executor.Execute(workflow.Workflow)
+	workflow, err = executor.Execute(workflow)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
@@ -41,15 +40,18 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	}
 
 	logger.Infow("workflow created",
-		"name", workflow.Workflow.Name,
-		"namespace", workflow.Workflow.Namespace)
+		"name", workflow.Name,
+		"namespace", workflow.Namespace)
 
 	w.Header().Add("Content-Type", "application/json")
 
-	url := fmt.Sprintf("%s/%s/%s", r.URL.Path, workflow.Workflow.Namespace, workflow.Workflow.Name)
 	data := struct {
-		URL string `json:"url"`
-	}{url}
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	}{
+		Name:      workflow.Name,
+		Namespace: workflow.Namespace,
+	}
 
 	err = json.NewEncoder(w).Encode(data)
 	if err != nil {

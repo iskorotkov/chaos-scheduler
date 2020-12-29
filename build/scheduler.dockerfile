@@ -16,5 +16,5 @@ RUN go install -v ./...
 # run
 FROM base as run
 RUN apk --no-cache add ca-certificates
-COPY --from=builder /go/bin/api /app
+COPY --from=builder /go/bin/scheduler /app
 ENTRYPOINT ["./app"]
