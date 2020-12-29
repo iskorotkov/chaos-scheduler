@@ -41,7 +41,7 @@ func watchWS(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		return
 	}
 
-	m := watcher.NewMonitor(cfg.ServerURL, logger.Named("monitor"))
+	m := watcher.NewMonitor(cfg.ArgoServer, logger.Named("monitor"))
 
 	events := make(chan *watcher.Event)
 

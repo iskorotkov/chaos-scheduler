@@ -11,7 +11,7 @@ var (
 )
 
 type Config struct {
-	ServerURL         string        `env:"SERVER_URL"`
+	ArgoServer        string        `env:"ARGO_SERVER"`
 	StageMonitorImage string        `env:"STAGE_MONITOR_IMAGE"`
 	AppNS             string        `env:"APP_NS"`
 	AppLabel          string        `env:"APP_LABEL"`

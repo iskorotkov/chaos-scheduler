@@ -40,23 +40,23 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chaos-scheduler-api
+  name: scheduler
   namespace: chaos-framework
 spec:
   selector:
     matchLabels:
-      app: chaos-scheduler-api
+      app: scheduler
   template:
     metadata:
       labels:
-        app: chaos-scheduler-api
+        app: scheduler
     spec:
       serviceAccountName: chaos-framework-sa
       containers:
-        - name: chaos-scheduler-api
+        - name: scheduler
           image: iskorotkov/chaos-scheduler-api:v0.5.0-alpha.1
           env:
-            - name: SERVER_URL
+            - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
               value: iskorotkov/chaos-pods-monitor:v0.4.0-alpha.1
@@ -74,11 +74,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: chaos-scheduler-api
+  name: scheduler
   namespace: chaos-framework
 spec:
   selector:
-    app: chaos-scheduler-api
+    app: scheduler
   ports:
     - name: web
       port: 8811

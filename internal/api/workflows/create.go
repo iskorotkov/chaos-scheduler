@@ -31,7 +31,7 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 		return
 	}
 
-	executor := executors.NewGRPCExecutor(cfg.ServerURL, logger.Named("execution"))
+	executor := executors.NewGRPCExecutor(cfg.ArgoServer, logger.Named("execution"))
 	workflow.Workflow, err = executor.Execute(workflow.Workflow)
 	if err != nil {
 		logger.Errorw(err.Error(),
