@@ -13,13 +13,15 @@ func (t Template) Id() string {
 
 type Workflow v1alpha1.Workflow
 
-func NewWorkflow(namespace string, generateName string, entrypoint string, serviceAccountName string, templates []Template) Workflow {
+type Option func(wf *Workflow)
+
+func NewWorkflow(namespace, generateName, entrypoint, serviceAccountName string, templates []Template, opts ...Option) Workflow {
 	argoTemplates := make([]v1alpha1.Template, 0)
 	for _, template := range templates {
 		argoTemplates = append(argoTemplates, v1alpha1.Template(template))
 	}
 
-	return Workflow{
+	wf := Workflow{
 		TypeMeta: v1.TypeMeta{
 			Kind:       "Workflow",
 			APIVersion: "argoproj.io/v1alpha1",
@@ -33,5 +35,23 @@ func NewWorkflow(namespace string, generateName string, entrypoint string, servi
 			ServiceAccountName: serviceAccountName,
 			Templates:          argoTemplates,
 		},
+	}
+
+	for _, opt := range opts {
+		opt(&wf)
+	}
+
+	return wf
+}
+
+func WithLabel(key, value string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Labels[key] = value
+	}
+}
+
+func WithAnnotation(key, value string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Annotations[key] = value
 	}
 }
