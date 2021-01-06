@@ -58,6 +58,15 @@ func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 			"params", workflowParams,
 			"config", cfg,
 			"failures", failures)
+
+		if err == advanced.LowTargetsError {
+			return generator.Scenario{}, targetsError
+		}
+
+		if err == advanced.ZeroFailures {
+			return generator.Scenario{}, failuresError
+		}
+
 		return generator.Scenario{}, scenarioParamsError
 	}
 
