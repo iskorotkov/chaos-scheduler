@@ -15,7 +15,7 @@ type Workflow v1alpha1.Workflow
 
 type Option func(wf *Workflow)
 
-func NewWorkflow(namespace, generateName, entrypoint, serviceAccountName string, templates []Template, opts ...Option) Workflow {
+func NewWorkflow(entrypoint string, templates []Template, opts ...Option) Workflow {
 	argoTemplates := make([]v1alpha1.Template, 0)
 	for _, template := range templates {
 		argoTemplates = append(argoTemplates, v1alpha1.Template(template))
@@ -27,13 +27,12 @@ func NewWorkflow(namespace, generateName, entrypoint, serviceAccountName string,
 			APIVersion: "argoproj.io/v1alpha1",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Namespace:    namespace,
-			GenerateName: generateName,
+			Labels:      make(map[string]string),
+			Annotations: make(map[string]string),
 		},
 		Spec: v1alpha1.WorkflowSpec{
-			Entrypoint:         entrypoint,
-			ServiceAccountName: serviceAccountName,
-			Templates:          argoTemplates,
+			Entrypoint: entrypoint,
+			Templates:  argoTemplates,
 		},
 	}
 
@@ -42,6 +41,24 @@ func NewWorkflow(namespace, generateName, entrypoint, serviceAccountName string,
 	}
 
 	return wf
+}
+
+func WithNamespace(ns string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Namespace = ns
+	}
+}
+
+func WithNamePrefix(prefix string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.GenerateName = prefix
+	}
+}
+
+func WithServiceAccount(sa string) Option {
+	return func(wf *Workflow) {
+		wf.Spec.ServiceAccountName = sa
+	}
 }
 
 func WithLabel(key, value string) Option {

@@ -23,14 +23,15 @@ type Stage struct {
 }
 
 type Event struct {
-	Name       string            `json:"name,omitempty"`
-	Namespace  string            `json:"namespace,omitempty"`
-	Type       string            `json:"type,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	Phase      string            `json:"phase,omitempty"`
-	StartedAt  time.Time         `json:"startedAt,omitempty"`
-	FinishedAt time.Time         `json:"finishedAt,omitempty"`
-	Stages     []Stage           `json:"stages,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Namespace   string            `json:"namespace,omitempty"`
+	Type        string            `json:"type,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Phase       string            `json:"phase,omitempty"`
+	StartedAt   time.Time         `json:"startedAt,omitempty"`
+	FinishedAt  time.Time         `json:"finishedAt,omitempty"`
+	Stages      []Stage           `json:"stages,omitempty"`
 }
 
 func buildNodesTree(nodes v1alpha1.Nodes) []Stage {
@@ -81,13 +82,14 @@ func newStage(n v1alpha1.NodeStatus, steps []Step) Stage {
 
 func newEvent(e *workflow.WorkflowWatchEvent) *Event {
 	return &Event{
-		Name:       e.Object.Name,
-		Namespace:  e.Object.Namespace,
-		Type:       e.Type,
-		Labels:     e.Object.Labels,
-		Phase:      string(e.Object.Status.Phase),
-		StartedAt:  e.Object.Status.StartedAt.Time,
-		FinishedAt: e.Object.Status.FinishedAt.Time,
-		Stages:     buildNodesTree(e.Object.Status.Nodes),
+		Name:        e.Object.Name,
+		Namespace:   e.Object.Namespace,
+		Type:        e.Type,
+		Labels:      e.Object.Labels,
+		Annotations: e.Object.Annotations,
+		Phase:       string(e.Object.Status.Phase),
+		StartedAt:   e.Object.Status.StartedAt.Time,
+		FinishedAt:  e.Object.Status.FinishedAt.Time,
+		Stages:      buildNodesTree(e.Object.Status.Nodes),
 	}
 }

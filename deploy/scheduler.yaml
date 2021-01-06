@@ -54,12 +54,12 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.6.0
+          image: iskorotkov/chaos-scheduler:v0.7.0
           env:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
-              value: iskorotkov/chaos-pods-monitor:v0.4.0-alpha.1
+              value: iskorotkov/chaos-pods-monitor:v0.3.0
             - name: APP_NS
               value: chaos-app
             - name: CHAOS_NS

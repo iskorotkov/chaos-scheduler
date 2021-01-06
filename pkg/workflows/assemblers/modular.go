@@ -22,7 +22,12 @@ func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workf
 		return templates.Workflow{}, err
 	}
 
-	wf := templates.NewWorkflow("litmus", "workflow-", "entry", "argo-chaos", ts)
+	wf := templates.NewWorkflow("entry", ts,
+		templates.WithNamespace("litmus"),
+		templates.WithNamePrefix("workflow-"),
+		templates.WithServiceAccount("argo-chaos"),
+		templates.WithAnnotation("chaosframework.com/version", "v1"),
+		templates.WithAnnotation("chaosframework.com/iteration", "1"))
 
 	return wf, nil
 }
