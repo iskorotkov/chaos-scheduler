@@ -14,15 +14,17 @@ const (
 	TypeFailure = Type("failure")
 	TypeUtility = Type("utility")
 
-	SeverityNonCritical = Severity("non critical")
-	SeverityCritical    = Severity("critical")
-	SeverityLethal      = Severity("lethal")
+	SeverityHarmless = Severity("harmless")
+	SeverityLight    = Severity("light")
+	SeveritySevere   = Severity("severe")
+	SeverityCritical = Severity("critical")
 
 	ScaleContainer      = Scale("container")
 	ScalePod            = Scale("pod")
 	ScaleDeploymentPart = Scale("deployment part")
 	ScaleDeployment     = Scale("deployment")
 	ScaleNode           = Scale("node")
+	ScaleCluster        = Scale("cluster")
 )
 
 type TemplateMetadata struct {

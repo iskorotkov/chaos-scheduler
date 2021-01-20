@@ -28,7 +28,7 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	ignoredPods := make([]string, 0)
 
 	for _, action := range stage.Actions {
-		if action.Info.Severity == metadata.SeverityLethal {
+		if action.Info.Severity == metadata.SeverityCritical {
 			if action.Info.Scale == metadata.ScaleNode {
 				ignoredPods = append(ignoredPods, action.Target.Node)
 			} else {

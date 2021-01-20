@@ -10,6 +10,7 @@ var (
 	StagesError         = errors.New("number of stages must be positive")
 	ActionsError        = errors.New("number of actions in every stage must be positive")
 	ActionMarshallError = errors.New("couldn't marshall action to yaml")
+	MetadataError       = errors.New("couldn't set metadata")
 )
 
 type Assembler interface {

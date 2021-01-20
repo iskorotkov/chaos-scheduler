@@ -44,9 +44,9 @@ func NewGenerator(failures []failures.Failure, seeker targets.Seeker, logger *za
 			metadata.ScaleNode:           4,
 		},
 		BySeverity: map[metadata.Severity]Cost{
-			metadata.SeverityNonCritical: 1,
-			metadata.SeverityCritical:    1.5,
-			metadata.SeverityLethal:      2,
+			metadata.SeverityLight:    1,
+			metadata.SeveritySevere:   1.5,
+			metadata.SeverityCritical: 2,
 		},
 	})(a)
 
