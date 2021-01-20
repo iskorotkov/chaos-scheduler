@@ -2,9 +2,11 @@ package assemblers
 
 import (
 	"fmt"
+	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"github.com/iskorotkov/metadata"
 	"gopkg.in/yaml.v2"
 )
 
@@ -46,6 +48,17 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 		stageIDs := make([]string, 0)
 
 		for actionIndex, action := range stage.Actions {
+			meta := api.TemplateMetadata{
+				Version:  api.VersionV1,
+				Type:     api.TypeFailure,
+				Severity: action.Info.Severity,
+				Scale:    action.Info.Scale,
+			}
+
+			if err := metadata.Marshal(&action.Engine.Metadata, &meta, api.Prefix); err != nil {
+				return nil, ActionMarshallError
+			}
+
 			manifest, err := yaml.Marshal(action.Engine)
 			if err != nil {
 				return nil, ActionMarshallError

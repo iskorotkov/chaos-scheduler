@@ -1,5 +1,9 @@
 package failures
 
+import (
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 type AppInfo struct {
 	AppNS    string `json:"appns" yaml:"appns"`
 	AppLabel string `json:"applabel" yaml:"applabel"`
@@ -16,18 +20,11 @@ type EngineSpec struct {
 	Experiments         []Experiment `json:"experiments" yaml:"experiments"`
 }
 
-type EngineMetadata struct {
-	Name        string            `json:"name,omitempty" yaml:"name,omitempty"`
-	Namespace   string            `json:"namespace,omitempty" yaml:"namespace,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
-}
-
 type Engine struct {
-	APIVersion string         `json:"apiVersion" yaml:"apiVersion"`
-	Kind       string         `json:"kind" yaml:"kind"`
-	Metadata   EngineMetadata `json:"metadata" yaml:"metadata"`
-	Spec       EngineSpec     `json:"spec" yaml:"spec"`
+	APIVersion string        `json:"apiVersion" yaml:"apiVersion"`
+	Kind       string        `json:"kind" yaml:"kind"`
+	Metadata   v1.ObjectMeta `json:"metadata" yaml:"metadata"`
+	Spec       EngineSpec    `json:"spec" yaml:"spec"`
 }
 
 type EngineParams struct {
@@ -43,7 +40,7 @@ func NewEngine(params EngineParams) Engine {
 	return Engine{
 		Kind:       "ChaosEngine",
 		APIVersion: "litmuschaos.io/v1alpha1",
-		Metadata: EngineMetadata{
+		Metadata: v1.ObjectMeta{
 			Name:        params.Name,
 			Namespace:   params.Namespace,
 			Labels:      params.Labels,
