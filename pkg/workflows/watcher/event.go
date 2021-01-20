@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"time"
 )
 
 type Step struct {
-	Name       string    `json:"name,omitempty"`
-	Type       string    `json:"type,omitempty"`
-	Phase      string    `json:"phase,omitempty"`
-	StartedAt  time.Time `json:"startedAt,omitempty"`
-	FinishedAt time.Time `json:"finishedAt,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Type        string            `json:"type,omitempty"`
+	Phase       string            `json:"phase,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	StartedAt   time.Time         `json:"startedAt,omitempty"`
+	FinishedAt  time.Time         `json:"finishedAt,omitempty"`
 }
 
 type Stage struct {
@@ -34,7 +37,27 @@ type Event struct {
 	Stages      []Stage           `json:"stages,omitempty"`
 }
 
-func buildNodesTree(nodes v1alpha1.Nodes) []Stage {
+func buildNodesTree(ts []v1alpha1.Template, nodes v1alpha1.Nodes) []Stage {
+	stagesIDs, stepsIDs := splitStagesAndSteps(nodes)
+
+	stages := make([]Stage, 0)
+	for i := 0; i < len(stagesIDs); i++ {
+		id := fmt.Sprintf("[%d]", i)
+		stageStatus := stagesIDs[id]
+		steps := make([]Step, 0)
+		for _, stepID := range stageStatus.Children {
+			stepStatus := stepsIDs[stepID]
+			stepSpec := findStepSpec(ts, stepStatus)
+			steps = append(steps, newStep(stepSpec.Metadata, stepStatus))
+		}
+
+		stages = append(stages, newStage(stageStatus, steps))
+	}
+
+	return stages
+}
+
+func splitStagesAndSteps(nodes v1alpha1.Nodes) (map[string]v1alpha1.NodeStatus, map[string]v1alpha1.NodeStatus) {
 	stagesID := make(map[string]v1alpha1.NodeStatus)
 	stepsID := make(map[string]v1alpha1.NodeStatus)
 
@@ -45,29 +68,28 @@ func buildNodesTree(nodes v1alpha1.Nodes) []Stage {
 			stepsID[n.ID] = n
 		}
 	}
-
-	stages := make([]Stage, 0)
-	for i := 0; i < len(stagesID); i++ {
-		stage := stagesID[fmt.Sprintf("[%d]", i)]
-		steps := make([]Step, 0)
-		for _, stepID := range stage.Children {
-			step := stepsID[stepID]
-			steps = append(steps, newStep(step))
-		}
-
-		stages = append(stages, newStage(stage, steps))
-	}
-
-	return stages
+	return stagesID, stepsID
 }
 
-func newStep(n v1alpha1.NodeStatus) Step {
+func findStepSpec(ts []v1alpha1.Template, stepStatus v1alpha1.NodeStatus) templates.Template {
+	var stepSpec templates.Template
+	for _, t := range ts {
+		if t.Name == stepStatus.Name {
+			stepSpec = templates.Template(t)
+		}
+	}
+	return stepSpec
+}
+
+func newStep(metadata v1alpha1.Metadata, n v1alpha1.NodeStatus) Step {
 	return Step{
-		Name:       n.TemplateName,
-		Type:       string(n.Type),
-		Phase:      string(n.Phase),
-		StartedAt:  n.StartedAt.Time,
-		FinishedAt: n.FinishedAt.Time,
+		Name:        n.TemplateName,
+		Type:        string(n.Type),
+		Phase:       string(n.Phase),
+		Labels:      metadata.Labels,
+		Annotations: metadata.Annotations,
+		StartedAt:   n.StartedAt.Time,
+		FinishedAt:  n.FinishedAt.Time,
 	}
 }
 
@@ -90,6 +112,6 @@ func newEvent(e *workflow.WorkflowWatchEvent) *Event {
 		Phase:       string(e.Object.Status.Phase),
 		StartedAt:   e.Object.Status.StartedAt.Time,
 		FinishedAt:  e.Object.Status.FinishedAt.Time,
-		Stages:      buildNodesTree(e.Object.Status.Nodes),
+		Stages:      buildNodesTree(e.Object.Spec.Templates, e.Object.Status.Nodes),
 	}
 }
