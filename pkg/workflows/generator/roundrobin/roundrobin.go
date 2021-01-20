@@ -50,13 +50,11 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 			target := selectTarget(targetsList, rnd)
 			engine := failure.Template.Instantiate(target, params.StageDuration)
 			newAction := generator.Action{
-				Info: generator.Info{
-					Name:     failure.Name(),
-					Severity: failure.Severity,
-					Scale:    failure.Scale,
-				},
-				Target: target,
-				Engine: engine,
+				Name:     failure.Name(),
+				Severity: failure.Severity,
+				Scale:    failure.Scale,
+				Target:   target,
+				Engine:   engine,
 			}
 
 			stage := generator.Stage{Actions: []generator.Action{newAction}, Duration: params.StageDuration}

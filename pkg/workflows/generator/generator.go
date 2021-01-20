@@ -15,16 +15,12 @@ var (
 	TargetsError           = errors.New("couldn't get list of targets")
 )
 
-type Info struct {
+type Action struct {
 	Name     string            `json:"name"`
 	Severity metadata.Severity `json:"severity"`
 	Scale    metadata.Scale    `json:"scale"`
-}
-
-type Action struct {
-	Info   Info            `json:"info"`
-	Engine failures.Engine `json:"engine"`
-	Target targets.Target  `json:"target"`
+	Engine   failures.Engine   `json:"engine"`
+	Target   targets.Target    `json:"target"`
 }
 
 type Stage struct {
