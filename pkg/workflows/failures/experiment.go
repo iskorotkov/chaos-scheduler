@@ -1,4 +1,4 @@
-package experiments
+package failures
 
 type ExperimentName string
 

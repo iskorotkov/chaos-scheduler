@@ -2,7 +2,8 @@ package generator
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/api/metadata"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"time"
 )
@@ -14,10 +15,16 @@ var (
 	TargetsError           = errors.New("couldn't get list of targets")
 )
 
+type Info struct {
+	Name     string            `json:"name"`
+	Severity metadata.Severity `json:"severity"`
+	Scale    metadata.Scale    `json:"scale"`
+}
+
 type Action struct {
-	Info   experiments.Info   `json:"info"`
-	Target targets.Target     `json:"target"`
-	Engine experiments.Engine `json:"engine"`
+	Info   Info            `json:"info"`
+	Engine failures.Engine `json:"engine"`
+	Target targets.Target  `json:"target"`
 }
 
 type Stage struct {

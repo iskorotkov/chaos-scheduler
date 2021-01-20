@@ -37,9 +37,13 @@ func addCascadeFailures(a *Generator, targetsList []targets.Target, r *rand.Rand
 			target := randomTarget(stageTargets, r)
 
 			actions = append(actions, generator.Action{
-				Info:   failure.Preset.Info(),
+				Info: generator.Info{
+					Name:     failure.Name(),
+					Severity: failure.Severity,
+					Scale:    failure.Scale,
+				},
 				Target: target,
-				Engine: failure.Preset.Engine(target, params.StageDuration),
+				Engine: failure.Template.Instantiate(target, params.StageDuration),
 			})
 
 			points -= cost

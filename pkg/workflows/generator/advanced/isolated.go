@@ -14,9 +14,13 @@ func addIsolatedFailures(a *Generator, targetsList []targets.Target, r *rand.Ran
 		target := randomTarget(targetsList, r)
 
 		actions := []generator.Action{{
-			Info:   failure.Preset.Info(),
+			Info: generator.Info{
+				Name:     failure.Name(),
+				Severity: failure.Severity,
+				Scale:    failure.Scale,
+			},
 			Target: target,
-			Engine: failure.Preset.Engine(target, params.StageDuration),
+			Engine: failure.Template.Instantiate(target, params.StageDuration),
 		}}
 
 		stages = append(stages, generator.Stage{

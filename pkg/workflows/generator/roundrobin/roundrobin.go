@@ -1,7 +1,7 @@
 package roundrobin
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
@@ -9,13 +9,13 @@ import (
 )
 
 type RoundRobin struct {
-	presets []experiments.Preset
-	seeker  targets.Seeker
-	logger  *zap.SugaredLogger
+	failures []failures.Failure
+	seeker   targets.Seeker
+	logger   *zap.SugaredLogger
 }
 
 func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error) {
-	if len(r.presets) == 0 {
+	if len(r.failures) == 0 {
 		return generator.Scenario{}, generator.ZeroFailures
 	}
 
@@ -40,7 +40,7 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 
 	stagesLeft := params.Stages
 	for stagesLeft > 0 {
-		for _, preset := range r.presets {
+		for _, failure := range r.failures {
 			if stagesLeft == 0 {
 				break
 			}
@@ -48,9 +48,13 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 			stagesLeft--
 
 			target := selectTarget(targetsList, rnd)
-			engine := preset.Engine(target, params.StageDuration)
+			engine := failure.Template.Instantiate(target, params.StageDuration)
 			newAction := generator.Action{
-				Info:   preset.Info(),
+				Info: generator.Info{
+					Name:     failure.Name(),
+					Severity: failure.Severity,
+					Scale:    failure.Scale,
+				},
 				Target: target,
 				Engine: engine,
 			}
@@ -63,8 +67,8 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 	return generator.Scenario{Stages: stages}, nil
 }
 
-func NewRoundRobin(presets []experiments.Preset, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
-	return RoundRobin{presets: presets, seeker: seeker, logger: logger}
+func NewRoundRobin(failures []failures.Failure, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
+	return RoundRobin{failures: failures, seeker: seeker, logger: logger}
 }
 
 func selectTarget(ts []targets.Target, rnd *rand.Rand) targets.Target {

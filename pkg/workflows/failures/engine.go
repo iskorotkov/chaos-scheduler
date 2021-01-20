@@ -1,4 +1,4 @@
-package experiments
+package failures
 
 type AppInfo struct {
 	AppNS    string `json:"appns" yaml:"appns"`

@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"fmt"
+	"github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
@@ -27,8 +28,8 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	ignoredPods := make([]string, 0)
 
 	for _, action := range stage.Actions {
-		if action.Info.Lethal {
-			if action.Info.AffectingNode {
+		if action.Info.Severity == metadata.SeverityLethal {
+			if action.Info.Scale == metadata.ScaleNode {
 				ignoredPods = append(ignoredPods, action.Target.Node)
 			} else {
 				podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)

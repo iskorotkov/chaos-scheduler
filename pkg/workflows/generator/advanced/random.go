@@ -1,7 +1,7 @@
 package advanced
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
 )
@@ -12,7 +12,7 @@ func randomTarget(targets []targets.Target, r *rand.Rand) targets.Target {
 	return target
 }
 
-func randomFailure(failures []experiments.Failure, r *rand.Rand) experiments.Failure {
+func randomFailure(failures []failures.Failure, r *rand.Rand) failures.Failure {
 	failureIndex := r.Intn(len(failures))
 	failure := failures[failureIndex]
 	return failure

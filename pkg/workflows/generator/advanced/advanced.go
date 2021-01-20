@@ -2,7 +2,7 @@ package advanced
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
@@ -12,7 +12,7 @@ import (
 
 type Generator struct {
 	retries   int
-	failures  []experiments.Failure
+	failures  []failures.Failure
 	seeker    targets.Seeker
 	budget    Budget
 	modifiers Modifiers
@@ -21,7 +21,7 @@ type Generator struct {
 
 type Option func(a *Generator)
 
-func NewGenerator(failures []experiments.Failure, seeker targets.Seeker, logger *zap.SugaredLogger, opts ...Option) (*Generator, error) {
+func NewGenerator(failures []failures.Failure, seeker targets.Seeker, logger *zap.SugaredLogger, opts ...Option) (*Generator, error) {
 	a := &Generator{
 		failures: failures,
 		seeker:   seeker,

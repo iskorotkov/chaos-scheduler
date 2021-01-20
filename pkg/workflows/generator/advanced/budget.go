@@ -2,7 +2,7 @@ package advanced
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 )
 
 type Cost float64
@@ -17,7 +17,7 @@ type Modifiers struct {
 	BySeverity map[metadata.Severity]Cost
 }
 
-func calculateCost(modifiers Modifiers, f experiments.Failure) Cost {
+func calculateCost(modifiers Modifiers, f failures.Failure) Cost {
 	severity, ok := modifiers.BySeverity[f.Severity]
 	if !ok {
 		severity = 1
