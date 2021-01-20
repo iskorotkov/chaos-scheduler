@@ -1,6 +1,8 @@
 package advanced
 
 import (
+	"github.com/iskorotkov/chaos-scheduler/api/metadata"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
@@ -10,7 +12,7 @@ import (
 
 type Generator struct {
 	retries   int
-	failures  []Failure
+	failures  []experiments.Failure
 	seeker    targets.Seeker
 	budget    Budget
 	modifiers Modifiers
@@ -19,7 +21,7 @@ type Generator struct {
 
 type Option func(a *Generator)
 
-func NewGenerator(failures []Failure, seeker targets.Seeker, logger *zap.SugaredLogger, opts ...Option) (*Generator, error) {
+func NewGenerator(failures []experiments.Failure, seeker targets.Seeker, logger *zap.SugaredLogger, opts ...Option) (*Generator, error) {
 	a := &Generator{
 		failures: failures,
 		seeker:   seeker,
@@ -34,17 +36,17 @@ func NewGenerator(failures []Failure, seeker targets.Seeker, logger *zap.Sugared
 	})(a)
 
 	WithModifiers(Modifiers{
-		ByScale: map[Scale]Cost{
-			ScaleContainer:      1,
-			ScalePod:            1,
-			ScaleDeploymentPart: 1.5,
-			ScaleDeployment:     2,
-			ScaleNode:           4,
+		ByScale: map[metadata.Scale]Cost{
+			metadata.ScaleContainer:      1,
+			metadata.ScalePod:            1,
+			metadata.ScaleDeploymentPart: 1.5,
+			metadata.ScaleDeployment:     2,
+			metadata.ScaleNode:           4,
 		},
-		BySeverity: map[Severity]Cost{
-			SeverityNonCritical: 1,
-			SeverityCritical:    1.5,
-			SeverityLethal:      2,
+		BySeverity: map[metadata.Severity]Cost{
+			metadata.SeverityNonCritical: 1,
+			metadata.SeverityCritical:    1.5,
+			metadata.SeverityLethal:      2,
 		},
 	})(a)
 

@@ -1,7 +1,8 @@
-package generator
+package roundrobin
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
@@ -13,17 +14,17 @@ type RoundRobin struct {
 	logger  *zap.SugaredLogger
 }
 
-func (r RoundRobin) Generate(params Params) (Scenario, error) {
+func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error) {
 	if len(r.presets) == 0 {
-		return Scenario{}, ZeroFailures
+		return generator.Scenario{}, generator.ZeroFailures
 	}
 
 	if params.Stages <= 0 {
-		return Scenario{}, NonPositiveStagesError
+		return generator.Scenario{}, generator.NonPositiveStagesError
 	}
 
 	if params.Stages > 100 {
-		return Scenario{}, TooManyStagesError
+		return generator.Scenario{}, generator.TooManyStagesError
 	}
 
 	src := rand.NewSource(params.Seed)
@@ -32,10 +33,10 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 	targetsList, err := r.seeker.Targets()
 	if err != nil {
 		r.logger.Error(err.Error())
-		return Scenario{}, TargetsError
+		return generator.Scenario{}, generator.TargetsError
 	}
 
-	stages := make([]Stage, 0, params.Stages)
+	stages := make([]generator.Stage, 0, params.Stages)
 
 	stagesLeft := params.Stages
 	for stagesLeft > 0 {
@@ -48,18 +49,18 @@ func (r RoundRobin) Generate(params Params) (Scenario, error) {
 
 			target := selectTarget(targetsList, rnd)
 			engine := preset.Engine(target, params.StageDuration)
-			newAction := Action{
+			newAction := generator.Action{
 				Info:   preset.Info(),
 				Target: target,
 				Engine: engine,
 			}
 
-			stage := Stage{Actions: []Action{newAction}, Duration: params.StageDuration}
+			stage := generator.Stage{Actions: []generator.Action{newAction}, Duration: params.StageDuration}
 			stages = append(stages, stage)
 		}
 	}
 
-	return Scenario{stages}, nil
+	return generator.Scenario{Stages: stages}, nil
 }
 
 func NewRoundRobin(presets []experiments.Preset, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {

@@ -1,24 +1,11 @@
 package advanced
 
-type Scale int
-
-type Severity int
-
-type Cost float32
-
-const (
-	ScaleContainer Scale = iota
-	ScalePod
-	ScaleDeploymentPart
-	ScaleDeployment
-	ScaleNode
+import (
+	"github.com/iskorotkov/chaos-scheduler/api/metadata"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/experiments"
 )
 
-const (
-	SeverityNonCritical Severity = iota
-	SeverityCritical
-	SeverityLethal
-)
+type Cost float64
 
 type Budget struct {
 	MaxFailures int
@@ -26,11 +13,11 @@ type Budget struct {
 }
 
 type Modifiers struct {
-	ByScale    map[Scale]Cost
-	BySeverity map[Severity]Cost
+	ByScale    map[metadata.Scale]Cost
+	BySeverity map[metadata.Severity]Cost
 }
 
-func calculateCost(modifiers Modifiers, f Failure) Cost {
+func calculateCost(modifiers Modifiers, f experiments.Failure) Cost {
 	severity, ok := modifiers.BySeverity[f.Severity]
 	if !ok {
 		severity = 1
