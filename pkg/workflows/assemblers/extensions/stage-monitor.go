@@ -28,8 +28,8 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	ignoredPods := make([]string, 0)
 
 	for _, action := range stage.Actions {
-		if action.Info.Severity == metadata.SeverityCritical {
-			if action.Info.Scale == metadata.ScaleNode {
+		if action.Severity == metadata.SeverityCritical {
+			if action.Scale == metadata.ScaleNode {
 				ignoredPods = append(ignoredPods, action.Target.Node)
 			} else {
 				podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)

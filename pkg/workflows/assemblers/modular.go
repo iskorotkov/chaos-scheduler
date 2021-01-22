@@ -58,7 +58,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 				return nil, ActionMarshallError
 			}
 
-			id := fmt.Sprintf("%s-%d-%d", action.Info.Name, stageIndex+1, actionIndex+1)
+			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
 
 			actions = append(actions, manifestTemplate)
@@ -95,8 +95,8 @@ func (a ModularAssembler) addFailureMetadata(action generator.Action) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeFailure,
-		Severity: action.Info.Severity,
-		Scale:    action.Info.Scale,
+		Severity: action.Severity,
+		Scale:    action.Scale,
 	}
 
 	if err := metadata.Marshal(&action.Engine.Metadata, &values, api.Prefix); err != nil {

@@ -54,7 +54,7 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.7.0
+          image: iskorotkov/chaos-scheduler:v0.8.0-alpha.2
           env:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
