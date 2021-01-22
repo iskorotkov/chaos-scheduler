@@ -37,7 +37,7 @@ type Event struct {
 	Stages      []Stage           `json:"stages,omitempty"`
 }
 
-func buildNodesTree(ts []v1alpha1.Template, nodes v1alpha1.Nodes) []Stage {
+func buildNodesTree(ts []v1alpha1.Template, nodes v1alpha1.Nodes) ([]Stage, error) {
 	stagesIDs, stepsIDs := splitStagesAndSteps(nodes)
 
 	stages := make([]Stage, 0)
@@ -47,14 +47,18 @@ func buildNodesTree(ts []v1alpha1.Template, nodes v1alpha1.Nodes) []Stage {
 		steps := make([]Step, 0)
 		for _, stepID := range stageStatus.Children {
 			stepStatus := stepsIDs[stepID]
-			stepSpec := findStepSpec(ts, stepStatus)
+			stepSpec, err := findStepSpec(ts, stepStatus)
+			if err != nil {
+				return nil, err
+			}
+
 			steps = append(steps, newStep(stepSpec.Metadata, stepStatus))
 		}
 
 		stages = append(stages, newStage(stageStatus, steps))
 	}
 
-	return stages
+	return stages, nil
 }
 
 func splitStagesAndSteps(nodes v1alpha1.Nodes) (map[string]v1alpha1.NodeStatus, map[string]v1alpha1.NodeStatus) {
@@ -71,14 +75,14 @@ func splitStagesAndSteps(nodes v1alpha1.Nodes) (map[string]v1alpha1.NodeStatus, 
 	return stagesID, stepsID
 }
 
-func findStepSpec(ts []v1alpha1.Template, stepStatus v1alpha1.NodeStatus) templates.Template {
-	var stepSpec templates.Template
+func findStepSpec(ts []v1alpha1.Template, stepStatus v1alpha1.NodeStatus) (templates.Template, error) {
 	for _, t := range ts {
-		if t.Name == stepStatus.Name {
-			stepSpec = templates.Template(t)
+		if t.Name == stepStatus.TemplateName {
+			return templates.Template(t), nil
 		}
 	}
-	return stepSpec
+
+	return templates.Template{}, SpecError
 }
 
 func newStep(metadata v1alpha1.Metadata, n v1alpha1.NodeStatus) Step {
@@ -102,7 +106,12 @@ func newStage(n v1alpha1.NodeStatus, steps []Step) Stage {
 	}
 }
 
-func newEvent(e *workflow.WorkflowWatchEvent) *Event {
+func newEvent(e *workflow.WorkflowWatchEvent) (*Event, error) {
+	stages, err := buildNodesTree(e.Object.Spec.Templates, e.Object.Status.Nodes)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Event{
 		Name:        e.Object.Name,
 		Namespace:   e.Object.Namespace,
@@ -112,6 +121,6 @@ func newEvent(e *workflow.WorkflowWatchEvent) *Event {
 		Phase:       string(e.Object.Status.Phase),
 		StartedAt:   e.Object.Status.StartedAt.Time,
 		FinishedAt:  e.Object.Status.FinishedAt.Time,
-		Stages:      buildNodesTree(e.Object.Spec.Templates, e.Object.Status.Nodes),
-	}
+		Stages:      stages,
+	}, nil
 }

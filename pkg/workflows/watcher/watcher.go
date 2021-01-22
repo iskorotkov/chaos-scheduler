@@ -15,6 +15,7 @@ var (
 	ConnectionError = errors.New("couldn't establish connection to gRPC server")
 	RequestError    = errors.New("couldn't start watching updates")
 	StreamError     = errors.New("couldn't read workflow update")
+	SpecError       = errors.New("couldn't find step spec")
 )
 
 type Watcher struct {
@@ -59,7 +60,7 @@ func (w Watcher) Start(ctx context.Context, name string, namespace string, outpu
 	defer close(output)
 
 	for {
-		event, err := service.Recv()
+		msg, err := service.Recv()
 		if err == io.EOF || ctx.Err() != nil {
 			break
 		}
@@ -71,10 +72,15 @@ func (w Watcher) Start(ctx context.Context, name string, namespace string, outpu
 			return StreamError
 		}
 
-		output <- newEvent(event)
+		ev, err := newEvent(msg)
+		if err != nil {
+			w.logger.Error(err.Error())
+			return err
+		}
 
-		phase := event.Object.Status.Phase
-		if phase != "Running" && phase != "Pending" {
+		output <- ev
+
+		if ev.Phase != "Running" && ev.Phase != "Pending" {
 			break
 		}
 	}

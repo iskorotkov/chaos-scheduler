@@ -1,7 +1,10 @@
 package failures
 
 import (
+	"fmt"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/rand"
+	"reflect"
 )
 
 type AppInfo struct {
@@ -34,6 +37,36 @@ type EngineParams struct {
 	Annotations map[string]string
 	AppInfo     AppInfo
 	Experiments []Experiment
+}
+
+func (e Engine) Generate(r *rand.Rand, size int) reflect.Value {
+	rs := func(prefix string) string {
+		return fmt.Sprintf("%s-%d", prefix, r.Int())
+	}
+
+	experiments := make([]Experiment, 0)
+	for i := 0; i < 1+r.Intn(10); i++ {
+		experiments = append(experiments, Experiment{}.Generate(r, size).Interface().(Experiment))
+	}
+
+	return reflect.ValueOf(NewEngine(EngineParams{
+		Name:      rs("name"),
+		Namespace: rs("namespace"),
+		Labels: map[string]string{
+			rs("label1"): rs("value"),
+			rs("label2"): rs("value"),
+		},
+		Annotations: map[string]string{
+			rs("annotation1"): rs("value"),
+			rs("annotation2"): rs("value"),
+		},
+		AppInfo: AppInfo{
+			AppNS:    rs("app-ns"),
+			AppLabel: rs("app-label"),
+			AppKind:  rs("app-kind"),
+		},
+		Experiments: experiments,
+	}))
 }
 
 func NewEngine(params EngineParams) Engine {

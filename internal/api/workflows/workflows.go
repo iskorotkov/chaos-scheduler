@@ -18,7 +18,7 @@ func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 	}
 
 	ext := enabledExtensions(cfg, logger)
-	a := assemblers.NewModularAssembler(ext)
+	a := assemblers.NewModularAssembler(ext, logger.Named("assembler"))
 
 	workflow, err := a.Assemble(scenario)
 	if err != nil {

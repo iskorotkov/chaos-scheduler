@@ -7,6 +7,7 @@ import (
 func NewManifestTemplate(name string, manifest string) Template {
 	return Template{
 		Name: name,
+
 		Resource: &v1alpha1.ResourceTemplate{
 			Action:   "apply",
 			Manifest: manifest,

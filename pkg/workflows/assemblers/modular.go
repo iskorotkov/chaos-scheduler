@@ -7,12 +7,14 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"github.com/iskorotkov/metadata"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ModularAssembler struct {
 	Extensions extensions.List
+	logger     *zap.SugaredLogger
 }
 
 func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workflow, error) {
@@ -33,8 +35,8 @@ func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workf
 	return wf, nil
 }
 
-func NewModularAssembler(ext extensions.List) Assembler {
-	return ModularAssembler{Extensions: ext}
+func NewModularAssembler(ext extensions.List, logger *zap.SugaredLogger) Assembler {
+	return ModularAssembler{Extensions: ext, logger: logger}
 }
 
 func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]templates.Template, error) {
@@ -49,10 +51,6 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 		stageIDs := make([]string, 0)
 
 		for actionIndex, action := range stage.Actions {
-			if err := a.addFailureMetadata(action); err != nil {
-				return nil, err
-			}
-
 			manifest, err := yaml.Marshal(action.Engine)
 			if err != nil {
 				return nil, ActionMarshallError
@@ -60,6 +58,10 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 
 			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
+
+			if err := a.addFailureMetadata(&manifestTemplate, action); err != nil {
+				return nil, err
+			}
 
 			actions = append(actions, manifestTemplate)
 			stageIDs = append(stageIDs, id)
@@ -91,7 +93,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 	return actions, nil
 }
 
-func (a ModularAssembler) addFailureMetadata(action generator.Action) error {
+func (a ModularAssembler) addFailureMetadata(t *templates.Template, action generator.Action) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeFailure,
@@ -99,13 +101,20 @@ func (a ModularAssembler) addFailureMetadata(action generator.Action) error {
 		Scale:    action.Scale,
 	}
 
-	if err := metadata.Marshal(&action.Engine.Metadata, &values, api.Prefix); err != nil {
+	// TODO: Do not use temporary ObjectMeta to marshal data to
+	objectMeta := v1.ObjectMeta{
+		Labels:      t.Metadata.Labels,
+		Annotations: t.Metadata.Annotations,
+	}
+	if err := metadata.Marshal(&objectMeta, &values, api.Prefix); err != nil {
 		return MetadataError
 	}
+
+	t.Metadata.Labels, t.Metadata.Annotations = objectMeta.Labels, objectMeta.Annotations
 	return nil
 }
 
-func (a ModularAssembler) addUtilityMetadata(action templates.Template, severity api.Severity, scale api.Scale) error {
+func (a ModularAssembler) addUtilityMetadata(t *templates.Template, severity api.Severity, scale api.Scale) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeUtility,
@@ -113,12 +122,16 @@ func (a ModularAssembler) addUtilityMetadata(action templates.Template, severity
 		Scale:    scale,
 	}
 
-	var objectMeta v1.ObjectMeta
+	// TODO: Do not use temporary ObjectMeta to marshal data to
+	objectMeta := v1.ObjectMeta{
+		Labels:      t.Metadata.Labels,
+		Annotations: t.Metadata.Annotations,
+	}
 	if err := metadata.Marshal(&objectMeta, &values, api.Prefix); err != nil {
 		return MetadataError
 	}
 
-	action.Metadata.Labels, action.Metadata.Labels = objectMeta.Labels, objectMeta.Annotations
+	t.Metadata.Labels, t.Metadata.Annotations = objectMeta.Labels, objectMeta.Annotations
 	return nil
 }
 
@@ -134,8 +147,8 @@ func (a ModularAssembler) applyWorkflowExtensions(ids [][]string) ([]templates.T
 		}
 	}
 
-	for _, action := range actions {
-		if err := a.addUtilityMetadata(action, api.SeverityHarmless, api.ScaleCluster); err != nil {
+	for i := 0; i < len(actions); i++ {
+		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, err
 		}
 	}
@@ -161,8 +174,8 @@ func (a ModularAssembler) applyStageExtensions(stage generator.Stage, stageIndex
 		}
 	}
 
-	for _, action := range actions {
-		if err := a.addUtilityMetadata(action, api.SeverityHarmless, api.ScaleCluster); err != nil {
+	for i := 0; i < len(actions); i++ {
+		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -188,8 +201,8 @@ func (a ModularAssembler) applyActionExtensions(action generator.Action, stageIn
 		}
 	}
 
-	for _, action := range actions {
-		if err := a.addUtilityMetadata(action, api.SeverityHarmless, api.ScaleCluster); err != nil {
+	for i := 0; i < len(actions); i++ {
+		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}
