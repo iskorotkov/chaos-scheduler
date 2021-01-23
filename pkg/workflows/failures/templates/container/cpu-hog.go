@@ -1,7 +1,7 @@
-package node
+package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
@@ -13,28 +13,28 @@ type CPUHog struct {
 	Cores        int
 }
 
-func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) failures.Engine {
+func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) templates.Engine {
 	if c.Cores == 0 {
-		c.Cores = 2
+		c.Cores = 1
 	}
 
-	return failures.NewEngine(failures.EngineParams{
+	return templates.NewEngine(templates.EngineParams{
 		Name:        c.Name(),
 		Namespace:   c.Namespace,
 		Labels:      nil,
 		Annotations: nil,
-		AppInfo: failures.AppInfo{
+		AppInfo: templates.AppInfo{
 			AppNS:    c.AppNamespace,
 			AppLabel: target.AppLabel,
 			AppKind:  "deployment",
 		},
-		Experiments: []failures.Experiment{
-			failures.NewExperiment(failures.ExperimentParams{
+		Experiments: []templates.Experiment{
+			templates.NewExperiment(templates.ExperimentParams{
 				Name: c.Name(),
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
-					"TARGET_NODES":         target.Node,
-					"NODE_CPU_CORE":        strconv.Itoa(c.Cores),
+					"TARGET_CONTAINER":     target.MainContainer,
+					"CPU_CORES":            strconv.Itoa(c.Cores),
 				},
 			}),
 		},
@@ -42,5 +42,5 @@ func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) failu
 }
 
 func (c CPUHog) Name() string {
-	return "node-cpu-hog"
+	return "pod-cpu-hog"
 }

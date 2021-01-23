@@ -5,17 +5,17 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/container"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/node"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/pod"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/container"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/node"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/pod"
 	"go.uber.org/zap"
 )
 
-func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensions.List {
-	return extensions.List{
-		ActionExtensions:   nil,
-		StageExtensions:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
-		WorkflowExtensions: []extensions.WorkflowExtension{extensions.UseSteps()},
+func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensions.Extensions {
+	return extensions.Extensions{
+		Action:   nil,
+		Stage:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
+		Workflow: []extensions.WorkflowExtension{extensions.UseSteps()},
 	}
 }
 

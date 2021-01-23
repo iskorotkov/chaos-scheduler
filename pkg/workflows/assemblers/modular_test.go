@@ -10,26 +10,14 @@ import (
 	"math/rand"
 	"testing"
 	"testing/quick"
-	"time"
 )
 
 func TestModularAssembler_Assemble(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 
 	a := ModularAssembler{
-		Extensions: extensions.List{
-			ActionExtensions: []extensions.ActionExtension{
-				// No action extensions implemented
-			},
-			StageExtensions: []extensions.StageExtension{
-				extensions.UseSuspend(),
-				extensions.UseStageMonitor("stage-monitor", "target-ns", time.Duration(r.Intn(60)), &zap.SugaredLogger{}),
-			},
-			WorkflowExtensions: []extensions.WorkflowExtension{
-				extensions.UseSteps(),
-			},
-		},
-		logger: &zap.SugaredLogger{},
+		Extensions: extensions.Extensions{}.Generate(r, 10).Interface().(extensions.Extensions),
+		logger:     zap.NewNop().Sugar(),
 	}
 
 	hasStageWithZeroActions := func(stages []generator.Stage) bool {

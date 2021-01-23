@@ -13,7 +13,7 @@ import (
 )
 
 type ModularAssembler struct {
-	Extensions extensions.List
+	Extensions extensions.Extensions
 	logger     *zap.SugaredLogger
 }
 
@@ -35,7 +35,7 @@ func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workf
 	return wf, nil
 }
 
-func NewModularAssembler(ext extensions.List, logger *zap.SugaredLogger) Assembler {
+func NewModularAssembler(ext extensions.Extensions, logger *zap.SugaredLogger) Assembler {
 	return ModularAssembler{Extensions: ext, logger: logger}
 }
 
@@ -138,8 +138,8 @@ func (a ModularAssembler) addUtilityMetadata(t *templates.Template, severity api
 func (a ModularAssembler) applyWorkflowExtensions(ids [][]string) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 
-	if a.Extensions.WorkflowExtensions != nil {
-		for _, ext := range a.Extensions.WorkflowExtensions {
+	if a.Extensions.Workflow != nil {
+		for _, ext := range a.Extensions.Workflow {
 			createdExtensions := ext.Apply(ids)
 			if createdExtensions != nil {
 				actions = append(actions, createdExtensions...)
@@ -160,8 +160,8 @@ func (a ModularAssembler) applyStageExtensions(stage generator.Stage, stageIndex
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
-	if a.Extensions.StageExtensions != nil {
-		for _, ext := range a.Extensions.StageExtensions {
+	if a.Extensions.Stage != nil {
+		for _, ext := range a.Extensions.Stage {
 			createdExtensions := ext.Apply(stage, stageIndex)
 
 			if createdExtensions != nil {
@@ -187,8 +187,8 @@ func (a ModularAssembler) applyActionExtensions(action generator.Action, stageIn
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
-	if a.Extensions.ActionExtensions != nil {
-		for _, ext := range a.Extensions.ActionExtensions {
+	if a.Extensions.Action != nil {
+		for _, ext := range a.Extensions.Action {
 			createdExtensions := ext.Apply(action, stageIndex, actionIndex)
 
 			if createdExtensions != nil {

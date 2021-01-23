@@ -3,6 +3,7 @@ package workflows
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"go.uber.org/zap"
 	"net/http"
@@ -21,7 +22,7 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 
 	scenario, err := generateScenario(r, cfg, logger.Named("scenario-generation"))
 	if err != nil {
-		if err == formParseError || err == scenarioParamsError {
+		if err == formParseError || err == paramsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,4 +44,37 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
 		return
 	}
+}
+
+func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generator.Scenario, error) {
+	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
+	if err != nil {
+		return generator.Scenario{}, err
+	}
+
+	params := workflows.ScenarioParams{
+		Seed:          workflowParams.Seed,
+		Stages:        workflowParams.Stages,
+		AppNS:         cfg.AppNS,
+		AppLabel:      cfg.AppLabel,
+		StageDuration: cfg.StageDuration,
+		Failures:      enabledFailures(cfg),
+	}
+
+	scenario, err := workflows.CreateScenario(params, logger.Named("workflows"))
+	if err != nil {
+		logger.Errorw(err.Error(),
+			"params", params)
+
+		if err == workflows.TargetsError ||
+			err == workflows.FailuresError ||
+			err == workflows.UnknownGenerationError ||
+			err == workflows.TargetsSeekerError {
+			return generator.Scenario{}, internalError
+		} else {
+			return generator.Scenario{}, paramsError
+		}
+	}
+
+	return scenario, nil
 }

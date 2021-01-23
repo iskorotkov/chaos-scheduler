@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
@@ -13,23 +13,23 @@ type IOStress struct {
 	UtilizationPercentage int
 }
 
-func (i IOStress) Instantiate(target targets.Target, duration time.Duration) failures.Engine {
+func (i IOStress) Instantiate(target targets.Target, duration time.Duration) templates.Engine {
 	if i.UtilizationPercentage == 0 {
 		i.UtilizationPercentage = 10
 	}
 
-	return failures.NewEngine(failures.EngineParams{
+	return templates.NewEngine(templates.EngineParams{
 		Name:        i.Name(),
 		Namespace:   i.Namespace,
 		Labels:      nil,
 		Annotations: nil,
-		AppInfo: failures.AppInfo{
+		AppInfo: templates.AppInfo{
 			AppNS:    i.AppNamespace,
 			AppLabel: target.AppLabel,
 			AppKind:  "deployment",
 		},
-		Experiments: []failures.Experiment{
-			failures.NewExperiment(failures.ExperimentParams{
+		Experiments: []templates.Experiment{
+			templates.NewExperiment(templates.ExperimentParams{
 				Name: i.Name(),
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION":              strconv.Itoa(int(duration.Seconds())),

@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
@@ -13,23 +13,23 @@ type MemoryHog struct {
 	MemoryConsumption int
 }
 
-func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) failures.Engine {
+func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) templates.Engine {
 	if m.MemoryConsumption == 0 {
 		m.MemoryConsumption = 500
 	}
 
-	return failures.NewEngine(failures.EngineParams{
+	return templates.NewEngine(templates.EngineParams{
 		Name:        m.Name(),
 		Namespace:   m.Namespace,
 		Labels:      nil,
 		Annotations: nil,
-		AppInfo: failures.AppInfo{
+		AppInfo: templates.AppInfo{
 			AppNS:    m.AppNamespace,
 			AppLabel: target.AppLabel,
 			AppKind:  "deployment",
 		},
-		Experiments: []failures.Experiment{
-			failures.NewExperiment(failures.ExperimentParams{
+		Experiments: []templates.Experiment{
+			templates.NewExperiment(templates.ExperimentParams{
 				Name: m.Name(),
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
