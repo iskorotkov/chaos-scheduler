@@ -65,7 +65,7 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 	return generator.Scenario{Stages: stages}, nil
 }
 
-func NewRoundRobin(failures []failures.Failure, seeker targets.KubernetesSeeker, logger *zap.SugaredLogger) RoundRobin {
+func NewRoundRobin(failures []failures.Failure, seeker targets.Seeker, logger *zap.SugaredLogger) RoundRobin {
 	return RoundRobin{failures: failures, seeker: seeker, logger: logger}
 }
 
