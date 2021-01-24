@@ -20,18 +20,27 @@ func (t TestTargetSeeker) Targets() ([]targets.Target, error) {
 }
 
 func TestRoundRobin_Generate(t *testing.T) {
+	t.Parallel()
+
 	r := rand.New(rand.NewSource(0))
 	f := func(failures []failures.Failure, targets []targets.Target, params generator.Params) bool {
 		gen := NewRoundRobin(failures, TestTargetSeeker{targets, nil}, zap.NewNop().Sugar())
 
 		sc, err := gen.Generate(params)
 		if err == generator.TargetsError && len(targets) == 0 {
+			t.Log("zero targets provided")
 			return true
 		} else if err == generator.NonPositiveStagesError && params.Stages <= 0 {
+			t.Log("non positive stages value provided")
 			return true
 		} else if err == generator.ZeroFailures && len(failures) == 0 {
+			t.Log("zero failures provided")
 			return true
 		} else if err == generator.TooManyStagesError && params.Stages > 100 {
+			t.Logf("too many stages provided: %d", params.Stages)
+			return true
+		} else if err == generator.ZeroTargetsError && len(targets) == 0 {
+			t.Log("zero targets provided")
 			return true
 		} else if err != nil {
 			t.Log(err)

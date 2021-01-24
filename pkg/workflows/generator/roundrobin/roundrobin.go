@@ -36,6 +36,11 @@ func (r RoundRobin) Generate(params generator.Params) (generator.Scenario, error
 		return generator.Scenario{}, generator.TargetsError
 	}
 
+	if len(targetsList) == 0 {
+		r.logger.Error("no targets available")
+		return generator.Scenario{}, generator.ZeroTargetsError
+	}
+
 	stages := make([]generator.Stage, 0, params.Stages)
 
 	stagesLeft := params.Stages

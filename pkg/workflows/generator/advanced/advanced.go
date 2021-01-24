@@ -7,6 +7,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
+	"reflect"
 	"time"
 )
 
@@ -55,19 +56,19 @@ func NewGenerator(failures []failures.Failure, seeker targets.Seeker, logger *za
 	}
 
 	if len(failures) == 0 {
-		return nil, ZeroFailures
+		return nil, generator.ZeroFailures
 	}
 
 	if a.budget.MaxFailures < 1 {
-		return nil, MaxFailuresError
+		return nil, generator.MaxFailuresError
 	}
 
 	if a.budget.MaxPoints < 1 {
-		return nil, MaxPointsError
+		return nil, generator.MaxPointsError
 	}
 
 	if a.retries < 0 {
-		return nil, RetriesError
+		return nil, generator.RetriesError
 	}
 
 	return a, nil
@@ -96,38 +97,45 @@ type phaseParams struct {
 	StageDuration time.Duration
 }
 
+func (p phaseParams) Generate(rand *rand.Rand, _ int) reflect.Value {
+	return reflect.ValueOf(phaseParams{
+		Stages:        1 + rand.Intn(100),
+		StageDuration: time.Duration(1+rand.Int63n(120)) * time.Second,
+	})
+}
+
 func (a *Generator) Generate(stages int, seed int64, stageDuration time.Duration) (generator.Scenario, error) {
 	r := rand.New(rand.NewSource(seed))
 	t, err := a.seeker.Targets()
 
 	if stages <= 0 {
-		return generator.Scenario{}, NonPositiveStagesError
+		return generator.Scenario{}, generator.NonPositiveStagesError
 	}
 
 	if stages > 100 {
-		return generator.Scenario{}, TooManyStagesError
+		return generator.Scenario{}, generator.TooManyStagesError
 	}
 
 	if err != nil {
 		a.logger.Error(err)
-		return generator.Scenario{}, TargetsError
+		return generator.Scenario{}, generator.TargetsError
 	}
 
 	if len(t) == 0 {
-		return generator.Scenario{}, LowTargetsError
+		return generator.Scenario{}, generator.ZeroTargetsError
 	}
 
-	isolatedFailures := addIsolatedFailures(a, t, r, phaseParams{
+	isolatedFailures := a.addIsolatedFailures(t, r, phaseParams{
 		Stages:        stages,
 		StageDuration: stageDuration,
 	})
 
-	cascadeFailures := addCascadeFailures(a, t, r, phaseParams{
+	cascadeFailures := a.addCascadeFailures(t, r, phaseParams{
 		Stages:        stages,
 		StageDuration: stageDuration,
 	})
 
-	complexFailures := addComplexFailures(a, t, r, phaseParams{
+	complexFailures := a.addComplexFailures(t, r, phaseParams{
 		Stages:        stages,
 		StageDuration: stageDuration,
 	})

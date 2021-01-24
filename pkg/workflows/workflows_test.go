@@ -8,6 +8,8 @@ import (
 )
 
 func TestCreateScenario(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("test requires connection to a running Kubernetes cluster")
 	}
@@ -18,6 +20,7 @@ func TestCreateScenario(t *testing.T) {
 		s, err := CreateScenario(params, zap.NewNop().Sugar())
 		if err == ScenarioParamsError &&
 			(params.Stages <= 0 || params.Stages > 100 || params.StageDuration <= 0) {
+			t.Log("invalid scenario params")
 			return true
 		} else if err == TargetsSeekerError {
 			t.Skip("can't create target seeker in this environment; probably Kubernetes cluster isn't running")
@@ -41,6 +44,8 @@ func TestCreateScenario(t *testing.T) {
 }
 
 func TestCreateWorkflow(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("test requires connection to a running Kubernetes cluster")
 	}
@@ -51,6 +56,7 @@ func TestCreateWorkflow(t *testing.T) {
 		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
 		if err == ScenarioParamsError &&
 			(sp.Stages <= 0 || sp.Stages > 100 || sp.StageDuration <= 0) {
+			t.Log("invalid scenario params")
 			return true
 		} else if err == TargetsSeekerError {
 			t.Skip("can't create target seeker in this environment; probably Kubernetes cluster isn't running")

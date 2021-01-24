@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-func addIsolatedFailures(a *Generator, targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
+func (a *Generator) addIsolatedFailures(targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
 	stages := make([]generator.Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {

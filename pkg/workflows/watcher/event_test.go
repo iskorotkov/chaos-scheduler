@@ -56,8 +56,9 @@ func validateTime(start time.Time, finish time.Time) error {
 }
 
 func Test_buildNodesTree(t *testing.T) {
-	r := rand.New(rand.NewSource(0))
+	t.Parallel()
 
+	r := rand.New(rand.NewSource(0))
 	f := func(ts []v1alpha1.Template, n nodes) bool {
 		stages, err := buildNodesTree(ts, v1alpha1.Nodes(n))
 		if err != nil {

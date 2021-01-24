@@ -6,7 +6,7 @@ import (
 	"math/rand"
 )
 
-func addCascadeFailures(a *Generator, targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
+func (a *Generator) addCascadeFailures(targetsList []targets.Target, r *rand.Rand, params phaseParams) []generator.Stage {
 	phaseFailures := a.failures
 
 	stages := make([]generator.Stage, 0)

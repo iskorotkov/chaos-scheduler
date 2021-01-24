@@ -10,6 +10,8 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
+	"math/rand"
+	"reflect"
 	"time"
 )
 
@@ -30,8 +32,30 @@ type ScenarioParams struct {
 	Failures      []failures.Failure
 }
 
+func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
+	var fs []failures.Failure
+	for i := 0; i <= rand.Intn(10); i++ {
+		fs = append(fs, failures.Failure{}.Generate(rand, size).Interface().(failures.Failure))
+	}
+
+	return reflect.ValueOf(ScenarioParams{
+		Seed:          rand.Int63(),
+		Stages:        -10 + rand.Intn(120),
+		AppNS:         "chaos-app",
+		AppLabel:      "app",
+		StageDuration: time.Duration(-10+rand.Int63n(200)) * time.Second,
+		Failures:      fs,
+	})
+}
+
 type WorkflowParams struct {
 	Extensions extensions.Extensions
+}
+
+func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(WorkflowParams{
+		Extensions: extensions.Extensions{}.Generate(rand, size).Interface().(extensions.Extensions),
+	})
 }
 
 func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generator.Scenario, error) {
@@ -54,11 +78,11 @@ func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generator
 			"params", params,
 			"failures", params.Failures)
 
-		if err == advanced.LowTargetsError {
+		if err == generator.ZeroTargetsError {
 			return generator.Scenario{}, TargetsError
 		}
 
-		if err == advanced.ZeroFailures {
+		if err == generator.ZeroFailures {
 			return generator.Scenario{}, FailuresError
 		}
 
