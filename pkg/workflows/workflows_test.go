@@ -16,10 +16,12 @@ func TestCreateScenario(t *testing.T) {
 			(params.Stages <= 0 || params.Stages > 100 || params.StageDuration <= 0) {
 			return true
 		} else if err != nil {
+			t.Log(err)
 			return false
 		}
 
 		if len(s.Stages) == 0 {
+			t.Log("scenario must contain at least one stage")
 			return false
 		}
 
@@ -40,16 +42,19 @@ func TestCreateWorkflow(t *testing.T) {
 			(sp.Stages <= 0 || sp.Stages > 100 || sp.StageDuration <= 0) {
 			return true
 		} else if err != nil {
+			t.Log(err)
 			return false
 		}
 
 		if wf.Namespace == "" ||
 			wf.GenerateName == "" {
+			t.Log("namespace and generateName must not be empty")
 			return false
 		}
 
 		if len(wf.Labels) != 0 ||
 			len(wf.Annotations) != 0 {
+			t.Log("labels and annotations must contain zero items")
 			return false
 		}
 

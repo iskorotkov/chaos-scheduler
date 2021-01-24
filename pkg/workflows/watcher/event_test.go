@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"errors"
 	"fmt"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,11 +45,11 @@ func (n nodes) Generate(r *rand.Rand, _ int) reflect.Value {
 
 func validateTime(start time.Time, finish time.Time) error {
 	if !start.Before(finish) {
-		return fmt.Errorf("start time must be before finish time")
+		return errors.New("start time must be before finish time")
 	}
 
 	if finish.Sub(start) > 2*time.Hour {
-		return fmt.Errorf("workflow must be executed for 2 hours at most")
+		return errors.New("workflow must be executed for 2 hours at most")
 	}
 
 	return nil
@@ -60,31 +61,31 @@ func Test_buildNodesTree(t *testing.T) {
 	f := func(ts []v1alpha1.Template, n nodes) bool {
 		stages, err := buildNodesTree(ts, v1alpha1.Nodes(n))
 		if err != nil {
-			fmt.Println(err)
+			t.Log(err)
 			return false
 		}
 
 		for _, stage := range stages {
 			if stage.Phase == "" {
-				fmt.Println("stage phase must not be empty")
+				t.Log("stage phase must not be empty")
 				return false
 			}
 
 			if err := validateTime(stage.StartedAt, stage.FinishedAt); err != nil {
-				fmt.Println(err)
+				t.Log(err)
 				return false
 			}
 
 			for _, step := range stage.Steps {
 				if err := validateTime(step.StartedAt, step.FinishedAt); err != nil {
-					fmt.Println(err)
+					t.Log(err)
 					return false
 				}
 
 				if step.Name == "" ||
 					step.Phase == "" ||
 					step.Type == "" {
-					fmt.Println("step name, phase and type must not be empty")
+					t.Log("step name, phase and type must not be empty")
 					return false
 				}
 			}
