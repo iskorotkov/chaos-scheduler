@@ -104,9 +104,10 @@ func (p phaseParams) Generate(rand *rand.Rand, _ int) reflect.Value {
 	})
 }
 
-func (a *Generator) Generate(stages int, seed int64, stageDuration time.Duration) (generator.Scenario, error) {
+func (a *Generator) Generate(params generator.Params) (generator.Scenario, error) {
+	seed, stages, stageDuration := params.Seed, params.Stages, params.StageDuration
+
 	r := rand.New(rand.NewSource(seed))
-	t, err := a.seeker.Targets()
 
 	if stages <= 0 {
 		return generator.Scenario{}, generator.NonPositiveStagesError
@@ -116,6 +117,7 @@ func (a *Generator) Generate(stages int, seed int64, stageDuration time.Duration
 		return generator.Scenario{}, generator.TooManyStagesError
 	}
 
+	t, err := a.seeker.Targets()
 	if err != nil {
 		a.logger.Error(err)
 		return generator.Scenario{}, generator.TargetsError
