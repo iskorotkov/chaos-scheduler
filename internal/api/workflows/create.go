@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -63,10 +63,10 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	}
 }
 
-func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (templates.Workflow, error) {
+func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (assemble.Workflow, error) {
 	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
 	if err != nil {
-		return templates.Workflow{}, err
+		return assemble.Workflow{}, err
 	}
 
 	sp := workflows.ScenarioParams{
@@ -92,9 +92,9 @@ func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 			err == workflows.NotEnoughFailuresError ||
 			err == workflows.AssembleError ||
 			err == workflows.TargetsFetchError {
-			return templates.Workflow{}, internalError
+			return assemble.Workflow{}, internalError
 		} else {
-			return templates.Workflow{}, paramsError
+			return assemble.Workflow{}, paramsError
 		}
 	}
 

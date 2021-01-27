@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
@@ -16,12 +16,12 @@ var (
 	ResponseError   = errors.New("executor server returned invalid status code")
 )
 
-func Execute(url string, wf templates.Workflow, logger *zap.SugaredLogger) (templates.Workflow, error) {
+func Execute(url string, wf assemble.Workflow, logger *zap.SugaredLogger) (assemble.Workflow, error) {
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"url", url)
-		return templates.Workflow{}, ConnectionError
+		return assemble.Workflow{}, ConnectionError
 	}
 
 	client := workflow.NewWorkflowServiceClient(conn)
@@ -37,8 +37,8 @@ func Execute(url string, wf templates.Workflow, logger *zap.SugaredLogger) (temp
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"workflow", wf)
-		return templates.Workflow{}, ResponseError
+		return assemble.Workflow{}, ResponseError
 	}
 
-	return templates.Workflow(*createdWf), nil
+	return assemble.Workflow(*createdWf), nil
 }

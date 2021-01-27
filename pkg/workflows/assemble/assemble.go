@@ -3,6 +3,7 @@ package assemble
 import (
 	"errors"
 	"fmt"
+	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
@@ -21,6 +22,70 @@ var (
 	ActionMarshallError = errors.New("couldn't marshall action to yaml")
 	MetadataError       = errors.New("couldn't set metadata")
 )
+
+type Workflow v1alpha1.Workflow
+
+type Option func(wf *Workflow)
+
+func WithNamespace(ns string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Namespace = ns
+	}
+}
+
+func WithNamePrefix(prefix string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.GenerateName = prefix
+	}
+}
+
+func WithServiceAccount(sa string) Option {
+	return func(wf *Workflow) {
+		wf.Spec.ServiceAccountName = sa
+	}
+}
+
+//goland:noinspection GoUnusedExportedFunction
+func WithLabel(key, value string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Labels[key] = value
+	}
+}
+
+//goland:noinspection GoUnusedExportedFunction
+func WithAnnotation(key, value string) Option {
+	return func(wf *Workflow) {
+		wf.ObjectMeta.Annotations[key] = value
+	}
+}
+
+func NewWorkflow(entrypoint string, templates []templates.Template, opts ...Option) Workflow {
+	argoTemplates := make([]v1alpha1.Template, 0)
+	for _, template := range templates {
+		argoTemplates = append(argoTemplates, v1alpha1.Template(template))
+	}
+
+	wf := Workflow{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "Workflow",
+			APIVersion: "argoproj.io/v1alpha1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Labels:      make(map[string]string),
+			Annotations: make(map[string]string),
+		},
+		Spec: v1alpha1.WorkflowSpec{
+			Entrypoint: entrypoint,
+			Templates:  argoTemplates,
+		},
+	}
+
+	for _, opt := range opts {
+		opt(&wf)
+	}
+
+	return wf
+}
 
 type ActionExtension interface {
 	Apply(action generate.Action, stageIndex, actionIndex int) []templates.Template
@@ -55,20 +120,20 @@ func (e Extensions) Generate(r *rand.Rand, _ int) reflect.Value {
 	})
 }
 
-func Assemble(scenario generate.Scenario, extensions Extensions) (templates.Workflow, error) {
+func Assemble(scenario generate.Scenario, extensions Extensions) (Workflow, error) {
 	if len(scenario.Stages) == 0 {
-		return templates.Workflow{}, StagesError
+		return Workflow{}, StagesError
 	}
 
 	ts, err := createTemplatesList(scenario, extensions)
 	if err != nil {
-		return templates.Workflow{}, err
+		return Workflow{}, err
 	}
 
-	wf := templates.NewWorkflow("entry", ts,
-		templates.WithNamespace("litmus"),
-		templates.WithNamePrefix("workflow-"),
-		templates.WithServiceAccount("argo-chaos"))
+	wf := NewWorkflow("entry", ts,
+		WithNamespace("litmus"),
+		WithNamePrefix("workflow-"),
+		WithServiceAccount("argo-chaos"))
 
 	return wf, nil
 }

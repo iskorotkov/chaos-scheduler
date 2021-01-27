@@ -6,7 +6,6 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
 	"math/rand"
 	"reflect"
@@ -20,6 +19,10 @@ var (
 	NotEnoughFailuresError = errors.New("not enough failures provided to scenario generator")
 	AssembleError          = errors.New("couldn't generate scenario due to unknown reason")
 )
+
+//goland:noinspection GoUnusedExportedFunction
+
+//goland:noinspection GoUnusedExportedFunction
 
 type ScenarioParams struct {
 	Seed          int64
@@ -96,17 +99,17 @@ func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.
 	return scenario, nil
 }
 
-func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLogger) (templates.Workflow, error) {
+func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLogger) (assemble.Workflow, error) {
 	scenario, err := CreateScenario(sp, logger)
 	if err != nil {
-		return templates.Workflow{}, err
+		return assemble.Workflow{}, err
 	}
 
 	workflow, err := assemble.Assemble(scenario, wp.Extensions)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"extensions", wp.Extensions)
-		return templates.Workflow{}, AssembleError
+		return assemble.Workflow{}, AssembleError
 	}
 
 	return workflow, nil
