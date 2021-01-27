@@ -1,7 +1,8 @@
-package executors
+package execute
 
 import (
 	"context"
+	"errors"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
@@ -10,20 +11,16 @@ import (
 	"time"
 )
 
-type GRPCExecutor struct {
-	url    string
-	logger *zap.SugaredLogger
-}
+var (
+	ConnectionError = errors.New("couldn't post scenario to executor server")
+	ResponseError   = errors.New("executor server returned invalid status code")
+)
 
-func NewGRPCExecutor(url string, logger *zap.SugaredLogger) GRPCExecutor {
-	return GRPCExecutor{url: url, logger: logger}
-}
-
-func (g GRPCExecutor) Execute(wf templates.Workflow) (templates.Workflow, error) {
-	conn, err := grpc.Dial(g.url, grpc.WithInsecure())
+func Execute(url string, wf templates.Workflow, logger *zap.SugaredLogger) (templates.Workflow, error) {
+	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
-		g.logger.Errorw(err.Error(),
-			"url", g.url)
+		logger.Errorw(err.Error(),
+			"url", url)
 		return templates.Workflow{}, ConnectionError
 	}
 
@@ -38,7 +35,7 @@ func (g GRPCExecutor) Execute(wf templates.Workflow) (templates.Workflow, error)
 		Workflow:  &argoWf,
 	})
 	if err != nil {
-		g.logger.Errorw(err.Error(),
+		logger.Errorw(err.Error(),
 			"workflow", wf)
 		return templates.Workflow{}, ResponseError
 	}

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/executors"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
 	"net/http"
@@ -32,8 +32,7 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 		return
 	}
 
-	executor := executors.NewGRPCExecutor(cfg.ArgoServer, logger.Named("execution"))
-	workflow, err = executor.Execute(workflow)
+	workflow, err = execute.Execute(cfg.ArgoServer, workflow, logger.Named("execution"))
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"config", cfg)
