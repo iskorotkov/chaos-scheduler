@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -34,7 +34,7 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	w.Header().Add("Content-Type", "application/json")
 
 	data := struct {
-		Scenario generator.Scenario `json:"scenario"`
+		Scenario generate.Scenario `json:"scenario"`
 	}{Scenario: scenario}
 
 	err = json.NewEncoder(w).Encode(data)
@@ -46,10 +46,10 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	}
 }
 
-func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generator.Scenario, error) {
+func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generate.Scenario, error) {
 	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
 	if err != nil {
-		return generator.Scenario{}, err
+		return generate.Scenario{}, err
 	}
 
 	params := workflows.ScenarioParams{
@@ -70,9 +70,9 @@ func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 			err == workflows.FailuresError ||
 			err == workflows.UnknownGenerationError ||
 			err == workflows.TargetsSeekerError {
-			return generator.Scenario{}, internalError
+			return generate.Scenario{}, internalError
 		} else {
-			return generator.Scenario{}, paramsError
+			return generate.Scenario{}, paramsError
 		}
 	}
 

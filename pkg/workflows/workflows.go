@@ -4,8 +4,7 @@ import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator/advanced"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
@@ -57,39 +56,44 @@ func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
 	})
 }
 
-func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generator.Scenario, error) {
+func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.Scenario, error) {
 	targetSeeker, err := targets.NewSeeker(params.AppNS, params.AppLabel, logger.Named("targets"))
 	if err != nil {
 		logger.Errorw(err.Error())
-		return generator.Scenario{}, TargetsSeekerError
+		return generate.Scenario{}, TargetsSeekerError
 	}
 
-	scenarioGenerator, err := advanced.NewGenerator(params.Failures, targetSeeker, logger.Named("generator"))
+	ts, err := targetSeeker.Targets()
 	if err != nil {
-		logger.Errorw(err.Error(),
-			"failures", params.Failures)
-		return generator.Scenario{}, ScenarioParamsError
+		logger.Errorw(err.Error())
+		return generate.Scenario{}, TargetsError
 	}
 
-	scenario, err := scenarioGenerator.Generate(generator.Params{
+	scenario, err := generate.Generate(generate.Params{
+		RNG:           rand.New(rand.NewSource(params.Seed)),
 		Stages:        params.Stages,
-		Seed:          params.Seed,
 		StageDuration: params.StageDuration,
+		Failures:      params.Failures,
+		Targets:       ts,
+		Retries:       generate.DefaultRetries(),
+		Budget:        generate.DefaultBudget(),
+		Modifiers:     generate.DefaultModifiers(),
+		Logger:        logger.Named("generate"),
 	})
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"params", params,
 			"failures", params.Failures)
 
-		if err == generator.ZeroTargetsError {
-			return generator.Scenario{}, TargetsError
+		if err == generate.ZeroTargetsError {
+			return generate.Scenario{}, TargetsError
 		}
 
-		if err == generator.ZeroFailures {
-			return generator.Scenario{}, FailuresError
+		if err == generate.ZeroFailures {
+			return generate.Scenario{}, FailuresError
 		}
 
-		return generator.Scenario{}, ScenarioParamsError
+		return generate.Scenario{}, ScenarioParamsError
 	}
 	return scenario, nil
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"github.com/iskorotkov/metadata"
 	"go.uber.org/zap"
@@ -23,11 +23,11 @@ var (
 )
 
 type ActionExtension interface {
-	Apply(action generator.Action, stageIndex, actionIndex int) []templates.Template
+	Apply(action generate.Action, stageIndex, actionIndex int) []templates.Template
 }
 
 type StageExtension interface {
-	Apply(stage generator.Stage, stageIndex int) []templates.Template
+	Apply(stage generate.Stage, stageIndex int) []templates.Template
 }
 
 type WorkflowExtension interface {
@@ -55,7 +55,7 @@ func (e Extensions) Generate(r *rand.Rand, _ int) reflect.Value {
 	})
 }
 
-func Assemble(scenario generator.Scenario, extensions Extensions) (templates.Workflow, error) {
+func Assemble(scenario generate.Scenario, extensions Extensions) (templates.Workflow, error) {
 	if len(scenario.Stages) == 0 {
 		return templates.Workflow{}, StagesError
 	}
@@ -73,7 +73,7 @@ func Assemble(scenario generator.Scenario, extensions Extensions) (templates.Wor
 	return wf, nil
 }
 
-func createTemplatesList(scenario generator.Scenario, extensions Extensions) ([]templates.Template, error) {
+func createTemplatesList(scenario generate.Scenario, extensions Extensions) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 	ids := make([][]string, 0)
 
@@ -127,7 +127,7 @@ func createTemplatesList(scenario generator.Scenario, extensions Extensions) ([]
 	return actions, nil
 }
 
-func addFailureMetadata(t *templates.Template, action generator.Action) error {
+func addFailureMetadata(t *templates.Template, action generate.Action) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeFailure,
@@ -190,7 +190,7 @@ func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExtension) ([]
 	return actions, nil
 }
 
-func applyStageExtensions(stage generator.Stage, stageIndex int, extensions []StageExtension) ([]templates.Template, []string, error) {
+func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []StageExtension) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
@@ -217,7 +217,7 @@ func applyStageExtensions(stage generator.Stage, stageIndex int, extensions []St
 	return actions, stageIDs, nil
 }
 
-func applyActionExtensions(action generator.Action, stageIndex, actionIndex int, extensions []ActionExtension) ([]templates.Template, []string, error) {
+func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, extensions []ActionExtension) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 

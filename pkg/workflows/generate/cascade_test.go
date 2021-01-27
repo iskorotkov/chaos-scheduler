@@ -1,9 +1,6 @@
-package advanced
+package generate
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"go.uber.org/zap"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -14,19 +11,13 @@ func Test_addCascadeFailures(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(0))
-	f := func(fs []failures.Failure, ts []targets.Target, params phaseParams) bool {
-		if len(fs) == 0 || len(ts) == 0 {
+	f := func(params Params) bool {
+		if len(params.Failures) == 0 || len(params.Targets) == 0 {
 			t.Log("zero failures or targets provided")
 			return true
 		}
 
-		gen, err := NewGenerator(fs, TestTargetSeeker{ts, nil}, zap.NewNop().Sugar())
-		if err != nil {
-			t.Log(err)
-			return false
-		}
-
-		stages := gen.addCascadeFailures(ts, r, params)
+		stages := addCascadeFailures(params)
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {
@@ -39,7 +30,7 @@ func Test_addCascadeFailures(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) > gen.budget.MaxFailures {
+			if len(stage.Actions) > params.Budget.MaxFailures {
 				t.Log("total number os actions per stage must be less or equal to budget's max value")
 				return false
 			}

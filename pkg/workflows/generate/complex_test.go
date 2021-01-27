@@ -1,9 +1,7 @@
-package advanced
+package generate
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"go.uber.org/zap"
 	"math/rand"
 	"testing"
 	"testing/quick"
@@ -13,19 +11,13 @@ func Test_addComplexFailures(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(0))
-	f := func(fs []failures.Failure, targets []targets.Target, params phaseParams) bool {
-		if len(fs) == 0 || len(targets) == 0 {
+	f := func(params Params) bool {
+		if len(params.Failures) == 0 || len(params.Targets) == 0 {
 			t.Log("zero failures or targets provided")
 			return true
 		}
 
-		gen, err := NewGenerator(fs, TestTargetSeeker{targets, nil}, zap.NewNop().Sugar())
-		if err != nil {
-			t.Log(err)
-			return false
-		}
-
-		stages := gen.addComplexFailures(targets, r, params)
+		stages := addComplexFailures(params)
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {
@@ -38,7 +30,7 @@ func Test_addComplexFailures(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) > gen.budget.MaxFailures {
+			if len(stage.Actions) > params.Budget.MaxFailures {
 				t.Log("total number os actions per stage must be less or equal to budget's max value")
 				return false
 			}
@@ -52,14 +44,14 @@ func Test_addComplexFailures(t *testing.T) {
 					return false
 				}
 
-				points += calculateCost(gen.modifiers, failures.Failure{
+				points += calculateCost(params.Modifiers, failures.Failure{
 					Template: nil,
 					Scale:    action.Scale,
 					Severity: action.Severity,
 				})
 			}
 
-			if points > gen.budget.MaxPoints {
+			if points > params.Budget.MaxPoints {
 				t.Log("total points of each stage must be less or equal to budget points")
 				return false
 			}

@@ -3,7 +3,7 @@ package assemble
 import (
 	"fmt"
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ type stageMonitor struct {
 	logger        *zap.SugaredLogger
 }
 
-func (s stageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.Template {
+func (s stageMonitor) Apply(stage generate.Stage, stageIndex int) []templates.Template {
 	if s.image == "" {
 		s.logger.Warn("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil

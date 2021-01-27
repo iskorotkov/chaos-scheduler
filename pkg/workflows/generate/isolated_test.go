@@ -1,40 +1,22 @@
-package advanced
+package generate
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"go.uber.org/zap"
 	"math/rand"
 	"testing"
 	"testing/quick"
 )
 
-type TestTargetSeeker struct {
-	targets []targets.Target
-	error   error
-}
-
-func (t TestTargetSeeker) Targets() ([]targets.Target, error) {
-	return t.targets, t.error
-}
-
 func Test_addIsolatedFailures(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(0))
-	f := func(failures []failures.Failure, targets []targets.Target, params phaseParams) bool {
-		if len(failures) == 0 || len(targets) == 0 {
+	f := func(params Params) bool {
+		if len(params.Failures) == 0 || len(params.Targets) == 0 {
 			t.Log("zero failures or targets provided")
 			return true
 		}
 
-		gen, err := NewGenerator(failures, TestTargetSeeker{targets, nil}, zap.NewNop().Sugar())
-		if err != nil {
-			t.Log(err)
-			return false
-		}
-
-		stages := gen.addIsolatedFailures(targets, r, params)
+		stages := addIsolatedFailures(params)
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {

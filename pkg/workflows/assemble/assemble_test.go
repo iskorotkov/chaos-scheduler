@@ -2,7 +2,7 @@ package assemble
 
 import (
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/metadata"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
@@ -13,7 +13,7 @@ import (
 func TestModularAssembler_Assemble(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 
-	hasStageWithZeroActions := func(stages []generator.Stage) bool {
+	hasStageWithZeroActions := func(stages []generate.Stage) bool {
 		for _, s := range stages {
 			if len(s.Actions) == 0 {
 				return true
@@ -22,7 +22,7 @@ func TestModularAssembler_Assemble(t *testing.T) {
 		return false
 	}
 
-	f := func(scenario generator.Scenario, ext Extensions) bool {
+	f := func(scenario generate.Scenario, ext Extensions) bool {
 		wf, err := Assemble(scenario, ext)
 		if err == StagesError && len(scenario.Stages) == 0 {
 			return true

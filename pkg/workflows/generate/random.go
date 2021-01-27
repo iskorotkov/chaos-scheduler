@@ -1,4 +1,4 @@
-package advanced
+package generate
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
