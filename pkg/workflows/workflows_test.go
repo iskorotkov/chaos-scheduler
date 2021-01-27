@@ -54,16 +54,13 @@ func TestCreateWorkflow(t *testing.T) {
 
 	f := func(sp ScenarioParams, wp WorkflowParams) bool {
 		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
-		if err == ScenarioParamsError &&
-			(sp.Stages <= 0 || sp.Stages > 100 || sp.StageDuration <= 0) {
-			t.Log("invalid scenario params")
-			return true
-		} else if err == TargetsSeekerError {
-			t.Skip("can't create target seeker in this environment; probably Kubernetes cluster isn't running")
-			return true
-		} else if err != nil {
+		if err != nil {
+			if err == TargetsSeekerError {
+				t.Skip("can't create target seeker in this environment; probably Kubernetes cluster isn't running")
+			}
+
 			t.Log(err)
-			return false
+			return err == ScenarioParamsError && (sp.Stages <= 0 || sp.Stages > 100 || sp.StageDuration <= 0)
 		}
 
 		if wf.Namespace == "" ||
