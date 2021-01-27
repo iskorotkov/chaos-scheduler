@@ -12,7 +12,7 @@ func addIsolatedFailures(params Params) []Stage {
 			Severity: failure.Severity,
 			Scale:    failure.Scale,
 			Target:   target,
-			Engine:   failure.Template.Instantiate(target, params.StageDuration),
+			Engine:   failure.Blueprint.Instantiate(target, params.StageDuration),
 		}}
 
 		stages = append(stages, Stage{

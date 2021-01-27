@@ -3,16 +3,16 @@ package failures
 import (
 	"fmt"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/pod"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/pod"
 	"math/rand"
 	"reflect"
 )
 
 type Failure struct {
-	Template templates.Template
-	Scale    api.Scale
-	Severity api.Severity
+	Blueprint blueprints.Blueprint
+	Scale     api.Scale
+	Severity  api.Severity
 }
 
 func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
@@ -36,7 +36,7 @@ func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 	}
 
 	return reflect.ValueOf(Failure{
-		Template: pod.Delete{
+		Blueprint: pod.Delete{
 			Namespace:    rs("namespace"),
 			AppNamespace: rs("app-namespace"),
 			Interval:     r.Intn(60),
@@ -48,5 +48,5 @@ func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 }
 
 func (f Failure) Name() string {
-	return f.Template.Name()
+	return f.Blueprint.Name()
 }

@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
@@ -17,19 +17,19 @@ func (p NetworkLatency) Name() string {
 	return "pod-network-latency"
 }
 
-func (p NetworkLatency) Instantiate(target targets.Target, duration time.Duration) templates.Engine {
-	return templates.NewEngine(templates.EngineParams{
+func (p NetworkLatency) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
+	return blueprints.NewEngine(blueprints.EngineParams{
 		Name:        p.Name(),
 		Namespace:   p.Namespace,
 		Labels:      nil,
 		Annotations: nil,
-		AppInfo: templates.AppInfo{
+		AppInfo: blueprints.AppInfo{
 			AppNS:    p.AppNamespace,
 			AppLabel: target.AppLabel,
 			AppKind:  "deployment",
 		},
-		Experiments: []templates.Experiment{
-			templates.NewExperiment(templates.ExperimentParams{
+		Experiments: []blueprints.Experiment{
+			blueprints.NewExperiment(blueprints.ExperimentParams{
 				Name: p.Name(),
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),

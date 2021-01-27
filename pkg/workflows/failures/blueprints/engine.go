@@ -1,4 +1,4 @@
-package templates
+package blueprints
 
 import (
 	"fmt"

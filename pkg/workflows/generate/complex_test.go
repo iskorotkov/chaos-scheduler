@@ -45,9 +45,9 @@ func Test_addComplexFailures(t *testing.T) {
 				}
 
 				points += calculateCost(params.Modifiers, failures.Failure{
-					Template: nil,
-					Scale:    action.Scale,
-					Severity: action.Severity,
+					Blueprint: nil,
+					Scale:     action.Scale,
+					Severity:  action.Severity,
 				})
 			}
 

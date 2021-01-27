@@ -2,7 +2,7 @@ package generate
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
 	"reflect"
@@ -14,7 +14,7 @@ type Action struct {
 	Name     string            `json:"name"`
 	Severity metadata.Severity `json:"severity"`
 	Scale    metadata.Scale    `json:"scale"`
-	Engine   templates.Engine  `json:"engine"`
+	Engine   blueprints.Engine `json:"engine"`
 	Target   targets.Target    `json:"target"`
 }
 
@@ -38,7 +38,7 @@ func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
 		Name:     strconv.FormatUint(r.Uint64(), 10),
 		Severity: severity[r.Intn(len(severity))],
 		Scale:    scale[r.Intn(len(scale))],
-		Engine:   templates.Engine{}.Generate(r, size).Interface().(templates.Engine),
+		Engine:   blueprints.Engine{}.Generate(r, size).Interface().(blueprints.Engine),
 		Target:   targets.Target{}.Generate(r, size).Interface().(targets.Target),
 	})
 }
