@@ -15,10 +15,10 @@ import (
 
 var (
 	ScenarioParamsError    = errors.New("couldn't create scenario with given parameters")
-	TargetsSeekerError     = errors.New("couldn't create targets seeker")
-	TargetsError           = errors.New("not enough targets present")
-	FailuresError          = errors.New("not enough failures provided to scenario generator")
-	UnknownGenerationError = errors.New("couldn't generate scenario due to unknown reason")
+	TargetsFetchError      = errors.New("couldn't fetch targets")
+	NotEnoughTargetsError  = errors.New("not enough targets present")
+	NotEnoughFailuresError = errors.New("not enough failures provided to scenario generator")
+	AssembleError          = errors.New("couldn't generate scenario due to unknown reason")
 )
 
 type ScenarioParams struct {
@@ -57,16 +57,14 @@ func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
 }
 
 func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.Scenario, error) {
-	targetSeeker, err := targets.NewSeeker(params.AppNS, params.AppLabel, logger.Named("targets"))
+	ts, err := targets.List(params.AppNS, params.AppLabel, logger.Named("targets"))
 	if err != nil {
 		logger.Errorw(err.Error())
-		return generate.Scenario{}, TargetsSeekerError
-	}
-
-	ts, err := targetSeeker.Targets()
-	if err != nil {
-		logger.Errorw(err.Error())
-		return generate.Scenario{}, TargetsError
+		if err == targets.ClientsetError {
+			return generate.Scenario{}, TargetsFetchError
+		} else {
+			return generate.Scenario{}, NotEnoughTargetsError
+		}
 	}
 
 	scenario, err := generate.Generate(generate.Params{
@@ -86,11 +84,11 @@ func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.
 			"failures", params.Failures)
 
 		if err == generate.ZeroTargetsError {
-			return generate.Scenario{}, TargetsError
+			return generate.Scenario{}, NotEnoughTargetsError
 		}
 
 		if err == generate.ZeroFailures {
-			return generate.Scenario{}, FailuresError
+			return generate.Scenario{}, NotEnoughFailuresError
 		}
 
 		return generate.Scenario{}, ScenarioParamsError
@@ -108,7 +106,7 @@ func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLog
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"extensions", wp.Extensions)
-		return templates.Workflow{}, UnknownGenerationError
+		return templates.Workflow{}, AssembleError
 	}
 
 	return workflow, nil

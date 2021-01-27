@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"os"
 	"path/filepath"
 )
 
@@ -15,11 +16,11 @@ var (
 	ClientsetError = errors.New("couldn't create clientset from config")
 )
 
-func NewClient(isKubernetes bool, logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
+func NewClient(logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
 	var config *rest.Config
 	var err error
 
-	if isKubernetes {
+	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
 		config, err = rest.InClusterConfig()
 	} else {
 		configFile := filepath.Join(homedir.HomeDir(), ".kube", "config")

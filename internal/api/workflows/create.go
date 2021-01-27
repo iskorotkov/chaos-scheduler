@@ -88,10 +88,10 @@ func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 			"scenario params", sp,
 			"workflow params", wp)
 
-		if err == workflows.TargetsError ||
-			err == workflows.FailuresError ||
-			err == workflows.UnknownGenerationError ||
-			err == workflows.TargetsSeekerError {
+		if err == workflows.NotEnoughTargetsError ||
+			err == workflows.NotEnoughFailuresError ||
+			err == workflows.AssembleError ||
+			err == workflows.TargetsFetchError {
 			return templates.Workflow{}, internalError
 		} else {
 			return templates.Workflow{}, paramsError

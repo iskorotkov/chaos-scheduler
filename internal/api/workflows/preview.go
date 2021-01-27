@@ -66,10 +66,10 @@ func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 		logger.Errorw(err.Error(),
 			"params", params)
 
-		if err == workflows.TargetsError ||
-			err == workflows.FailuresError ||
-			err == workflows.UnknownGenerationError ||
-			err == workflows.TargetsSeekerError {
+		if err == workflows.NotEnoughTargetsError ||
+			err == workflows.NotEnoughFailuresError ||
+			err == workflows.AssembleError ||
+			err == workflows.TargetsFetchError {
 			return generate.Scenario{}, internalError
 		} else {
 			return generate.Scenario{}, paramsError
