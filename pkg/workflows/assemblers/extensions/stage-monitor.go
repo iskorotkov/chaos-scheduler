@@ -25,15 +25,14 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 	}
 
 	podsToKill := make([]string, 0)
-	ignoredPods := make([]string, 0)
+	ignoredNodes := make([]string, 0)
 
 	for _, action := range stage.Actions {
 		if action.Severity == metadata.SeverityCritical {
 			if action.Scale == metadata.ScaleNode {
-				ignoredPods = append(ignoredPods, action.Target.Node)
+				ignoredNodes = append(ignoredNodes, action.Target.Node)
 			} else {
-				podTolerance := fmt.Sprintf("%s=%d", action.Target.AppLabel, -1)
-				podsToKill = append(podsToKill, podTolerance)
+				podsToKill = append(podsToKill, fmt.Sprintf("%s=%d", action.Target.AppLabel, -1))
 			}
 		}
 	}
@@ -46,7 +45,7 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 			{Name: "APP_NS", Value: s.targetNs},
 			{Name: "DURATION", Value: (stage.Duration + s.stageInterval).String()},
 			{Name: "CRASH_TOLERANCE", Value: strings.Join(podsToKill, ";")},
-			{Name: "IGNORED_PODS", Value: strings.Join(ignoredPods, ";")},
+			{Name: "IGNORED_NODES", Value: strings.Join(ignoredNodes, ";")},
 		},
 	})
 

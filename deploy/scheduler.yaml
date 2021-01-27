@@ -59,7 +59,7 @@ spec:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
-              value: iskorotkov/chaos-pods-monitor:v0.3.0
+              value: iskorotkov/chaos-pods-monitor:v0.4.0
             - name: APP_NS
               value: chaos-app
             - name: CHAOS_NS
