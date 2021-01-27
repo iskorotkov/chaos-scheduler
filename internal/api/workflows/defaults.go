@@ -3,7 +3,7 @@ package workflows
 import (
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/container"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/templates/node"
@@ -11,11 +11,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) extensions.Extensions {
-	return extensions.Extensions{
+func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) assemble.Extensions {
+	return assemble.Extensions{
 		Action:   nil,
-		Stage:    []extensions.StageExtension{extensions.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
-		Workflow: []extensions.WorkflowExtension{extensions.UseSteps()},
+		Stage:    []assemble.StageExtension{assemble.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
+		Workflow: []assemble.WorkflowExtension{assemble.UseSteps()},
 	}
 }
 

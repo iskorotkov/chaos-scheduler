@@ -1,28 +1,66 @@
-package assemblers
+package assemble
 
 import (
+	"errors"
 	"fmt"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"github.com/iskorotkov/metadata"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/rand"
+	"reflect"
+	"time"
 )
 
-type ModularAssembler struct {
-	Extensions extensions.Extensions
-	logger     *zap.SugaredLogger
+var (
+	StagesError         = errors.New("number of stages must be positive")
+	ActionsError        = errors.New("number of actions in every stage must be positive")
+	ActionMarshallError = errors.New("couldn't marshall action to yaml")
+	MetadataError       = errors.New("couldn't set metadata")
+)
+
+type ActionExtension interface {
+	Apply(action generator.Action, stageIndex, actionIndex int) []templates.Template
 }
 
-func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workflow, error) {
+type StageExtension interface {
+	Apply(stage generator.Stage, stageIndex int) []templates.Template
+}
+
+type WorkflowExtension interface {
+	Apply(ids [][]string) []templates.Template
+}
+
+type Extensions struct {
+	Action   []ActionExtension
+	Stage    []StageExtension
+	Workflow []WorkflowExtension
+}
+
+func (e Extensions) Generate(r *rand.Rand, _ int) reflect.Value {
+	return reflect.ValueOf(Extensions{
+		Action: []ActionExtension{
+			// No action extensions implemented
+		},
+		Stage: []StageExtension{
+			UseSuspend(),
+			UseStageMonitor("stage-monitor", "target-ns", time.Duration(r.Intn(60)), &zap.SugaredLogger{}),
+		},
+		Workflow: []WorkflowExtension{
+			UseSteps(),
+		},
+	})
+}
+
+func Assemble(scenario generator.Scenario, extensions Extensions) (templates.Workflow, error) {
 	if len(scenario.Stages) == 0 {
 		return templates.Workflow{}, StagesError
 	}
 
-	ts, err := a.createTemplatesList(scenario)
+	ts, err := createTemplatesList(scenario, extensions)
 	if err != nil {
 		return templates.Workflow{}, err
 	}
@@ -35,11 +73,7 @@ func (a ModularAssembler) Assemble(scenario generator.Scenario) (templates.Workf
 	return wf, nil
 }
 
-func NewModularAssembler(ext extensions.Extensions, logger *zap.SugaredLogger) Assembler {
-	return ModularAssembler{Extensions: ext, logger: logger}
-}
-
-func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]templates.Template, error) {
+func createTemplatesList(scenario generator.Scenario, extensions Extensions) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 	ids := make([][]string, 0)
 
@@ -59,14 +93,14 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
 
-			if err := a.addFailureMetadata(&manifestTemplate, action); err != nil {
+			if err := addFailureMetadata(&manifestTemplate, action); err != nil {
 				return nil, err
 			}
 
 			actions = append(actions, manifestTemplate)
 			stageIDs = append(stageIDs, id)
 
-			extensionsActions, extensionsIDs, err := a.applyActionExtensions(action, stageIndex, actionIndex)
+			extensionsActions, extensionsIDs, err := applyActionExtensions(action, stageIndex, actionIndex, extensions.Action)
 			if err != nil {
 				return nil, err
 			}
@@ -74,7 +108,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 			actions, stageIDs = append(actions, extensionsActions...), append(stageIDs, extensionsIDs...)
 		}
 
-		extensionsActions, extensionsIDs, err := a.applyStageExtensions(stage, stageIndex)
+		extensionsActions, extensionsIDs, err := applyStageExtensions(stage, stageIndex, extensions.Stage)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +118,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 		ids = append(ids, stageIDs)
 	}
 
-	workflowActions, err := a.applyWorkflowExtensions(ids)
+	workflowActions, err := applyWorkflowExtensions(ids, extensions.Workflow)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +127,7 @@ func (a ModularAssembler) createTemplatesList(scenario generator.Scenario) ([]te
 	return actions, nil
 }
 
-func (a ModularAssembler) addFailureMetadata(t *templates.Template, action generator.Action) error {
+func addFailureMetadata(t *templates.Template, action generator.Action) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeFailure,
@@ -114,7 +148,7 @@ func (a ModularAssembler) addFailureMetadata(t *templates.Template, action gener
 	return nil
 }
 
-func (a ModularAssembler) addUtilityMetadata(t *templates.Template, severity api.Severity, scale api.Scale) error {
+func addUtilityMetadata(t *templates.Template, severity api.Severity, scale api.Scale) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeUtility,
@@ -135,12 +169,12 @@ func (a ModularAssembler) addUtilityMetadata(t *templates.Template, severity api
 	return nil
 }
 
-func (a ModularAssembler) applyWorkflowExtensions(ids [][]string) ([]templates.Template, error) {
+func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExtension) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 
-	if a.Extensions.Workflow != nil {
-		for _, ext := range a.Extensions.Workflow {
-			createdExtensions := ext.Apply(ids)
+	if extensions != nil {
+		for _, extension := range extensions {
+			createdExtensions := extension.Apply(ids)
 			if createdExtensions != nil {
 				actions = append(actions, createdExtensions...)
 			}
@@ -148,7 +182,7 @@ func (a ModularAssembler) applyWorkflowExtensions(ids [][]string) ([]templates.T
 	}
 
 	for i := 0; i < len(actions); i++ {
-		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
+		if err := addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, err
 		}
 	}
@@ -156,13 +190,13 @@ func (a ModularAssembler) applyWorkflowExtensions(ids [][]string) ([]templates.T
 	return actions, nil
 }
 
-func (a ModularAssembler) applyStageExtensions(stage generator.Stage, stageIndex int) ([]templates.Template, []string, error) {
+func applyStageExtensions(stage generator.Stage, stageIndex int, extensions []StageExtension) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
-	if a.Extensions.Stage != nil {
-		for _, ext := range a.Extensions.Stage {
-			createdExtensions := ext.Apply(stage, stageIndex)
+	if extensions != nil {
+		for _, extension := range extensions {
+			createdExtensions := extension.Apply(stage, stageIndex)
 
 			if createdExtensions != nil {
 				actions = append(actions, createdExtensions...)
@@ -175,7 +209,7 @@ func (a ModularAssembler) applyStageExtensions(stage generator.Stage, stageIndex
 	}
 
 	for i := 0; i < len(actions); i++ {
-		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
+		if err := addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -183,13 +217,13 @@ func (a ModularAssembler) applyStageExtensions(stage generator.Stage, stageIndex
 	return actions, stageIDs, nil
 }
 
-func (a ModularAssembler) applyActionExtensions(action generator.Action, stageIndex, actionIndex int) ([]templates.Template, []string, error) {
+func applyActionExtensions(action generator.Action, stageIndex, actionIndex int, extensions []ActionExtension) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
-	if a.Extensions.Action != nil {
-		for _, ext := range a.Extensions.Action {
-			createdExtensions := ext.Apply(action, stageIndex, actionIndex)
+	if extensions != nil {
+		for _, extension := range extensions {
+			createdExtensions := extension.Apply(action, stageIndex, actionIndex)
 
 			if createdExtensions != nil {
 				actions = append(actions, createdExtensions...)
@@ -202,7 +236,7 @@ func (a ModularAssembler) applyActionExtensions(action generator.Action, stageIn
 	}
 
 	for i := 0; i < len(actions); i++ {
-		if err := a.addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
+		if err := addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}

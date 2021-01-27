@@ -1,4 +1,4 @@
-package extensions
+package assemble
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 )
 
-type Suspend struct{}
+type suspend struct{}
 
-func (d Suspend) Apply(stage generator.Stage, index int) []templates.Template {
+func (d suspend) Apply(stage generator.Stage, index int) []templates.Template {
 	id := fmt.Sprintf("delay-%d", index+1)
 	return []templates.Template{
 		templates.NewSuspendTemplate(id, stage.Duration),
@@ -17,5 +17,5 @@ func (d Suspend) Apply(stage generator.Stage, index int) []templates.Template {
 
 //goland:noinspection GoUnusedExportedFunction
 func UseSuspend() StageExtension {
-	return Suspend{}
+	return suspend{}
 }

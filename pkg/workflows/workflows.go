@@ -2,8 +2,7 @@ package workflows
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator/advanced"
@@ -49,12 +48,12 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 }
 
 type WorkflowParams struct {
-	Extensions extensions.Extensions
+	Extensions assemble.Extensions
 }
 
 func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(WorkflowParams{
-		Extensions: extensions.Extensions{}.Generate(rand, size).Interface().(extensions.Extensions),
+		Extensions: assemble.Extensions{}.Generate(rand, size).Interface().(assemble.Extensions),
 	})
 }
 
@@ -101,9 +100,7 @@ func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLog
 		return templates.Workflow{}, err
 	}
 
-	a := assemblers.NewModularAssembler(wp.Extensions, logger.Named("assembler"))
-
-	workflow, err := a.Assemble(scenario)
+	workflow, err := assemble.Assemble(scenario, wp.Extensions)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"extensions", wp.Extensions)

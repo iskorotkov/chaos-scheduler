@@ -1,4 +1,4 @@
-package extensions
+package assemble
 
 import (
 	"fmt"
@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-type StageMonitor struct {
+type stageMonitor struct {
 	image         string
 	targetNs      string
 	stageInterval time.Duration
 	logger        *zap.SugaredLogger
 }
 
-func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.Template {
+func (s stageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.Template {
 	if s.image == "" {
 		s.logger.Warn("stage monitor image wasn't specified; stage monitor creation skipped")
 		return nil
@@ -53,5 +53,5 @@ func (s StageMonitor) Apply(stage generator.Stage, stageIndex int) []templates.T
 }
 
 func UseStageMonitor(image string, targetNs string, bufferTime time.Duration, logger *zap.SugaredLogger) StageExtension {
-	return StageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime, logger: logger}
+	return stageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime, logger: logger}
 }

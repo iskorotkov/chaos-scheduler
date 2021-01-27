@@ -1,11 +1,9 @@
-package assemblers
+package assemble
 
 import (
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemblers/extensions"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generator"
 	"github.com/iskorotkov/metadata"
-	"go.uber.org/zap"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
 	"testing"
@@ -14,11 +12,6 @@ import (
 
 func TestModularAssembler_Assemble(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
-
-	a := ModularAssembler{
-		Extensions: extensions.Extensions{}.Generate(r, 10).Interface().(extensions.Extensions),
-		logger:     zap.NewNop().Sugar(),
-	}
 
 	hasStageWithZeroActions := func(stages []generator.Stage) bool {
 		for _, s := range stages {
@@ -29,8 +22,8 @@ func TestModularAssembler_Assemble(t *testing.T) {
 		return false
 	}
 
-	f := func(scenario generator.Scenario) bool {
-		wf, err := a.Assemble(scenario)
+	f := func(scenario generator.Scenario, ext Extensions) bool {
+		wf, err := Assemble(scenario, ext)
 		if err == StagesError && len(scenario.Stages) == 0 {
 			return true
 		} else if err == ActionsError && hasStageWithZeroActions(scenario.Stages) {
