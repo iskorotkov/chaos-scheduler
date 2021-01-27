@@ -72,7 +72,11 @@ func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generator
 		return generator.Scenario{}, ScenarioParamsError
 	}
 
-	scenario, err := scenarioGenerator.Generate(params.Stages, params.Seed, params.StageDuration)
+	scenario, err := scenarioGenerator.Generate(generator.Params{
+		Stages:        params.Stages,
+		Seed:          params.Seed,
+		StageDuration: params.StageDuration,
+	})
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"params", params,
