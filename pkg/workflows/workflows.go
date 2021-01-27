@@ -20,10 +20,6 @@ var (
 	AssembleError          = errors.New("couldn't generate scenario due to unknown reason")
 )
 
-//goland:noinspection GoUnusedExportedFunction
-
-//goland:noinspection GoUnusedExportedFunction
-
 type ScenarioParams struct {
 	Seed          int64
 	Stages        int
