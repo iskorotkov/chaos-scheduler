@@ -11,7 +11,7 @@ func TestCreateScenario(t *testing.T) {
 	t.Parallel()
 
 	if testing.Short() {
-		t.Skip("test requires connection to a running Kubernetes cluster")
+		t.Skipf("test skipped due to -short flag")
 	}
 
 	rng := rand.New(rand.NewSource(0))
@@ -47,7 +47,7 @@ func TestCreateWorkflow(t *testing.T) {
 	t.Parallel()
 
 	if testing.Short() {
-		t.Skip("test requires connection to a running Kubernetes cluster")
+		t.Skipf("test skipped due to -short flag")
 	}
 
 	rng := rand.New(rand.NewSource(0))
