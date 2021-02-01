@@ -47,18 +47,22 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 }
 
 func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generate.Scenario, error) {
-	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
+	form, err := parseForm(r, logger.Named("params"))
 	if err != nil {
 		return generate.Scenario{}, err
 	}
 
-	params := workflows.ScenarioParams{
-		Seed:          workflowParams.Seed,
-		Stages:        workflowParams.Stages,
-		AppNS:         cfg.AppNS,
-		AppLabel:      cfg.AppLabel,
-		StageDuration: cfg.StageDuration,
-		Failures:      enabledFailures(cfg),
+	params, err := createScenarioParams(scenarioParams{
+		server:        cfg.ArgoServer,
+		namespace:     cfg.AppNS,
+		label:         cfg.AppLabel,
+		stageDuration: cfg.StageDuration,
+		seed:          form.Seed,
+		stages:        form.Stages,
+		failures:      enabledFailures(cfg),
+	}, logger.Named("params"))
+	if err != nil {
+		return generate.Scenario{}, err
 	}
 
 	scenario, err := workflows.CreateScenario(params, logger.Named("workflows"))

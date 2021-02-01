@@ -1,30 +1,37 @@
-package execute
+package argo
 
 import (
 	"context"
-	"errors"
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
 )
 
-var (
-	ConnectionError = errors.New("couldn't post scenario to executor server")
-	ResponseError   = errors.New("executor server returned invalid status code")
-)
+type argo struct {
+	conn   *grpc.ClientConn
+	logger *zap.SugaredLogger
+}
 
-func Execute(url string, wf assemble.Workflow, logger *zap.SugaredLogger) (assemble.Workflow, error) {
+func NewExecutor(url string, logger *zap.SugaredLogger) (execution.Executor, error) {
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"url", url)
-		return assemble.Workflow{}, ConnectionError
+		return nil, execution.ConnectionError
 	}
 
-	client := workflow.NewWorkflowServiceClient(conn)
+	return &argo{
+		conn:   conn,
+		logger: logger,
+	}, nil
+}
+
+func (a argo) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
+	client := workflow.NewWorkflowServiceClient(a.conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
@@ -35,9 +42,9 @@ func Execute(url string, wf assemble.Workflow, logger *zap.SugaredLogger) (assem
 		Workflow:  &argoWf,
 	})
 	if err != nil {
-		logger.Errorw(err.Error(),
+		a.logger.Errorw(err.Error(),
 			"workflow", wf)
-		return assemble.Workflow{}, ResponseError
+		return assemble.Workflow{}, execution.ResponseError
 	}
 
 	return assemble.Workflow(*createdWf), nil

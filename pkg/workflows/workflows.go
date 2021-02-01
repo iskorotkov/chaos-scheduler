@@ -3,6 +3,7 @@ package workflows
 import (
 	"errors"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
@@ -18,6 +19,7 @@ var (
 	NotEnoughTargetsError  = errors.New("not enough targets present")
 	NotEnoughFailuresError = errors.New("not enough failures provided to scenario generator")
 	AssembleError          = errors.New("couldn't generate scenario due to unknown reason")
+	ExecutionError         = errors.New("couldn't execute generated workflow")
 )
 
 type ScenarioParams struct {
@@ -27,6 +29,7 @@ type ScenarioParams struct {
 	AppLabel      string
 	StageDuration time.Duration
 	Failures      []failures.Failure
+	TargetFinder  targets.TargetFinder
 }
 
 func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
@@ -42,24 +45,15 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 		AppLabel:      "app",
 		StageDuration: time.Duration(-10+rand.Int63n(200)) * time.Second,
 		Failures:      fs,
-	})
-}
-
-type WorkflowParams struct {
-	Extensions assemble.Extensions
-}
-
-func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
-	return reflect.ValueOf(WorkflowParams{
-		Extensions: assemble.Extensions{}.Generate(rand, size).Interface().(assemble.Extensions),
+		TargetFinder:  targets.TestTargetFinder{}.Generate(rand, size).Interface().(targets.TestTargetFinder),
 	})
 }
 
 func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.Scenario, error) {
-	ts, err := targets.List(params.AppNS, params.AppLabel, logger.Named("targets"))
+	ts, err := params.TargetFinder.List(params.AppNS, params.AppLabel)
 	if err != nil {
 		logger.Errorw(err.Error())
-		if err == targets.ClientsetError {
+		if err == targets.ClientError {
 			return generate.Scenario{}, TargetsFetchError
 		} else {
 			return generate.Scenario{}, NotEnoughTargetsError
@@ -95,6 +89,16 @@ func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.
 	return scenario, nil
 }
 
+type WorkflowParams struct {
+	Extensions assemble.Extensions
+}
+
+func (w WorkflowParams) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(WorkflowParams{
+		Extensions: assemble.Extensions{}.Generate(rand, size).Interface().(assemble.Extensions),
+	})
+}
+
 func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLogger) (assemble.Workflow, error) {
 	scenario, err := CreateScenario(sp, logger)
 	if err != nil {
@@ -109,4 +113,29 @@ func CreateWorkflow(sp ScenarioParams, wp WorkflowParams, logger *zap.SugaredLog
 	}
 
 	return workflow, nil
+}
+
+type ExecutionParams struct {
+	Executor execution.Executor
+}
+
+func (e ExecutionParams) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(ExecutionParams{
+		Executor: execution.TestExecutor{}.Generate(rand, size).Interface().(execution.TestExecutor),
+	})
+}
+
+func ExecuteWorkflow(sp ScenarioParams, wp WorkflowParams, ep ExecutionParams, logger *zap.SugaredLogger) (assemble.Workflow, error) {
+	workflow, err := CreateWorkflow(sp, wp, logger.Named("create-workflow"))
+	if err != nil {
+		return assemble.Workflow{}, err
+	}
+
+	workflow, err = ep.Executor.Execute(workflow)
+	if err != nil {
+		logger.Errorw(err.Error())
+		return assemble.Workflow{}, ExecutionError
+	}
+
+	return workflow, err
 }

@@ -3,9 +3,9 @@ package workflows
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -21,7 +21,7 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 		return
 	}
 
-	workflow, err := generateWorkflow(r, cfg, logger)
+	workflow, err := executeWorkflow(r, cfg, logger)
 	if err != nil {
 		if err == formParseError || err == paramsError {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -29,14 +29,6 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		return
-	}
-
-	workflow, err = execute.Execute(cfg.ArgoServer, workflow, logger.Named("execution"))
-	if err != nil {
-		logger.Errorw(err.Error(),
-			"config", cfg)
-		http.Error(w, "couldn't execute scenario", http.StatusInternalServerError)
 		return
 	}
 
@@ -63,26 +55,36 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	}
 }
 
-func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (assemble.Workflow, error) {
-	workflowParams, err := parseWorkflowParams(r, logger.Named("params"))
+func executeWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (assemble.Workflow, error) {
+	form, err := parseForm(r, logger.Named("params"))
 	if err != nil {
 		return assemble.Workflow{}, err
 	}
 
-	sp := workflows.ScenarioParams{
-		Seed:          workflowParams.Seed,
-		Stages:        workflowParams.Stages,
-		AppNS:         cfg.AppNS,
-		AppLabel:      cfg.AppLabel,
-		StageDuration: cfg.StageDuration,
-		Failures:      enabledFailures(cfg),
+	sp, err := createScenarioParams(scenarioParams{
+		server:        cfg.ArgoServer,
+		namespace:     cfg.AppNS,
+		label:         cfg.AppLabel,
+		stageDuration: cfg.StageDuration,
+		seed:          form.Seed,
+		stages:        form.Stages,
+		failures:      enabledFailures(cfg),
+	}, logger.Named("scenario-params"))
+	if err != nil {
+		return assemble.Workflow{}, err
 	}
 
-	wp := workflows.WorkflowParams{
-		Extensions: enabledExtensions(cfg, logger),
+	wp := workflows.WorkflowParams{Extensions: enabledExtensions(cfg, logger.Named("extensions"))}
+
+	executor, err := argo.NewExecutor(cfg.ArgoServer, logger.Named("argo"))
+	if err != nil {
+		logger.Error(err)
+		return assemble.Workflow{}, internalError
 	}
 
-	wf, err := workflows.CreateWorkflow(sp, wp, logger.Named("workflows"))
+	ep := workflows.ExecutionParams{Executor: executor}
+
+	wf, err := workflows.ExecuteWorkflow(sp, wp, ep, logger.Named("workflows"))
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"scenario params", sp,
@@ -90,8 +92,9 @@ func generateWorkflow(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 
 		if err == workflows.NotEnoughTargetsError ||
 			err == workflows.NotEnoughFailuresError ||
+			err == workflows.TargetsFetchError ||
 			err == workflows.AssembleError ||
-			err == workflows.TargetsFetchError {
+			err == workflows.ExecutionError {
 			return assemble.Workflow{}, internalError
 		} else {
 			return assemble.Workflow{}, paramsError

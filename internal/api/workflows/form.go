@@ -6,25 +6,25 @@ import (
 	"strconv"
 )
 
-type workflowParams struct {
+type form struct {
 	Seed   int64 `json:"seed"`
 	Stages int   `json:"stages"`
 }
 
-func parseWorkflowParams(r *http.Request, logger *zap.SugaredLogger) (workflowParams, error) {
+func parseForm(r *http.Request, logger *zap.SugaredLogger) (form, error) {
 	stages, err := strconv.ParseInt(r.FormValue("stages"), 10, 32)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"stages", r.FormValue("stages"))
-		return workflowParams{}, formParseError
+		return form{}, formParseError
 	}
 
 	seed, err := strconv.ParseInt(r.FormValue("seed"), 10, 64)
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"seed", r.FormValue("seed"))
-		return workflowParams{}, formParseError
+		return form{}, formParseError
 	}
 
-	return workflowParams{Seed: seed, Stages: int(stages)}, err
+	return form{Seed: seed, Stages: int(stages)}, err
 }

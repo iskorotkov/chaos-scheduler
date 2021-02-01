@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
+	"github.com/iskorotkov/chaos-scheduler/pkg/rx"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"github.com/iskorotkov/metadata"
@@ -24,6 +25,37 @@ var (
 )
 
 type Workflow v1alpha1.Workflow
+
+func (w Workflow) Generate(rand *rand.Rand, size int) reflect.Value {
+	rs := func(prefix string) string {
+		return fmt.Sprintf("%s-%d", prefix, rand.Intn(100))
+	}
+
+	var ts []v1alpha1.Template
+	for i := 0; i <= rand.Intn(10); i++ {
+		randomTemplate := templates.Template{}.Generate(rand, size).Interface().(templates.Template)
+		ts = append(ts, v1alpha1.Template(randomTemplate))
+	}
+
+	return reflect.ValueOf(Workflow{
+		TypeMeta: v1.TypeMeta{
+			Kind:       rs("kind"),
+			APIVersion: rs("api-version"),
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:         rs("name"),
+			GenerateName: rs("generate-name"),
+			Namespace:    rs("namespace"),
+			Labels:       rx.Rmap(rand, 10),
+			Annotations:  rx.Rmap(rand, 10),
+		},
+		Spec: v1alpha1.WorkflowSpec{
+			Templates:          ts,
+			Entrypoint:         rs("entrypoint"),
+			ServiceAccountName: rs("sa-name"),
+		},
+	})
+}
 
 type Option func(wf *Workflow)
 

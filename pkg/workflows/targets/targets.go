@@ -1,21 +1,16 @@
 package targets
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
-	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
 	"reflect"
-	"strings"
-	"time"
 )
 
 var (
-	ClientsetError = errors.New("couldn't create clientset")
-	FetchError     = errors.New("couldn't fetch info from Kubernetes")
+	ConfigError = errors.New("couldn't read config")
+	ClientError = errors.New("couldn't create client from config")
+	FetchError  = errors.New("couldn't fetch info from Kubernetes")
 )
 
 type Target struct {
@@ -57,44 +52,32 @@ func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
 	})
 }
 
-func List(namespace string, label string, logger *zap.SugaredLogger) ([]Target, error) {
-	clientset, err := k8s.NewClient(logger.Named("k8s"))
-	if err != nil {
-		logger.Error(err)
-		return nil, ClientsetError
+type TargetFinder interface {
+	List(namespace string, label string) ([]Target, error)
+}
+
+type TestTargetFinder struct {
+	Targets []Target
+	Err     error
+
+	SubmittedNamespace string
+	SubmittedLabel     string
+}
+
+func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
+	var targets []Target
+	for i := 0; i < rand.Intn(10); i++ {
+		targets = append(targets, Target{}.Generate(rand, size).Interface().(Target))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	return reflect.ValueOf(TestTargetFinder{
+		Targets: targets,
+		Err:     nil,
+	})
+}
 
-	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, v1.ListOptions{})
-	if err != nil {
-		logger.Error(err)
-		return nil, FetchError
-	}
-
-	res := make([]Target, 0)
-	for _, pod := range pods.Items {
-		parts := strings.Split(pod.Name, "-")
-		deployment := strings.Join(parts[0:len(parts)-2], "-")
-
-		containers := make([]string, 0)
-		for _, container := range pod.Spec.Containers {
-			containers = append(containers, container.Name)
-		}
-
-		p := Target{
-			Pod:           pod.Name,
-			Node:          pod.Spec.NodeName,
-			Deployment:    deployment,
-			MainContainer: containers[0],
-			Containers:    containers,
-			AppLabel:      fmt.Sprintf("%s=%s", label, pod.Labels[label]),
-			Labels:        pod.Labels,
-			Annotations:   pod.Annotations,
-		}
-		res = append(res, p)
-	}
-
-	return res, nil
+func (t TestTargetFinder) List(namespace string, label string) ([]Target, error) {
+	t.SubmittedNamespace = namespace
+	t.SubmittedLabel = label
+	return t.Targets, t.Err
 }
