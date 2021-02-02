@@ -45,7 +45,7 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 		AppLabel:      "app",
 		StageDuration: time.Duration(-10+rand.Int63n(200)) * time.Second,
 		Failures:      fs,
-		TargetFinder:  targets.TestTargetFinder{}.Generate(rand, size).Interface().(targets.TestTargetFinder),
+		TargetFinder:  targets.TestTargetFinder{}.Generate(rand, size).Interface().(*targets.TestTargetFinder),
 	})
 }
 
@@ -121,7 +121,7 @@ type ExecutionParams struct {
 
 func (e ExecutionParams) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(ExecutionParams{
-		Executor: execution.TestExecutor{}.Generate(rand, size).Interface().(execution.TestExecutor),
+		Executor: execution.TestExecutor{}.Generate(rand, size).Interface().(*execution.TestExecutor),
 	})
 }
 

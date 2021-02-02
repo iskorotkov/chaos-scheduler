@@ -70,13 +70,13 @@ func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
 		targets = append(targets, Target{}.Generate(rand, size).Interface().(Target))
 	}
 
-	return reflect.ValueOf(TestTargetFinder{
+	return reflect.ValueOf(&TestTargetFinder{
 		Targets: targets,
 		Err:     nil,
 	})
 }
 
-func (t TestTargetFinder) List(namespace string, label string) ([]Target, error) {
+func (t *TestTargetFinder) List(namespace string, label string) ([]Target, error) {
 	t.SubmittedNamespace = namespace
 	t.SubmittedLabel = label
 	return t.Targets, t.Err

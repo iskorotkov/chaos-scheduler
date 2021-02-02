@@ -23,13 +23,13 @@ type TestExecutor struct {
 }
 
 func (t TestExecutor) Generate(rand *rand.Rand, size int) reflect.Value {
-	return reflect.ValueOf(TestExecutor{
+	return reflect.ValueOf(&TestExecutor{
 		Workflow: assemble.Workflow{}.Generate(rand, size).Interface().(assemble.Workflow),
 		Err:      nil,
 	})
 }
 
-func (t TestExecutor) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
+func (t *TestExecutor) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
 	t.SubmittedWorkflow = wf
 	return t.Workflow, t.Err
 }
