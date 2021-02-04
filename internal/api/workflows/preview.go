@@ -3,11 +3,16 @@ package workflows
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"go.uber.org/zap"
 	"net/http"
 )
+
+type previewResponse struct {
+	Scenario generate.Scenario `json:"scenario"`
+}
 
 func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	entry := r.Context().Value("config")
@@ -33,10 +38,7 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 
 	w.Header().Add("Content-Type", "application/json")
 
-	data := struct {
-		Scenario generate.Scenario `json:"scenario"`
-	}{Scenario: scenario}
-
+	data := previewResponse{Scenario: scenario}
 	err = json.NewEncoder(w).Encode(data)
 	if err != nil {
 		logger.Errorw(err.Error(),
@@ -47,22 +49,25 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 }
 
 func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generate.Scenario, error) {
-	form, err := parseForm(r, logger.Named("params"))
-	if err != nil {
-		return generate.Scenario{}, err
+	form, ok := parseForm(r, logger.Named("params"))
+	if !ok {
+		return generate.Scenario{}, formParseError
 	}
 
-	params, err := createScenarioParams(scenarioParams{
-		server:        cfg.ArgoServer,
-		namespace:     cfg.AppNS,
-		label:         cfg.AppLabel,
-		stageDuration: cfg.StageDuration,
-		seed:          form.Seed,
-		stages:        form.Stages,
-		failures:      enabledFailures(cfg),
-	}, logger.Named("params"))
+	finder, err := k8s.NewFinder(logger.Named("targets"))
 	if err != nil {
-		return generate.Scenario{}, err
+		logger.Error(err)
+		return generate.Scenario{}, internalError
+	}
+
+	params := workflows.ScenarioParams{
+		Seed:          form.Seed,
+		Stages:        form.Stages,
+		AppNS:         cfg.AppNS,
+		AppLabel:      cfg.AppLabel,
+		StageDuration: cfg.StageDuration,
+		Failures:      enabledFailures(cfg),
+		TargetFinder:  finder,
 	}
 
 	scenario, err := workflows.CreateScenario(params, logger.Named("workflows"))
