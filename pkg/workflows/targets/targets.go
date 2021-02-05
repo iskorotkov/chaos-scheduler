@@ -57,23 +57,40 @@ type TargetFinder interface {
 }
 
 type TestTargetFinder struct {
-	Targets []Target
-	Err     error
-
+	Targets            []Target
+	Err                error
 	SubmittedNamespace string
 	SubmittedLabel     string
 }
 
 func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
-	var targets []Target
-	for i := 0; i < rand.Intn(10); i++ {
-		targets = append(targets, Target{}.Generate(rand, size).Interface().(Target))
-	}
+	switch rand.Intn(10) {
+	case 0:
+		return reflect.ValueOf(TestTargetFinder{
+			Targets: nil,
+			Err:     ClientError,
+		})
+	case 1:
+		return reflect.ValueOf(TestTargetFinder{
+			Targets: nil,
+			Err:     ConfigError,
+		})
+	case 2:
+		return reflect.ValueOf(TestTargetFinder{
+			Targets: nil,
+			Err:     FetchError,
+		})
+	default:
+		var targets []Target
+		for i := 0; i < rand.Intn(10); i++ {
+			targets = append(targets, Target{}.Generate(rand, size).Interface().(Target))
+		}
 
-	return reflect.ValueOf(&TestTargetFinder{
-		Targets: targets,
-		Err:     nil,
-	})
+		return reflect.ValueOf(TestTargetFinder{
+			Targets: targets,
+			Err:     nil,
+		})
+	}
 }
 
 func (t *TestTargetFinder) List(namespace string, label string) ([]Target, error) {

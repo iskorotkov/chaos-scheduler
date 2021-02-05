@@ -38,6 +38,7 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 		fs = append(fs, failures.Failure{}.Generate(rand, size).Interface().(failures.Failure))
 	}
 
+	finder := targets.TestTargetFinder{}.Generate(rand, size).Interface().(targets.TestTargetFinder)
 	return reflect.ValueOf(ScenarioParams{
 		Seed:          rand.Int63(),
 		Stages:        -10 + rand.Intn(120),
@@ -45,7 +46,7 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 		AppLabel:      "app",
 		StageDuration: time.Duration(-10+rand.Int63n(200)) * time.Second,
 		Failures:      fs,
-		TargetFinder:  targets.TestTargetFinder{}.Generate(rand, size).Interface().(*targets.TestTargetFinder),
+		TargetFinder:  &finder,
 	})
 }
 
@@ -120,8 +121,9 @@ type ExecutionParams struct {
 }
 
 func (e ExecutionParams) Generate(rand *rand.Rand, size int) reflect.Value {
+	executor := execution.TestExecutor{}.Generate(rand, size).Interface().(execution.TestExecutor)
 	return reflect.ValueOf(ExecutionParams{
-		Executor: execution.TestExecutor{}.Generate(rand, size).Interface().(*execution.TestExecutor),
+		Executor: &executor,
 	})
 }
 

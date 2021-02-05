@@ -23,10 +23,23 @@ type TestExecutor struct {
 }
 
 func (t TestExecutor) Generate(rand *rand.Rand, size int) reflect.Value {
-	return reflect.ValueOf(&TestExecutor{
-		Workflow: assemble.Workflow{}.Generate(rand, size).Interface().(assemble.Workflow),
-		Err:      nil,
-	})
+	switch rand.Intn(10) {
+	case 0:
+		return reflect.ValueOf(TestExecutor{
+			Workflow: assemble.Workflow{},
+			Err:      ConnectionError,
+		})
+	case 1:
+		return reflect.ValueOf(TestExecutor{
+			Workflow: assemble.Workflow{},
+			Err:      ResponseError,
+		})
+	default:
+		return reflect.ValueOf(TestExecutor{
+			Workflow: assemble.Workflow{}.Generate(rand, size).Interface().(assemble.Workflow),
+			Err:      nil,
+		})
+	}
 }
 
 func (t *TestExecutor) Execute(wf assemble.Workflow) (assemble.Workflow, error) {

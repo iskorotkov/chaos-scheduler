@@ -3,7 +3,6 @@ package workflows
 import (
 	"errors"
 	"github.com/go-chi/chi"
-	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/server"
 	"go.uber.org/zap"
 	"net/http"
@@ -45,10 +44,4 @@ func parseForm(r *http.Request, logger *zap.SugaredLogger) (form, bool) {
 	}
 
 	return form{Seed: seed, Stages: int(stages)}, true
-}
-
-func configFromContext(r *http.Request) (*config.Config, bool) {
-	entry := r.Context().Value("config")
-	cfg, ok := entry.(*config.Config)
-	return cfg, ok
 }

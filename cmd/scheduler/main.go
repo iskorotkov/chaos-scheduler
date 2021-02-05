@@ -7,6 +7,8 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/iskorotkov/chaos-scheduler/internal/api/workflows"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
+	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -19,7 +21,66 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var logger *zap.Logger
+	logger := createLogger(cfg)
+	defer syncLogger(logger)
+
+	logger.Infow("get config from environment",
+		"config", cfg)
+
+	r := createRouter(cfg, logger)
+	if err = http.ListenAndServe(":8811", r); err != nil {
+		logger.Fatal(err.Error())
+	}
+}
+
+func contextValue(key, value interface{}) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(context.WithValue(r.Context(), key, value))
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(10 * time.Second))
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+	}))
+	r.Use(contextValue("config", cfg))
+	r.Use(contextValue("logger", logger.Named("requests")))
+
+	finder, err := k8s.NewFinder(logger.Named("finder"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+	r.Use(contextValue("finder", finder))
+
+	executor, err := argo.NewExecutor(cfg.ArgoServer, logger.Named("argo"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+	r.Use(contextValue("executor", executor))
+
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/v1", func(r chi.Router) {
+			r.Mount("/workflows", workflows.Router(logger.Named("workflows")))
+		})
+	})
+
+	return r
+}
+
+func createLogger(cfg *config.Config) *zap.SugaredLogger {
+	var (
+		logger *zap.Logger
+		err    error
+	)
 	if cfg.Development {
 		logger, err = zap.NewDevelopment()
 	} else {
@@ -30,63 +91,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	sugar := logger.Sugar()
-	defer syncLogger(sugar)
-
-	sugar.Infow("get config from environment",
-		"config", cfg)
-
-	r := chi.NewRouter()
-	useDefaultMiddleware(r)
-	useCors(r)
-	useConfig(r, cfg)
-
-	mapRoutes(r, sugar)
-
-	err = http.ListenAndServe(":8811", r)
-	if err != nil {
-		sugar.Fatal(err.Error())
-	}
-}
-
-func useConfig(r *chi.Mux, cfg *config.Config) {
-	r.Use(configCtx(cfg))
-}
-
-func mapRoutes(r chi.Router, logger *zap.SugaredLogger) {
-	r.Route("/api", func(r chi.Router) {
-		r.Route("/v1", func(r chi.Router) {
-			r.Mount("/workflows", workflows.Router(logger.Named("workflows")))
-		})
-	})
+	return logger.Sugar()
 }
 
 func syncLogger(logger *zap.SugaredLogger) {
 	err := logger.Sync()
 	if err != nil {
 		log.Fatal(err.Error())
-	}
-}
-
-func useCors(r chi.Router) {
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
-	}))
-}
-
-func useDefaultMiddleware(r chi.Router) {
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(10 * time.Second))
-}
-
-func configCtx(cfg *config.Config) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
-			next.ServeHTTP(w, r)
-		})
 	}
 }

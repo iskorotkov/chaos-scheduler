@@ -20,14 +20,18 @@ func TestCreateScenario(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(params ScenarioParams) bool {
-		s, err := CreateScenario(params, zap.NewNop().Sugar())
 		targetFinder := params.TargetFinder.(*targets.TestTargetFinder)
-		if err == ScenarioParamsError && !paramsValid(params) ||
-			err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 {
+
+		s, err := CreateScenario(params, zap.NewNop().Sugar())
+		if err != nil {
 			t.Log(err)
-			return true
-		} else if err != nil {
-			t.Log(err)
+			return err == ScenarioParamsError && !paramsValid(params) ||
+				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
+				err == TargetsFetchError && targetFinder.Err != nil
+		}
+
+		if targetFinder.Err != nil {
+			t.Log("must return error when target finder returns error")
 			return false
 		}
 
@@ -52,6 +56,7 @@ func TestCreateScenario(t *testing.T) {
 			return false
 		}
 
+		t.Log("succeeded")
 		return true
 	}
 
@@ -66,14 +71,18 @@ func TestCreateWorkflow(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(sp ScenarioParams, wp WorkflowParams) bool {
-		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
 		targetFinder := sp.TargetFinder.(*targets.TestTargetFinder)
-		if err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
-			err == ScenarioParamsError && !paramsValid(sp) {
+
+		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
+		if err != nil {
 			t.Log(err)
-			return true
-		} else if err != nil {
-			t.Log(err)
+			return err == ScenarioParamsError && !paramsValid(sp) ||
+				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
+				err == TargetsFetchError && targetFinder.Err != nil
+		}
+
+		if targetFinder.Err != nil {
+			t.Log("must return error when target finder returns error")
 			return false
 		}
 
@@ -105,6 +114,7 @@ func TestCreateWorkflow(t *testing.T) {
 			return false
 		}
 
+		t.Log("succeeded")
 		return true
 	}
 
@@ -119,14 +129,20 @@ func TestExecuteWorkflow(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(sp ScenarioParams, wp WorkflowParams, ep ExecutionParams) bool {
-		wf, err := ExecuteWorkflow(sp, wp, ep, zap.NewNop().Sugar())
 		targetFinder := sp.TargetFinder.(*targets.TestTargetFinder)
-		if err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
-			err == ScenarioParamsError && !paramsValid(sp) {
+		executor := ep.Executor.(*execution.TestExecutor)
+
+		wf, err := ExecuteWorkflow(sp, wp, ep, zap.NewNop().Sugar())
+		if err != nil {
 			t.Log(err)
-			return true
-		} else if err != nil {
-			t.Log(err)
+			return err == ScenarioParamsError && !paramsValid(sp) ||
+				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
+				err == TargetsFetchError && targetFinder.Err != nil ||
+				err == ExecutionError && executor.Err != nil
+		}
+
+		if targetFinder.Err != nil {
+			t.Log("must return error when target finder returns error")
 			return false
 		}
 
@@ -146,7 +162,6 @@ func TestExecuteWorkflow(t *testing.T) {
 			return false
 		}
 
-		executor := ep.Executor.(*execution.TestExecutor)
 		if len(executor.SubmittedWorkflow.Labels) != 0 ||
 			len(executor.SubmittedWorkflow.Annotations) != 0 {
 			t.Log("labels and annotations must contain zero items")
@@ -159,6 +174,7 @@ func TestExecuteWorkflow(t *testing.T) {
 			return false
 		}
 
+		t.Log("succeeded")
 		return true
 	}
 
