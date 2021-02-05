@@ -3,9 +3,9 @@ package workflows
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"net/http"
 )
@@ -15,49 +15,28 @@ type previewResponse struct {
 }
 
 func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
-	entry := r.Context().Value("config")
-	cfg, ok := entry.(*config.Config)
+	cfg, ok := r.Context().Value("config").(*config.Config)
 	if !ok {
 		msg := "couldn't get config from request context"
-		logger.Error(msg,
-			"config", entry)
+		logger.Error(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	scenario, err := generateScenario(r, cfg, logger.Named("scenario-generation"))
-	if err != nil {
-		if err == formParseError || err == paramsError {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
+	finder, ok := r.Context().Value("finder").(targets.TargetFinder)
+	if !ok {
+		msg := "couldn't get target finder from request context"
+		logger.Error(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-
-	data := previewResponse{Scenario: scenario}
-	err = json.NewEncoder(w).Encode(data)
-	if err != nil {
-		logger.Errorw(err.Error(),
-			"data", data)
-		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
-		return
-	}
-}
-
-func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLogger) (generate.Scenario, error) {
 	form, ok := parseForm(r, logger.Named("params"))
 	if !ok {
-		return generate.Scenario{}, formParseError
-	}
-
-	finder, err := k8s.NewFinder(logger.Named("targets"))
-	if err != nil {
-		logger.Error(err)
-		return generate.Scenario{}, internalError
+		msg := "couldn't parse form data"
+		logger.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
 	}
 
 	params := workflows.ScenarioParams{
@@ -72,18 +51,23 @@ func generateScenario(r *http.Request, cfg *config.Config, logger *zap.SugaredLo
 
 	scenario, err := workflows.CreateScenario(params, logger.Named("workflows"))
 	if err != nil {
-		logger.Errorw(err.Error(),
-			"params", params)
-
+		logger.Error(err)
 		if err == workflows.NotEnoughTargetsError ||
 			err == workflows.NotEnoughFailuresError ||
 			err == workflows.AssembleError ||
 			err == workflows.TargetsFetchError {
-			return generate.Scenario{}, internalError
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			return generate.Scenario{}, paramsError
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
 
-	return scenario, nil
+	w.Header().Add("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(previewResponse{Scenario: scenario})
+	if err != nil {
+		logger.Errorw(err.Error())
+		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)
+		return
+	}
 }
