@@ -53,7 +53,6 @@ func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
 		AllowedOrigins: []string{"*"},
 	}))
 	r.Use(contextValue("config", cfg))
-	r.Use(contextValue("logger", logger.Named("requests")))
 
 	finder, err := k8s.NewFinder(logger.Named("finder"))
 	if err != nil {
