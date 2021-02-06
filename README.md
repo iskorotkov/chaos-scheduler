@@ -168,7 +168,7 @@ go test ./...
   - workflows - workflow creation and execution
     - generate - test scenario creation
 
-      Scenario is a logical representation of a chaos test, while workflow is a 1) practical representation of a chaos test; 2) scenario prepared to be executed.
+      Scenario is a logical representation of a chaos test, while a workflow is a 1) practical representation of a chaos test; 2) scenario prepared to be executed.
 
     - assemble - test workflow creation
     - execution - test workflow execution
