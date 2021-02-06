@@ -1,4 +1,4 @@
-package workflows
+package handlers
 
 import (
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
@@ -11,14 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) assemble.Extensions {
-	return assemble.Extensions{
+// enabledExtensions are assembling extension used by default.
+func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) assemble.ExtCollection {
+	return assemble.ExtCollection{
 		Action:   nil,
-		Stage:    []assemble.StageExtension{assemble.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
-		Workflow: []assemble.WorkflowExtension{assemble.UseSteps()},
+		Stage:    []assemble.StageExt{assemble.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
+		Workflow: []assemble.WorkflowExt{assemble.UseSteps()},
 	}
 }
 
+// enabledFailures are chaos failures used by default.
 func enabledFailures(cfg *config.Config) []failures.Failure {
 	return []failures.Failure{
 		{

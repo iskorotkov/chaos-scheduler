@@ -15,14 +15,13 @@ func TestGenerator_Generate(t *testing.T) {
 		sc, err := Generate(params)
 		if err != nil {
 			t.Log(err)
-			return err == ZeroTargetsError && len(params.Targets) == 0 ||
-				err == NonPositiveStagesError && params.Stages <= 0 ||
-				err == TooManyStagesError && params.Stages > 100 ||
-				err == ZeroFailures && len(params.Failures) == 0 ||
-				err == MaxFailuresError && params.Budget.MaxFailures < 1 ||
-				err == MaxPointsError && params.Budget.MaxPoints < 1 ||
-				err == RetriesError && params.Retries < 1 ||
-				err == StageDurationError && params.StageDuration < time.Second
+			return err == ErrZeroTargets && len(params.Targets) == 0 ||
+				err == ErrNonPositiveStages && params.Stages <= 0 ||
+				err == ErrTooManyStages && params.Stages > 100 ||
+				err == ErrZeroFailures && len(params.Failures) == 0 ||
+				err == ErrMaxFailures && params.Budget.MaxFailures < 1 ||
+				err == ErrMaxPoints && params.Budget.MaxPoints < 1 ||
+				err == ErrStageDuration && params.StageDuration < time.Second
 		}
 
 		if len(sc.Stages) == 0 {

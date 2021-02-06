@@ -1,11 +1,16 @@
 package generate
 
-func addIsolatedFailures(params Params) []Stage {
+import (
+	"math/rand"
+)
+
+// addIsolatedFailures adds one failure in each stage.
+func addIsolatedFailures(params Params, rng *rand.Rand) []Stage {
 	stages := make([]Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
-		failure := randomFailure(params.Failures, params.RNG)
-		target := randomTarget(params.Targets, params.RNG)
+		failure := randomFailure(params.Failures, rng)
+		target := randomTarget(params.Targets, rng)
 
 		actions := []Action{{
 			Name:     failure.Name(),

@@ -1,3 +1,4 @@
+// Package failures describes failures structure and hierarchy.
 package failures
 
 import (
@@ -9,12 +10,17 @@ import (
 	"reflect"
 )
 
+// Failure represents a real-world failure.
 type Failure struct {
+	// Blueprint is a template used for instantiating concrete failures with targets.
 	Blueprint blueprints.Blueprint
-	Scale     api.Scale
-	Severity  api.Severity
+	// Scale describes area of damage.
+	Scale api.Scale
+	// Severity describes level of damage.
+	Severity api.Severity
 }
 
+// Generate returns random Failure.
 func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 	scale := []api.Scale{
 		api.ScaleContainer,
@@ -47,6 +53,7 @@ func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 	})
 }
 
+// Name returns a Failure name.
 func (f Failure) Name() string {
 	return f.Blueprint.Name()
 }

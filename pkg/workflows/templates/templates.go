@@ -1,3 +1,4 @@
+// Package templates allows to use different types of templates in generated workflows.
 package templates
 
 import (
@@ -9,6 +10,7 @@ import (
 	"reflect"
 )
 
+// Template is a reusable and composable unit of execution in a workflow.
 type Template v1alpha1.Template
 
 func (t Template) Generate(rand *rand.Rand, _ int) reflect.Value {
@@ -52,6 +54,7 @@ func (t Template) Generate(rand *rand.Rand, _ int) reflect.Value {
 	})
 }
 
-func (t Template) Id() string {
+// ID is a template unique ID.
+func (t Template) ID() string {
 	return t.Name
 }

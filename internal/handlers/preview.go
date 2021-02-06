@@ -1,4 +1,4 @@
-package workflows
+package handlers
 
 import (
 	"encoding/json"
@@ -10,10 +10,12 @@ import (
 	"net/http"
 )
 
+// previewResponse is a response returned after scenario was generated.
 type previewResponse struct {
 	Scenario generate.Scenario `json:"scenario"`
 }
 
+// preview handles requests to create and preview scenario.
 func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	cfg, ok := r.Context().Value("config").(*config.Config)
 	if !ok {
@@ -52,10 +54,10 @@ func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) 
 	scenario, err := workflows.CreateScenario(params, logger.Named("workflows"))
 	if err != nil {
 		logger.Error(err)
-		if err == workflows.NotEnoughTargetsError ||
-			err == workflows.NotEnoughFailuresError ||
-			err == workflows.AssembleError ||
-			err == workflows.TargetsFetchError {
+		if err == workflows.ErrNotEnoughTargets ||
+			err == workflows.ErrNotEnoughFailures ||
+			err == workflows.ErrAssemble ||
+			err == workflows.ErrTargetsFetch {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
 			http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,3 +1,4 @@
+// Package argo allows to launch generated workflows using Argo server.
 package argo
 
 import (
@@ -5,7 +6,7 @@ import (
 	"github.com/argoproj/argo/pkg/apiclient/workflow"
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"time"
@@ -16,12 +17,12 @@ type argo struct {
 	logger *zap.SugaredLogger
 }
 
-func NewExecutor(url string, logger *zap.SugaredLogger) (execution.Executor, error) {
+func NewExecutor(url string, logger *zap.SugaredLogger) (execute.Executor, error) {
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		logger.Errorw(err.Error(),
 			"url", url)
-		return nil, execution.ConnectionError
+		return nil, execute.ErrConnection
 	}
 
 	return &argo{
@@ -30,6 +31,7 @@ func NewExecutor(url string, logger *zap.SugaredLogger) (execution.Executor, err
 	}, nil
 }
 
+// Execute workflow using Argo server.
 func (a argo) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
 	client := workflow.NewWorkflowServiceClient(a.conn)
 
@@ -44,7 +46,7 @@ func (a argo) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
 	if err != nil {
 		a.logger.Errorw(err.Error(),
 			"workflow", wf)
-		return assemble.Workflow{}, execution.ResponseError
+		return assemble.Workflow{}, execute.ErrResponse
 	}
 
 	return assemble.Workflow(*createdWf), nil

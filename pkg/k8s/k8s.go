@@ -1,3 +1,4 @@
+// Package k8s allows to fetch a list of targets from Kubernetes.
 package k8s
 
 import (
@@ -33,14 +34,15 @@ func NewFinder(logger *zap.SugaredLogger) (targets.TargetFinder, error) {
 	}, nil
 }
 
-func (k finder) List(namespace string, label string) ([]targets.Target, error) {
+// List returns list of targets in a specified namespace.
+func (k finder) List(namespace, label string) ([]targets.Target, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
 	pods, err := k.clientset.CoreV1().Pods(namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
 		k.logger.Error(err)
-		return nil, targets.FetchError
+		return nil, targets.ErrFetch
 	}
 
 	res := make([]targets.Target, 0)
@@ -69,6 +71,7 @@ func (k finder) List(namespace string, label string) ([]targets.Target, error) {
 	return res, nil
 }
 
+// newClient returns configured Kubernetes clientset.
 func newClient(logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
 	var config *rest.Config
 	var err error
@@ -82,37 +85,14 @@ func newClient(logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
 
 	if err != nil {
 		logger.Error(err.Error())
-		return nil, targets.ConfigError
+		return nil, targets.ErrConfig
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		logger.Error(err.Error())
-		return nil, targets.ClientError
+		return nil, targets.ErrClient
 	}
 
 	return clientset, nil
-}
-
-func Available() bool {
-	var config *rest.Config
-	var err error
-
-	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
-		config, err = rest.InClusterConfig()
-	} else {
-		configFile := filepath.Join(homedir.HomeDir(), ".kube", "config")
-		config, err = clientcmd.BuildConfigFromFlags("", configFile)
-	}
-
-	if err != nil {
-		return false
-	}
-
-	_, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return false
-	}
-
-	return true
 }

@@ -18,6 +18,7 @@ type stageMonitor struct {
 	logger        *zap.SugaredLogger
 }
 
+// Apply adds monitor app to the stage
 func (s stageMonitor) Apply(stage generate.Stage, stageIndex int) []templates.Template {
 	if s.image == "" {
 		s.logger.Warn("stage monitor image wasn't specified; stage monitor creation skipped")
@@ -52,6 +53,7 @@ func (s stageMonitor) Apply(stage generate.Stage, stageIndex int) []templates.Te
 	return []templates.Template{containerTemplate}
 }
 
-func UseStageMonitor(image string, targetNs string, bufferTime time.Duration, logger *zap.SugaredLogger) StageExtension {
+// UseStageMonitor returns a stage extension that adds a monitor app to the stage.
+func UseStageMonitor(image string, targetNs string, bufferTime time.Duration, logger *zap.SugaredLogger) StageExt {
 	return stageMonitor{image: image, targetNs: targetNs, stageInterval: bufferTime, logger: logger}
 }

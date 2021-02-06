@@ -1,6 +1,11 @@
 package generate
 
-func addComplexFailures(params Params) []Stage {
+import (
+	"math/rand"
+)
+
+// addComplexFailures add several failures of different types in each stage.
+func addComplexFailures(params Params, rng *rand.Rand) []Stage {
 	stages := make([]Stage, 0)
 
 	for i := 0; i < params.Stages; i++ {
@@ -10,10 +15,10 @@ func addComplexFailures(params Params) []Stage {
 		actions := make([]Action, 0)
 
 		points := params.Budget.MaxPoints
-		retries := params.Retries
+		stageRetries := retries
 		for len(actions) < params.Budget.MaxFailures {
-			failure := randomFailure(stageFailures, params.RNG)
-			target := randomTarget(stageTargets, params.RNG)
+			failure := randomFailure(stageFailures, rng)
+			target := randomTarget(stageTargets, rng)
 			cost := calculateCost(params.Modifiers, failure)
 
 			if cost <= points {
@@ -27,11 +32,11 @@ func addComplexFailures(params Params) []Stage {
 					Engine:   failure.Blueprint.Instantiate(target, params.StageDuration),
 				})
 			} else {
-				if retries <= 0 {
+				if stageRetries <= 0 {
 					break
 				}
 
-				retries--
+				stageRetries--
 			}
 		}
 

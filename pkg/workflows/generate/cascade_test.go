@@ -17,7 +17,7 @@ func Test_addCascadeFailures(t *testing.T) {
 			return true
 		}
 
-		stages := addCascadeFailures(params)
+		stages := addCascadeFailures(params, rand.New(rand.NewSource(0)))
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {

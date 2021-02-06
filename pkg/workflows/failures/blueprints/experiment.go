@@ -6,8 +6,7 @@ import (
 	"reflect"
 )
 
-type ExperimentName string
-
+// EnvVar describes environment variable.
 type EnvVar struct {
 	Name  string `yaml:"name" json:"name"`
 	Value string `yaml:"value" json:"value"`
@@ -21,6 +20,7 @@ type ExperimentSpec struct {
 	Components ExperimentComponents `json:"components" yaml:"components"`
 }
 
+// Experiment is a smallest part of the failure that determines its effects.
 type Experiment struct {
 	Name string         `json:"name" yaml:"name"`
 	Spec ExperimentSpec `json:"spec" yaml:"spec"`
@@ -41,10 +41,13 @@ func (e Experiment) Generate(r *rand.Rand, _ int) reflect.Value {
 }
 
 type ExperimentParams struct {
+	// Experiment is a special value used to determine the experiment type.
 	Name string
-	Env  map[string]string
+	// Env is a list of env vars.
+	Env map[string]string
 }
 
+// NewExperiment returns new Experiment.
 func NewExperiment(params ExperimentParams) Experiment {
 	envVarList := make([]EnvVar, 0)
 	for k, v := range params.Env {

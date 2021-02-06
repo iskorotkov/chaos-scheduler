@@ -1,10 +1,10 @@
-package workflows
+package handlers
 
 import (
 	"context"
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math"
@@ -22,7 +22,7 @@ func Test_create(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(0))
-	f := func(cfg config.Config, finder targets.TestTargetFinder, executor execution.TestExecutor) bool {
+	f := func(cfg config.Config, finder targets.TestTargetFinder, executor execute.TestExecutor) bool {
 		request := httptest.NewRequest("GET", "/url", nil)
 
 		seed := rand.Int63() - math.MaxInt64/2

@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Action is a single scenario step.
 type Action struct {
 	Name     string            `json:"name"`
 	Severity metadata.Severity `json:"severity"`
@@ -43,6 +44,7 @@ func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
 	})
 }
 
+// Stage is a set of actions executed in parallel during specified time.
 type Stage struct {
 	Actions  []Action      `json:"actions"`
 	Duration time.Duration `json:"duration"`
@@ -60,6 +62,7 @@ func (s Stage) Generate(rand *rand.Rand, size int) reflect.Value {
 	})
 }
 
+// Scenario is a complete test scenario.
 type Scenario struct {
 	Stages []Stage `json:"stages"`
 }

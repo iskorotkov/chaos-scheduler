@@ -1,4 +1,5 @@
-package execution
+// Package execute handles execute of previously generated workflows.
+package execute
 
 import (
 	"errors"
@@ -8,17 +9,23 @@ import (
 )
 
 var (
-	ConnectionError = errors.New("couldn't post scenario to execution server")
-	ResponseError   = errors.New("execution server returned invalid status code")
+	ErrConnection = errors.New("couldn't post scenario to execution server")
+	ErrResponse   = errors.New("execution server returned invalid status code")
 )
 
+// Executor executes a assemble.Workflow.
 type Executor interface {
+	// Execute passed assemble.Workflow.
 	Execute(wf assemble.Workflow) (assemble.Workflow, error)
 }
 
+// TestExecutor mocks Executor.
 type TestExecutor struct {
-	Workflow          assemble.Workflow
-	Err               error
+	// Workflow is a workflow to return from Execute.
+	Workflow assemble.Workflow
+	// Err is an error to return from Execute.
+	Err error
+	// SubmittedWorkflow is a workflow passed to Execute.
 	SubmittedWorkflow assemble.Workflow
 }
 
@@ -27,12 +34,12 @@ func (t TestExecutor) Generate(rand *rand.Rand, size int) reflect.Value {
 	case 0:
 		return reflect.ValueOf(TestExecutor{
 			Workflow: assemble.Workflow{},
-			Err:      ConnectionError,
+			Err:      ErrConnection,
 		})
 	case 1:
 		return reflect.ValueOf(TestExecutor{
 			Workflow: assemble.Workflow{},
-			Err:      ResponseError,
+			Err:      ErrResponse,
 		})
 	default:
 		return reflect.ValueOf(TestExecutor{
@@ -42,6 +49,7 @@ func (t TestExecutor) Generate(rand *rand.Rand, size int) reflect.Value {
 	}
 }
 
+// Execute ignores passed workflow.
 func (t *TestExecutor) Execute(wf assemble.Workflow) (assemble.Workflow, error) {
 	t.SubmittedWorkflow = wf
 	return t.Workflow, t.Err

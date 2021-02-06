@@ -1,3 +1,4 @@
+// Package targets manages fetching and managing list of targets.
 package targets
 
 import (
@@ -8,20 +9,29 @@ import (
 )
 
 var (
-	ConfigError = errors.New("couldn't read config")
-	ClientError = errors.New("couldn't create client from config")
-	FetchError  = errors.New("couldn't fetch info from Kubernetes")
+	ErrConfig = errors.New("couldn't read config")
+	ErrClient = errors.New("couldn't create client from config")
+	ErrFetch  = errors.New("couldn't fetch list of targets")
 )
 
+// Target describes potential target.
 type Target struct {
-	Pod           string            `json:"pod"`
-	Deployment    string            `json:"deployment"`
-	Node          string            `json:"node"`
-	MainContainer string            `json:"mainContainer"`
-	Containers    []string          `json:"containers"`
-	AppLabel      string            `json:"appLabel"`
-	Labels        map[string]string `json:"labels"`
-	Annotations   map[string]string `json:"annotations"`
+	// Pod is a pod name.
+	Pod string `json:"pod"`
+	// Deployment is a deployment name (each pod must have a deployment).
+	Deployment string `json:"deployment"`
+	// Node is a node name where the pod runs.
+	Node string `json:"node"`
+	// MainContainer is a container to kill in failures.
+	MainContainer string `json:"mainContainer"`
+	// Containers is a list of all containers in the pod.
+	Containers []string `json:"containers"`
+	// AppLabel is a pod label.
+	AppLabel string `json:"appLabel"`
+	// Labels is a list of labels from target metadata.
+	Labels map[string]string `json:"labels"`
+	// Annotations is a list of annotations from target metadata.
+	Annotations map[string]string `json:"annotations"`
 }
 
 func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
@@ -52,15 +62,22 @@ func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
 	})
 }
 
+// TargetFinder fetches targets.
 type TargetFinder interface {
+	// List returns fetched targets from specified namespace.
 	List(namespace string, label string) ([]Target, error)
 }
 
+// TestTargetFinder mocks TargetFinder.
 type TestTargetFinder struct {
-	Targets            []Target
-	Err                error
+	// Targets is a list of targets to return from List.
+	Targets []Target
+	// Err is an error to return from List.
+	Err error
+	// SubmittedNamespace is a namespace passed to List.
 	SubmittedNamespace string
-	SubmittedLabel     string
+	// SubmittedLabel is a label passed to List.
+	SubmittedLabel string
 }
 
 func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
@@ -68,17 +85,17 @@ func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
 	case 0:
 		return reflect.ValueOf(TestTargetFinder{
 			Targets: nil,
-			Err:     ClientError,
+			Err:     ErrClient,
 		})
 	case 1:
 		return reflect.ValueOf(TestTargetFinder{
 			Targets: nil,
-			Err:     ConfigError,
+			Err:     ErrConfig,
 		})
 	case 2:
 		return reflect.ValueOf(TestTargetFinder{
 			Targets: nil,
-			Err:     FetchError,
+			Err:     ErrFetch,
 		})
 	default:
 		var targets []Target
@@ -93,6 +110,7 @@ func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
 	}
 }
 
+// List returns fake list of targets.
 func (t *TestTargetFinder) List(namespace string, label string) ([]Target, error) {
 	t.SubmittedNamespace = namespace
 	t.SubmittedLabel = label

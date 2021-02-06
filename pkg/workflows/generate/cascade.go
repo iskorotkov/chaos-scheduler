@@ -1,6 +1,11 @@
 package generate
 
-func addCascadeFailures(params Params) []Stage {
+import (
+	"math/rand"
+)
+
+// addCascadeFailures add several failures of the same type in each stage.
+func addCascadeFailures(params Params, rng *rand.Rand) []Stage {
 	phaseFailures := params.Failures
 
 	stages := make([]Stage, 0)
@@ -11,15 +16,15 @@ func addCascadeFailures(params Params) []Stage {
 		actions := make([]Action, 0)
 		points := params.Budget.MaxPoints
 
-		failure := randomFailure(phaseFailures, params.RNG)
+		failure := randomFailure(phaseFailures, rng)
 		cost := calculateCost(params.Modifiers, failure)
 
-		for i := 0; i < params.Retries; i++ {
+		for i := 0; i < retries; i++ {
 			if cost*2 <= points {
 				break
 			}
 
-			failure := randomFailure(phaseFailures, params.RNG)
+			failure := randomFailure(phaseFailures, rng)
 			cost = calculateCost(params.Modifiers, failure)
 		}
 
@@ -28,7 +33,7 @@ func addCascadeFailures(params Params) []Stage {
 				break
 			}
 
-			target := randomTarget(stageTargets, params.RNG)
+			target := randomTarget(stageTargets, rng)
 
 			actions = append(actions, Action{
 				Name:     failure.Name(),

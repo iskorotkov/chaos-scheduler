@@ -7,22 +7,35 @@ import (
 	"reflect"
 )
 
+// AppInfo describes failure target.
 type AppInfo struct {
-	AppNS    string `json:"appns" yaml:"appns"`
+	// AppNS describes target namespace.
+	AppNS string `json:"appns" yaml:"appns"`
+	// AppLabel describes target label.
 	AppLabel string `json:"applabel" yaml:"applabel"`
-	AppKind  string `json:"appkind" yaml:"appkind"`
+	// AppKind describes target kind.
+	AppKind string `json:"appkind" yaml:"appkind"`
 }
 
+// EngineSpec describes engine spec.
 type EngineSpec struct {
-	AppInfo             AppInfo      `json:"appinfo" yaml:"appinfo"`
-	JobCleanupPolicy    string       `json:"jobCleanupPolicy,omitempty" yaml:"jobCleanupPolicy,omitempty"`
-	Monitoring          bool         `json:"monitoring,omitempty" yaml:"monitoring,omitempty"`
-	AnnotationsCheck    bool         `json:"annotationsCheck,omitempty" yaml:"annotationsCheck,omitempty"`
-	EngineState         string       `json:"engineState,omitempty" yaml:"engineState,omitempty"`
-	ChaosServiceAccount string       `json:"chaosServiceAccount,omitempty" yaml:"chaosServiceAccount,omitempty"`
-	Experiments         []Experiment `json:"experiments" yaml:"experiments"`
+	// AppInfo describes failure target.
+	AppInfo AppInfo `json:"appinfo" yaml:"appinfo"`
+	// JobCleanupPolicy describes cleanup actions after the engine finishes execution.
+	JobCleanupPolicy string `json:"jobCleanupPolicy,omitempty" yaml:"jobCleanupPolicy,omitempty"`
+	// Monitoring describes whether monitoring data should be exported.
+	Monitoring bool `json:"monitoring,omitempty" yaml:"monitoring,omitempty"`
+	// AnnotationsCheck describes whether failures must influence only pods with the annotation set.
+	AnnotationsCheck bool `json:"annotationsCheck,omitempty" yaml:"annotationsCheck,omitempty"`
+	// EngineState is a current state of the engine.
+	EngineState string `json:"engineState,omitempty" yaml:"engineState,omitempty"`
+	// ChaosServiceAccount is a ServiceAccount name to use to cause chaos.
+	ChaosServiceAccount string `json:"chaosServiceAccount,omitempty" yaml:"chaosServiceAccount,omitempty"`
+	// Experiments is a list of experiments included in the engine.
+	Experiments []Experiment `json:"experiments" yaml:"experiments"`
 }
 
+// Engine is a set of experiments and associated values.
 type Engine struct {
 	APIVersion string        `json:"apiVersion" yaml:"apiVersion"`
 	Kind       string        `json:"kind" yaml:"kind"`
@@ -31,11 +44,16 @@ type Engine struct {
 }
 
 type EngineParams struct {
-	Name        string
-	Namespace   string
-	Labels      map[string]string
+	Name string
+	// Namespace is a namespace to create Engine in.
+	Namespace string
+	// Labels is a list of Engine labels.
+	Labels map[string]string
+	// Annotations is a list of Engine annotations.
 	Annotations map[string]string
-	AppInfo     AppInfo
+	// AppInfo is a target of the Engine.
+	AppInfo AppInfo
+	// Experiments is a list of chaos failures to cause.
 	Experiments []Experiment
 }
 

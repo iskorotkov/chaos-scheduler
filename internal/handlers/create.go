@@ -1,20 +1,24 @@
-package workflows
+package handlers
 
 import (
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"net/http"
 )
 
+// createResponse is a response returned after workflow was created and launched.
 type createResponse struct {
-	Name      string `json:"name"`
+	// Name is a name of the generated workflow.
+	Name string `json:"name"`
+	// Namespace is a namespace where the workflow was launched.
 	Namespace string `json:"namespace"`
 }
 
+// create handles requests to create and launch workflow.
 func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	cfg, ok := r.Context().Value("config").(*config.Config)
 	if !ok {
@@ -32,7 +36,7 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 		return
 	}
 
-	executor, ok := r.Context().Value("executor").(execution.Executor)
+	executor, ok := r.Context().Value("executor").(execute.Executor)
 	if !ok {
 		msg := "couldn't get workflow executor from request context"
 		logger.Error(msg)
@@ -63,11 +67,11 @@ func create(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
 	workflow, err := workflows.ExecuteWorkflow(sp, wp, ep, logger.Named("workflows"))
 	if err != nil {
 		logger.Errorw(err.Error())
-		if err == workflows.NotEnoughTargetsError ||
-			err == workflows.NotEnoughFailuresError ||
-			err == workflows.TargetsFetchError ||
-			err == workflows.AssembleError ||
-			err == workflows.ExecutionError {
+		if err == workflows.ErrNotEnoughTargets ||
+			err == workflows.ErrNotEnoughFailures ||
+			err == workflows.ErrTargetsFetch ||
+			err == workflows.ErrAssemble ||
+			err == workflows.ErrExecution {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
 			http.Error(w, err.Error(), http.StatusBadRequest)

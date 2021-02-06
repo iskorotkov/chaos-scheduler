@@ -4,6 +4,7 @@ import (
 	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
 )
 
+// NewStepsTemplate returns a template representing a list of stages of steps, where each step contains one other template.
 func NewStepsTemplate(ids [][]string) Template {
 	parallel := make([]v1alpha1.ParallelSteps, 0)
 

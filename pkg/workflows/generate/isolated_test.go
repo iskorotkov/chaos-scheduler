@@ -16,7 +16,7 @@ func Test_addIsolatedFailures(t *testing.T) {
 			return true
 		}
 
-		stages := addIsolatedFailures(params)
+		stages := addIsolatedFailures(params, rand.New(rand.NewSource(0)))
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {

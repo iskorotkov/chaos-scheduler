@@ -1,4 +1,5 @@
-package workflows
+// Package handlers handles web requests to preview or create workflows.
+package handlers
 
 import (
 	"github.com/go-chi/chi"
@@ -8,11 +9,15 @@ import (
 	"strconv"
 )
 
+// form describes request form fields required to generate workflow.
 type form struct {
-	Seed   int64 `json:"seed"`
-	Stages int   `json:"stages"`
+	// Seed is a seed used in both failure and target selection.
+	Seed int64 `json:"seed"`
+	// Stages is a number of stages in generated workflow.
+	Stages int `json:"stages"`
 }
 
+// Router returns a handler with configured routes.
 func Router(logger *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
 

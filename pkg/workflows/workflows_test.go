@@ -1,7 +1,7 @@
 package workflows
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execution"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"math/rand"
@@ -25,9 +25,9 @@ func TestCreateScenario(t *testing.T) {
 		s, err := CreateScenario(params, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
-			return err == ScenarioParamsError && !paramsValid(params) ||
-				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
-				err == TargetsFetchError && targetFinder.Err != nil
+			return err == ErrScenarioParams && !paramsValid(params) ||
+				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
+				err == ErrTargetsFetch && targetFinder.Err != nil
 		}
 
 		if targetFinder.Err != nil {
@@ -76,9 +76,9 @@ func TestCreateWorkflow(t *testing.T) {
 		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
-			return err == ScenarioParamsError && !paramsValid(sp) ||
-				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
-				err == TargetsFetchError && targetFinder.Err != nil
+			return err == ErrScenarioParams && !paramsValid(sp) ||
+				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
+				err == ErrTargetsFetch && targetFinder.Err != nil
 		}
 
 		if targetFinder.Err != nil {
@@ -130,15 +130,15 @@ func TestExecuteWorkflow(t *testing.T) {
 
 	f := func(sp ScenarioParams, wp WorkflowParams, ep ExecutionParams) bool {
 		targetFinder := sp.TargetFinder.(*targets.TestTargetFinder)
-		executor := ep.Executor.(*execution.TestExecutor)
+		executor := ep.Executor.(*execute.TestExecutor)
 
 		wf, err := ExecuteWorkflow(sp, wp, ep, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
-			return err == ScenarioParamsError && !paramsValid(sp) ||
-				err == NotEnoughTargetsError && len(targetFinder.Targets) == 0 ||
-				err == TargetsFetchError && targetFinder.Err != nil ||
-				err == ExecutionError && executor.Err != nil
+			return err == ErrScenarioParams && !paramsValid(sp) ||
+				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
+				err == ErrTargetsFetch && targetFinder.Err != nil ||
+				err == ErrExecution && executor.Err != nil
 		}
 
 		if targetFinder.Err != nil {

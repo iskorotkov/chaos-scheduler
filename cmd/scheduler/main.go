@@ -5,8 +5,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/iskorotkov/chaos-scheduler/internal/api/workflows"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/internal/handlers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
 	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
 	"go.uber.org/zap"
@@ -33,6 +33,7 @@ func main() {
 	}
 }
 
+// contextValue add value to the request context.
 func contextValue(key, value interface{}) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +43,7 @@ func contextValue(key, value interface{}) func(next http.Handler) http.Handler {
 	}
 }
 
+// createRouter creates and configures chi router.
 func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -68,13 +70,14 @@ func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Mount("/workflows", workflows.Router(logger.Named("workflows")))
+			r.Mount("/workflows", handlers.Router(logger.Named("workflows")))
 		})
 	})
 
 	return r
 }
 
+// createLogger creates and configures zap logger.
 func createLogger(cfg *config.Config) *zap.SugaredLogger {
 	var (
 		logger *zap.Logger
@@ -93,6 +96,7 @@ func createLogger(cfg *config.Config) *zap.SugaredLogger {
 	return logger.Sugar()
 }
 
+// syncLogger flushed logger buffer to stdout.
 func syncLogger(logger *zap.SugaredLogger) {
 	err := logger.Sync()
 	if err != nil {

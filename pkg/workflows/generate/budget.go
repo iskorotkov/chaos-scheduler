@@ -7,15 +7,18 @@ import (
 
 type Cost float64
 
+// Budget is a set of restrictions on a scenario max damage.
 type Budget struct {
 	MaxFailures int
-	MaxPoints   Cost
+	// MaxPoints is a max sum of chaos scores of all actions in each stage.
+	MaxPoints Cost
 }
 
 func DefaultBudget() Budget {
 	return Budget{MaxFailures: 3, MaxPoints: 12}
 }
 
+// Modifiers to calculate chaos score of failures.
 type Modifiers struct {
 	ByScale    map[metadata.Scale]Cost
 	BySeverity map[metadata.Severity]Cost

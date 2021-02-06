@@ -22,11 +22,11 @@ func TestModularAssembler_Assemble(t *testing.T) {
 		return false
 	}
 
-	f := func(scenario generate.Scenario, ext Extensions) bool {
+	f := func(scenario generate.Scenario, ext ExtCollection) bool {
 		wf, err := Assemble(scenario, ext)
-		if err == StagesError && len(scenario.Stages) == 0 {
+		if err == ErrStages && len(scenario.Stages) == 0 {
 			return true
-		} else if err == ActionsError && hasStageWithZeroActions(scenario.Stages) {
+		} else if err == ErrActions && hasStageWithZeroActions(scenario.Stages) {
 			return true
 		} else if err != nil {
 			return false

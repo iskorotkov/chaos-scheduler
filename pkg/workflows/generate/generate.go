@@ -1,3 +1,4 @@
+// Package generate handles generation of chaos scenarios.
 package generate
 
 import (
@@ -11,30 +12,32 @@ import (
 )
 
 var (
-	NonPositiveStagesError = errors.New("number of stages must be positive")
-	TooManyStagesError     = errors.New("number of stages can't be that high")
-	ZeroFailures           = errors.New("can't create scenario out of 0 failures")
-	ZeroTargetsError       = errors.New("no targets available")
-	MaxFailuresError       = errors.New("max number of failures must be positive")
-	MaxPointsError         = errors.New("max points per stage must be positive")
-	RetriesError           = errors.New("retries must be non negative")
-	StageDurationError     = errors.New("stage duration must be at least 1s")
+	ErrNonPositiveStages = errors.New("number of stages must be positive")
+	ErrTooManyStages     = errors.New("number of stages can't be that high")
+	ErrZeroFailures      = errors.New("can't create scenario out of 0 failures")
+	ErrZeroTargets       = errors.New("no targets available")
+	ErrMaxFailures       = errors.New("max number of failures must be positive")
+	ErrMaxPoints         = errors.New("max points per stage must be positive")
+	ErrStageDuration     = errors.New("stage duration must be at least 1s")
 )
 
-func DefaultRetries() int {
-	return 3
-}
+const (
+	retries = 3
+)
 
 type Params struct {
-	RNG           *rand.Rand
+	// Seed to use for selecting both targets and failures.
+	Seed int64
+	// Stages is a total number of stages.
 	Stages        int
 	StageDuration time.Duration
 	Failures      []failures.Failure
 	Targets       []targets.Target
-	Retries       int
-	Budget        Budget
-	Modifiers     Modifiers
-	Logger        *zap.SugaredLogger
+	// Budget is a set of restrictions on scenario max damage.
+	Budget Budget
+	// Modifiers to calculate chaos score of failures.
+	Modifiers Modifiers
+	Logger    *zap.SugaredLogger
 }
 
 func (p Params) Generate(r *rand.Rand, size int) reflect.Value {
@@ -50,11 +53,10 @@ func (p Params) Generate(r *rand.Rand, size int) reflect.Value {
 
 	return reflect.ValueOf(Params{
 		Stages:        -10 + r.Intn(120),
-		RNG:           rand.New(rand.NewSource(r.Int63())),
+		Seed:          0,
 		StageDuration: time.Duration(-10+r.Intn(200)) * time.Second,
 		Failures:      fs,
 		Targets:       ts,
-		Retries:       -5 + r.Intn(20),
 		Budget:        DefaultBudget(),
 		Modifiers:     DefaultModifiers(),
 		Logger:        zap.NewNop().Sugar(),
@@ -63,41 +65,51 @@ func (p Params) Generate(r *rand.Rand, size int) reflect.Value {
 
 func Generate(params Params) (Scenario, error) {
 	if len(params.Failures) == 0 {
-		return Scenario{}, ZeroFailures
+		return Scenario{}, ErrZeroFailures
 	}
 
 	if params.Budget.MaxFailures < 1 {
-		return Scenario{}, MaxFailuresError
+		return Scenario{}, ErrMaxFailures
 	}
 
 	if params.Budget.MaxPoints < 1 {
-		return Scenario{}, MaxPointsError
-	}
-
-	if params.Retries < 0 {
-		return Scenario{}, RetriesError
+		return Scenario{}, ErrMaxPoints
 	}
 
 	if params.Stages <= 0 {
-		return Scenario{}, NonPositiveStagesError
+		return Scenario{}, ErrNonPositiveStages
 	}
 
 	if params.Stages > 100 {
-		return Scenario{}, TooManyStagesError
+		return Scenario{}, ErrTooManyStages
 	}
 
 	if len(params.Targets) == 0 {
-		return Scenario{}, ZeroTargetsError
+		return Scenario{}, ErrZeroTargets
 	}
 
 	if params.StageDuration < time.Second {
-		return Scenario{}, StageDurationError
+		return Scenario{}, ErrStageDuration
 	}
 
+	rng := rand.New(rand.NewSource(params.Seed))
+
 	s := make([]Stage, 0)
-	s = append(s, addIsolatedFailures(params)...)
-	s = append(s, addCascadeFailures(params)...)
-	s = append(s, addComplexFailures(params)...)
+	s = append(s, addIsolatedFailures(params, rng)...)
+	s = append(s, addCascadeFailures(params, rng)...)
+	s = append(s, addComplexFailures(params, rng)...)
 
 	return Scenario{Stages: s}, nil
+}
+
+func randomTarget(targets []targets.Target, r *rand.Rand) targets.Target {
+	targetIndex := r.Intn(len(targets))
+	target := targets[targetIndex]
+	return target
+}
+
+func randomFailure(failures []failures.Failure, r *rand.Rand) failures.Failure {
+	failureIndex := r.Intn(len(failures))
+	failure := failures[failureIndex]
+	return failure
 }

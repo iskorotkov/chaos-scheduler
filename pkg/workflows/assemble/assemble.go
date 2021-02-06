@@ -1,3 +1,4 @@
+// Package assemble converts generate.Scenario to Workflow.
 package assemble
 
 import (
@@ -18,12 +19,13 @@ import (
 )
 
 var (
-	StagesError         = errors.New("number of stages must be positive")
-	ActionsError        = errors.New("number of actions in every stage must be positive")
-	ActionMarshallError = errors.New("couldn't marshall action to yaml")
-	MetadataError       = errors.New("couldn't set metadata")
+	ErrStages             = errors.New("scenario must contain at least one stage")
+	ErrActions            = errors.New("stage must contain at least one action")
+	ErrActionMarshalError = errors.New("couldn't marshal action to yaml")
+	ErrMetadata           = errors.New("couldn't set template metadata")
 )
 
+// Workflow is the definition of a workflow resource.
 type Workflow v1alpha1.Workflow
 
 func (w Workflow) Generate(rand *rand.Rand, size int) reflect.Value {
@@ -77,20 +79,6 @@ func WithServiceAccount(sa string) Option {
 	}
 }
 
-//goland:noinspection GoUnusedExportedFunction
-func WithLabel(key, value string) Option {
-	return func(wf *Workflow) {
-		wf.ObjectMeta.Labels[key] = value
-	}
-}
-
-//goland:noinspection GoUnusedExportedFunction
-func WithAnnotation(key, value string) Option {
-	return func(wf *Workflow) {
-		wf.ObjectMeta.Annotations[key] = value
-	}
-}
-
 func NewWorkflow(entrypoint string, templates []templates.Template, opts ...Option) Workflow {
 	argoTemplates := make([]v1alpha1.Template, 0)
 	for _, template := range templates {
@@ -119,42 +107,45 @@ func NewWorkflow(entrypoint string, templates []templates.Template, opts ...Opti
 	return wf
 }
 
-type ActionExtension interface {
+// ActionExt appends templates to a stage based on a previous action.
+type ActionExt interface {
 	Apply(action generate.Action, stageIndex, actionIndex int) []templates.Template
 }
 
-type StageExtension interface {
+// StageExt appends templates to a stage based on other actions of the stage.
+type StageExt interface {
 	Apply(stage generate.Stage, stageIndex int) []templates.Template
 }
 
-type WorkflowExtension interface {
+// WorkflowExt appends templates to a workflow based on actions IDs.
+type WorkflowExt interface {
 	Apply(ids [][]string) []templates.Template
 }
 
-type Extensions struct {
-	Action   []ActionExtension
-	Stage    []StageExtension
-	Workflow []WorkflowExtension
+type ExtCollection struct {
+	Action   []ActionExt
+	Stage    []StageExt
+	Workflow []WorkflowExt
 }
 
-func (e Extensions) Generate(r *rand.Rand, _ int) reflect.Value {
-	return reflect.ValueOf(Extensions{
-		Action: []ActionExtension{
+func (e ExtCollection) Generate(r *rand.Rand, _ int) reflect.Value {
+	return reflect.ValueOf(ExtCollection{
+		Action: []ActionExt{
 			// No action extensions implemented
 		},
-		Stage: []StageExtension{
-			UseSuspend(),
+		Stage: []StageExt{
 			UseStageMonitor("stage-monitor", "target-ns", time.Duration(r.Intn(60)), &zap.SugaredLogger{}),
 		},
-		Workflow: []WorkflowExtension{
+		Workflow: []WorkflowExt{
 			UseSteps(),
 		},
 	})
 }
 
-func Assemble(scenario generate.Scenario, extensions Extensions) (Workflow, error) {
+// Assemble converts generate.Scenario to Workflow.
+func Assemble(scenario generate.Scenario, extensions ExtCollection) (Workflow, error) {
 	if len(scenario.Stages) == 0 {
-		return Workflow{}, StagesError
+		return Workflow{}, ErrStages
 	}
 
 	ts, err := createTemplatesList(scenario, extensions)
@@ -170,13 +161,14 @@ func Assemble(scenario generate.Scenario, extensions Extensions) (Workflow, erro
 	return wf, nil
 }
 
-func createTemplatesList(scenario generate.Scenario, extensions Extensions) ([]templates.Template, error) {
+// createTemplatesList returns linear list of all templates.
+func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 	ids := make([][]string, 0)
 
 	for stageIndex, stage := range scenario.Stages {
 		if len(stage.Actions) == 0 {
-			return nil, ActionsError
+			return nil, ErrActions
 		}
 
 		stageIDs := make([]string, 0)
@@ -184,7 +176,7 @@ func createTemplatesList(scenario generate.Scenario, extensions Extensions) ([]t
 		for actionIndex, action := range stage.Actions {
 			manifest, err := yaml.Marshal(action.Engine)
 			if err != nil {
-				return nil, ActionMarshallError
+				return nil, ErrActionMarshalError
 			}
 
 			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
@@ -224,6 +216,7 @@ func createTemplatesList(scenario generate.Scenario, extensions Extensions) ([]t
 	return actions, nil
 }
 
+// addFailureMetadata adds metadata to a failure template.
 func addFailureMetadata(t *templates.Template, action generate.Action) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
@@ -238,13 +231,14 @@ func addFailureMetadata(t *templates.Template, action generate.Action) error {
 		Annotations: t.Metadata.Annotations,
 	}
 	if err := metadata.Marshal(&objectMeta, &values, api.Prefix); err != nil {
-		return MetadataError
+		return ErrMetadata
 	}
 
 	t.Metadata.Labels, t.Metadata.Annotations = objectMeta.Labels, objectMeta.Annotations
 	return nil
 }
 
+// addUtilityMetadata adds metadata to a utility template.
 func addUtilityMetadata(t *templates.Template, severity api.Severity, scale api.Scale) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
@@ -259,14 +253,14 @@ func addUtilityMetadata(t *templates.Template, severity api.Severity, scale api.
 		Annotations: t.Metadata.Annotations,
 	}
 	if err := metadata.Marshal(&objectMeta, &values, api.Prefix); err != nil {
-		return MetadataError
+		return ErrMetadata
 	}
 
 	t.Metadata.Labels, t.Metadata.Annotations = objectMeta.Labels, objectMeta.Annotations
 	return nil
 }
 
-func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExtension) ([]templates.Template, error) {
+func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExt) ([]templates.Template, error) {
 	actions := make([]templates.Template, 0)
 
 	if extensions != nil {
@@ -287,7 +281,7 @@ func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExtension) ([]
 	return actions, nil
 }
 
-func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []StageExtension) ([]templates.Template, []string, error) {
+func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []StageExt) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
@@ -299,7 +293,7 @@ func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []Sta
 				actions = append(actions, createdExtensions...)
 
 				for _, created := range createdExtensions {
-					stageIDs = append(stageIDs, created.Id())
+					stageIDs = append(stageIDs, created.ID())
 				}
 			}
 		}
@@ -314,7 +308,7 @@ func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []Sta
 	return actions, stageIDs, nil
 }
 
-func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, extensions []ActionExtension) ([]templates.Template, []string, error) {
+func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, extensions []ActionExt) ([]templates.Template, []string, error) {
 	actions := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
@@ -326,7 +320,7 @@ func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, 
 				actions = append(actions, createdExtensions...)
 
 				for _, created := range createdExtensions {
-					stageIDs = append(stageIDs, created.Id())
+					stageIDs = append(stageIDs, created.ID())
 				}
 			}
 		}
