@@ -15,7 +15,7 @@ import (
 func enabledExtensions(cfg *config.Config, logger *zap.SugaredLogger) assemble.ExtCollection {
 	return assemble.ExtCollection{
 		Action:   nil,
-		Stage:    []assemble.StageExt{assemble.UseStageMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.StageInterval, logger.Named("monitor"))},
+		Stage:    []assemble.StageExt{assemble.UseMonitor(cfg.StageMonitorImage, cfg.AppNS, cfg.AppLabel, cfg.StageInterval, logger.Named("monitor"))},
 		Workflow: []assemble.WorkflowExt{assemble.UseSteps()},
 	}
 }

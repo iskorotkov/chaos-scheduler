@@ -134,7 +134,7 @@ func (e ExtCollection) Generate(r *rand.Rand, _ int) reflect.Value {
 			// No action extensions implemented
 		},
 		Stage: []StageExt{
-			UseStageMonitor("stage-monitor", "target-ns", time.Duration(r.Intn(60)), &zap.SugaredLogger{}),
+			UseMonitor("stage-monitor", "target-ns", "target-label", time.Duration(r.Intn(60)), &zap.SugaredLogger{}),
 		},
 		Workflow: []WorkflowExt{
 			UseSteps(),
