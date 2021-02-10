@@ -14,12 +14,12 @@ Service for automatic generation and scheduling of the chaos test workflows.
   - [Setup](#setup)
     - [Dependencies](#dependencies)
     - [Installation](#installation)
-    - [Env var](#env-var)
-  - [Extension](#extension)
+    - [Env vars](#env-vars)
+  - [API](#api)
     - [REST API](#rest-api)
     - [Annotations](#annotations)
-    - [Development](#development)
-    - [Project structure](#project-structure)
+  - [Development](#development)
+  - [Project structure](#project-structure)
 
 ## Overview
 
@@ -100,27 +100,27 @@ Tweak env var values in `deploy/scheduler.yaml` file for your environment (optio
 kubectl -f deploy/scheduler.yaml
 ```
 
-### Env var
+### Env vars
 
 Service requires several env vars set (example values are provided in parentheses):
 
-- ARGO_SERVER - Argo server to use (`argo-server.argo.svc:2746`)
-- STAGE_MONITOR_IMAGE - Docker image to use for monitoring crashes of target containers/pods (`iskorotkov/chaos-pods-monitor:v0.4.0`)
-- APP_NS - namespace where system under test is located (`chaos-app`)
-- CHAOS_NS - namespace where to create workflows (`litmus`)
-- APP_LABEL - label to use for target selection (`app`)
+- `ARGO_SERVER` - Argo server to use (`argo-server.argo.svc:2746`)
+- `STAGE_MONITOR_IMAGE` - Docker image to use for monitoring crashes of target containers/pods (`iskorotkov/chaos-pods-monitor:v0.4.0`)
+- `APP_NS` - namespace where system under test is located (`chaos-app`)
+- `CHAOS_NS` - namespace where to create workflows (`litmus`)
+- `APP_LABEL` - label to use for target selection (`app`)
 
     Service looks for label `{APP_LABEL}: {VALUE}`, where `{VALUE}` will be the name of the target.
 
     For example, when `APP_LABEL`=`app` the service will look for label `app: {VALUE}`. The target with label `app: nginx` will be named `nginx`.
 
-- DEVELOPMENT - whether in development or not (false)
-- STAGE_DURATION - duration of each stage (30s)
-- STAGE_INTERVAL - duration between stages (30s)
+- `DEVELOPMENT` - whether in development or not (false)
+- `STAGE_DURATION` - duration of each stage (30s)
+- `STAGE_INTERVAL` - duration between stages (30s)
 
     Some failures take seconds to start and can't finish instantly. It's recommended to set interval to 30s or higher to avoid false positives in latter stages.
 
-## Extension
+## API
 
 ### REST API
 
@@ -139,7 +139,7 @@ Service adds annotations to generated workflow steps according:
 | chaosframework.com/severity | classification | string | Failure severity (harmless, light, severe, critical)                       |
 | chaosframework.com/scale    | classification | string | Failure scale (container, pod, deployment part, deployment, node, cluster) |
 
-### Development
+## Development
 
 To build project:
 
@@ -153,7 +153,7 @@ To run tests:
 go test ./...
 ```
 
-### Project structure
+## Project structure
 
 - cmd
   - scheduler - entry point
