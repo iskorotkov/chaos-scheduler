@@ -9,6 +9,7 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/internal/handlers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
 	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
+	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
