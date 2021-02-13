@@ -12,10 +12,22 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
+	"os"
+	"runtime/debug"
 	"time"
 )
 
 func main() {
+	// Handle panics.
+	defer func() {
+		r := recover()
+		if r != nil {
+			log.Printf("panic occurred: %v", r)
+			debug.PrintStack()
+			os.Exit(1)
+		}
+	}()
+
 	cfg, err := config.FromEnvironment()
 	if err != nil {
 		log.Fatal(err)
