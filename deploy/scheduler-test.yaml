@@ -1,13 +1,7 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: chaos-framework
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: chaos-framework-sa
-  namespace: chaos-framework
   labels:
     app: chaos-framework
 ---
@@ -19,7 +13,7 @@ metadata:
     app: chaos-framework
 rules:
   - apiGroups: [ "" ]
-    resources: [ "pods"]
+    resources: [ "pods" ]
     verbs: [ "get","list","watch" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35,13 +29,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: chaos-framework-sa
-    namespace: chaos-framework
+    namespace: "{{ .Namespace }}"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: scheduler
-  namespace: chaos-framework
 spec:
   selector:
     matchLabels:
@@ -54,28 +47,32 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.8.0-alpha.7
+          image: "{{ .Image }}"
+          ports:
+            - name: web
+              containerPort: 8811
           env:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
               value: iskorotkov/chaos-monitor:v0.5.0
             - name: APP_NS
-              value: chaos-app
+              value: "{{ .AppNS }}"
             - name: CHAOS_NS
-              value: litmus
+              value: "{{ .ChaosNS }}"
             - name: APP_LABEL
               value: app
             - name: STAGE_DURATION
               value: 30s
             - name: STAGE_INTERVAL
               value: 30s
+            - name: DEVELOPMENT
+              value: "true"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: scheduler
-  namespace: chaos-framework
 spec:
   selector:
     app: scheduler
@@ -84,4 +81,4 @@ spec:
       port: 8811
       targetPort: 8811
       protocol: TCP
-  type: NodePort
+  type: LoadBalancer
