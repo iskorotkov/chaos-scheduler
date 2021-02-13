@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
@@ -31,14 +30,9 @@ func Test_preview(t *testing.T) {
 			"stages": {strconv.FormatInt(int64(stages), 10)},
 		}
 
-		ctx := request.Context()
-		ctx = context.WithValue(ctx, "config", &cfg)
-		ctx = context.WithValue(ctx, "finder", &finder)
-		request = request.WithContext(ctx)
-
 		recorder := httptest.NewRecorder()
 
-		preview(recorder, request, zap.NewNop().Sugar())
+		preview(recorder, request, &cfg, &finder, zap.NewNop().Sugar())
 		if recorder.Code != 200 {
 			t.Logf("%d: %s", recorder.Code, recorder.Body)
 			if recorder.Code == http.StatusBadRequest {

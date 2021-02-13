@@ -3,7 +3,9 @@ package handlers
 
 import (
 	"github.com/go-chi/chi"
-	"github.com/iskorotkov/chaos-scheduler/pkg/server"
+	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
@@ -18,11 +20,15 @@ type form struct {
 }
 
 // Router returns a handler with configured routes.
-func Router(logger *zap.SugaredLogger) http.Handler {
+func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", server.WithLogger(preview, logger.Named("preview")))
-	r.Post("/", server.WithLogger(create, logger.Named("create")))
+	r.Get("/", func(writer http.ResponseWriter, request *http.Request) {
+		preview(writer, request, cfg, finder, logger.Named("preview"))
+	})
+	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
+		create(writer, request, cfg, finder, executor, logger.Named("create"))
+	})
 
 	return r
 }

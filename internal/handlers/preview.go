@@ -16,23 +16,7 @@ type previewResponse struct {
 }
 
 // preview handles requests to create and preview scenario.
-func preview(w http.ResponseWriter, r *http.Request, logger *zap.SugaredLogger) {
-	cfg, ok := r.Context().Value("config").(*config.Config)
-	if !ok {
-		msg := "couldn't get config from request context"
-		logger.Error(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
-	finder, ok := r.Context().Value("finder").(targets.TargetFinder)
-	if !ok {
-		msg := "couldn't get target finder from request context"
-		logger.Error(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-
+func preview(w http.ResponseWriter, r *http.Request, cfg *config.Config, finder targets.TargetFinder, logger *zap.SugaredLogger) {
 	form, ok := parseForm(r, logger.Named("params"))
 	if !ok {
 		msg := "couldn't parse form data"

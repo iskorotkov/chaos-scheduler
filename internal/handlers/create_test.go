@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
@@ -32,15 +31,9 @@ func Test_create(t *testing.T) {
 			"stages": {strconv.FormatInt(stages, 10)},
 		}
 
-		ctx := request.Context()
-		ctx = context.WithValue(ctx, "config", &cfg)
-		ctx = context.WithValue(ctx, "finder", &finder)
-		ctx = context.WithValue(ctx, "executor", &executor)
-		request = request.WithContext(ctx)
-
 		recorder := httptest.NewRecorder()
 
-		create(recorder, request, zap.NewNop().Sugar())
+		create(recorder, request, &cfg, &finder, &executor, zap.NewNop().Sugar())
 		if recorder.Code != http.StatusOK {
 			t.Logf("%d: %s", recorder.Code, recorder.Body)
 			if recorder.Code == http.StatusBadRequest {

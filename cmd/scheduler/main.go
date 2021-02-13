@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -9,6 +8,8 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/internal/handlers"
 	"github.com/iskorotkov/chaos-scheduler/pkg/argo"
 	"github.com/iskorotkov/chaos-scheduler/pkg/k8s"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 	"log"
@@ -37,27 +38,26 @@ func main() {
 	logger := createLogger(cfg)
 	defer syncLogger(logger)
 
-	logger.Infow("get config from environment",
-		"config", cfg)
+	logger.Infow("got config from environment", "config", cfg)
 
-	r := createRouter(cfg, logger)
+	finder, err := k8s.NewFinder(logger.Named("finder"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	executor, err := argo.NewExecutor(cfg.ArgoServer, logger.Named("argo"))
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	r := createRouter(cfg, finder, executor, logger)
 	if err = http.ListenAndServe(":8811", r); err != nil {
 		logger.Fatal(err.Error())
 	}
 }
 
-// contextValue add value to the request context.
-func contextValue(key, value interface{}) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(context.WithValue(r.Context(), key, value))
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 // createRouter creates and configures chi router.
-func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
+func createRouter(cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -67,23 +67,10 @@ func createRouter(cfg *config.Config, logger *zap.SugaredLogger) *chi.Mux {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 	}))
-	r.Use(contextValue("config", cfg))
-
-	finder, err := k8s.NewFinder(logger.Named("finder"))
-	if err != nil {
-		logger.Fatal(err)
-	}
-	r.Use(contextValue("finder", finder))
-
-	executor, err := argo.NewExecutor(cfg.ArgoServer, logger.Named("argo"))
-	if err != nil {
-		logger.Fatal(err)
-	}
-	r.Use(contextValue("executor", executor))
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Mount("/workflows", handlers.Router(logger.Named("workflows")))
+			r.Mount("/workflows", handlers.Router(cfg, finder, executor, logger.Named("workflows")))
 		})
 	})
 
