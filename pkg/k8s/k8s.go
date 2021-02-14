@@ -13,7 +13,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -47,21 +46,23 @@ func (k finder) List(namespace, label string) ([]targets.Target, error) {
 
 	res := make([]targets.Target, 0)
 	for _, pod := range pods.Items {
-		parts := strings.Split(pod.Name, "-")
-		deployment := strings.Join(parts[0:len(parts)-2], "-")
-
 		containers := make([]string, 0)
 		for _, container := range pod.Spec.Containers {
 			containers = append(containers, container.Name)
 		}
 
+		appLabel, ok := pod.Labels[label]
+		if !ok {
+			k.logger.Error("pods doesn't have a required label", "pod", pod)
+			return nil, targets.ErrInvalidTarget
+		}
+
 		p := targets.Target{
 			Pod:           pod.Name,
 			Node:          pod.Spec.NodeName,
-			Deployment:    deployment,
 			MainContainer: containers[0],
 			Containers:    containers,
-			AppLabel:      fmt.Sprintf("%s=%s", label, pod.Labels[label]),
+			AppLabel:      fmt.Sprintf("%s=%s", label, appLabel),
 			Labels:        pod.Labels,
 			Annotations:   pod.Annotations,
 		}
@@ -85,7 +86,7 @@ func newClient(logger *zap.SugaredLogger) (*kubernetes.Clientset, error) {
 
 	if err != nil {
 		logger.Error(err.Error())
-		return nil, targets.ErrConfig
+		return nil, targets.ErrClient
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)

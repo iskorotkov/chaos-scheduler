@@ -9,17 +9,15 @@ import (
 )
 
 var (
-	ErrConfig = errors.New("couldn't read config")
-	ErrClient = errors.New("couldn't create client from config")
-	ErrFetch  = errors.New("couldn't fetch list of targets")
+	ErrClient        = errors.New("couldn't create client")
+	ErrFetch         = errors.New("couldn't fetch list of targets")
+	ErrInvalidTarget = errors.New("target is not valid")
 )
 
 // Target describes potential target.
 type Target struct {
 	// Pod is a pod name.
 	Pod string `json:"pod"`
-	// Deployment is a deployment name (each pod must have a deployment).
-	Deployment string `json:"deployment"`
 	// Node is a node name where the pod runs.
 	Node string `json:"node"`
 	// MainContainer is a container to kill in failures.
@@ -46,7 +44,6 @@ func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
 
 	return reflect.ValueOf(Target{
 		Pod:           randomStr("pod"),
-		Deployment:    randomStr("deploy"),
 		Node:          randomStr("node"),
 		MainContainer: containers[r.Intn(len(containers))],
 		Containers:    containers,
@@ -88,11 +85,6 @@ func (t TestTargetFinder) Generate(rand *rand.Rand, size int) reflect.Value {
 			Err:     ErrClient,
 		})
 	case 1:
-		return reflect.ValueOf(TestTargetFinder{
-			Targets: nil,
-			Err:     ErrConfig,
-		})
-	case 2:
 		return reflect.ValueOf(TestTargetFinder{
 			Targets: nil,
 			Err:     ErrFetch,
