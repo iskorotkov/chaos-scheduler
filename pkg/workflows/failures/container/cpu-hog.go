@@ -8,9 +8,10 @@ import (
 )
 
 type CPUHog struct {
-	Namespace    string
-	AppNamespace string
-	Cores        int
+	Namespace              string
+	AppNamespace           string
+	Cores                  int
+	PodsAffectedPercentage int
 }
 
 func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -35,6 +36,7 @@ func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) bluep
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_CONTAINER":     target.MainContainer,
 					"CPU_CORES":            strconv.Itoa(c.Cores),
+					"PODS_AFFECTED_PERC":   strconv.Itoa(c.PodsAffectedPercentage),
 				},
 			}),
 		},

@@ -8,10 +8,11 @@ import (
 )
 
 type Delete struct {
-	Namespace    string
-	AppNamespace string
-	Interval     int
-	Force        bool
+	Namespace              string
+	AppNamespace           string
+	Interval               int
+	PodsAffectedPercentage int
+	Force                  bool
 }
 
 func (p Delete) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -32,6 +33,7 @@ func (p Delete) Instantiate(target targets.Target, duration time.Duration) bluep
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"CHAOS_INTERVAL":       strconv.Itoa(p.Interval),
 					"FORCE":                strconv.FormatBool(p.Force),
+					"PODS_AFFECTED_PERC":   strconv.Itoa(p.PodsAffectedPercentage),
 				},
 			}),
 		},

@@ -8,9 +8,10 @@ import (
 )
 
 type DiskFill struct {
-	Namespace      string
-	AppNamespace   string
-	FillPercentage int
+	Namespace              string
+	AppNamespace           string
+	FillPercentage         int
+	PodsAffectedPercentage int
 }
 
 func (d DiskFill) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -31,6 +32,7 @@ func (d DiskFill) Instantiate(target targets.Target, duration time.Duration) blu
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_CONTAINER":     target.MainContainer,
 					"FILL_PERCENTAGE":      strconv.Itoa(d.FillPercentage),
+					"PODS_AFFECTED_PERC":   strconv.Itoa(d.PodsAffectedPercentage),
 				},
 			}),
 		},

@@ -8,9 +8,10 @@ import (
 )
 
 type NetworkLatency struct {
-	Namespace      string
-	AppNamespace   string
-	NetworkLatency int
+	Namespace              string
+	AppNamespace           string
+	NetworkLatency         int
+	PodsAffectedPercentage int
 }
 
 func (p NetworkLatency) Name() string {
@@ -36,6 +37,7 @@ func (p NetworkLatency) Instantiate(target targets.Target, duration time.Duratio
 					"NETWORK_INTERFACE":    "eth0",
 					"TARGET_CONTAINER":     target.MainContainer,
 					"NETWORK_LATENCY":      strconv.Itoa(p.NetworkLatency),
+					"PODS_AFFECTED_PERC":   strconv.Itoa(p.PodsAffectedPercentage),
 				},
 			}),
 		},

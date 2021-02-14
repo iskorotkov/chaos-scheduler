@@ -8,9 +8,10 @@ import (
 )
 
 type NetworkLoss struct {
-	Namespace      string
-	AppNamespace   string
-	LossPercentage int
+	Namespace              string
+	AppNamespace           string
+	LossPercentage         int
+	PodsAffectedPercentage int
 }
 
 func (p NetworkLoss) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -32,6 +33,7 @@ func (p NetworkLoss) Instantiate(target targets.Target, duration time.Duration) 
 					"NETWORK_INTERFACE":              "eth0",
 					"TARGET_CONTAINER":               target.MainContainer,
 					"NETWORK_PACKET_LOSS_PERCENTAGE": strconv.Itoa(p.LossPercentage),
+					"PODS_AFFECTED_PERC":             strconv.Itoa(p.PodsAffectedPercentage),
 				},
 			}),
 		},

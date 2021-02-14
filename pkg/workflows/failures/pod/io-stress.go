@@ -8,9 +8,10 @@ import (
 )
 
 type IOStress struct {
-	Namespace             string
-	AppNamespace          string
-	UtilizationPercentage int
+	Namespace              string
+	AppNamespace           string
+	UtilizationPercentage  int
+	PodsAffectedPercentage int
 }
 
 func (i IOStress) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -34,6 +35,7 @@ func (i IOStress) Instantiate(target targets.Target, duration time.Duration) blu
 				Env: map[string]string{
 					"TOTAL_CHAOS_DURATION":              strconv.Itoa(int(duration.Seconds())),
 					"FILESYSTEM_UTILIZATION_PERCENTAGE": strconv.Itoa(i.UtilizationPercentage),
+					"PODS_AFFECTED_PERC":                strconv.Itoa(i.PodsAffectedPercentage),
 				},
 			}),
 		},

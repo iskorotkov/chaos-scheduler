@@ -8,9 +8,10 @@ import (
 )
 
 type NetworkCorruption struct {
-	Namespace            string
-	AppNamespace         string
-	CorruptionPercentage int
+	Namespace              string
+	AppNamespace           string
+	CorruptionPercentage   int
+	PodsAffectedPercentage int
 }
 
 func (n NetworkCorruption) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -32,6 +33,7 @@ func (n NetworkCorruption) Instantiate(target targets.Target, duration time.Dura
 					"NETWORK_INTERFACE":                    "eth0",
 					"TARGET_CONTAINER":                     target.MainContainer,
 					"NETWORK_PACKET_CORRUPTION_PERCENTAGE": strconv.Itoa(n.CorruptionPercentage),
+					"PODS_AFFECTED_PERC":                   strconv.Itoa(n.PodsAffectedPercentage),
 				},
 			}),
 		},

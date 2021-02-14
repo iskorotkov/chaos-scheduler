@@ -8,9 +8,10 @@ import (
 )
 
 type NetworkDuplication struct {
-	Namespace             string
-	AppNamespace          string
-	DuplicationPercentage int
+	Namespace              string
+	AppNamespace           string
+	DuplicationPercentage  int
+	PodsAffectedPercentage int
 }
 
 func (n NetworkDuplication) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -32,6 +33,7 @@ func (n NetworkDuplication) Instantiate(target targets.Target, duration time.Dur
 					"NETWORK_INTERFACE":                     "eth0",
 					"TARGET_CONTAINER":                      target.MainContainer,
 					"NETWORK_PACKET_DUPLICATION_PERCENTAGE": strconv.Itoa(n.DuplicationPercentage),
+					"PODS_AFFECTED_PERC":                    strconv.Itoa(n.PodsAffectedPercentage),
 				},
 			}),
 		},

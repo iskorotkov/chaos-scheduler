@@ -8,9 +8,10 @@ import (
 )
 
 type MemoryHog struct {
-	Namespace         string
-	AppNamespace      string
-	MemoryConsumption int
+	Namespace              string
+	AppNamespace           string
+	MemoryConsumption      int
+	PodsAffectedPercentage int
 }
 
 func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) blueprints.Engine {
@@ -35,6 +36,7 @@ func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) bl
 					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
 					"TARGET_CONTAINER":     target.MainContainer,
 					"MEMORY_CONSUMPTION":   strconv.Itoa(m.MemoryConsumption),
+					"PODS_AFFECTED_PERC":   strconv.Itoa(m.PodsAffectedPercentage),
 				},
 			}),
 		},
