@@ -74,11 +74,6 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Severity:  metadata.SeveritySevere,
 		},
 		{
-			Blueprint: container.DiskFill{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, FillPercentage: 90},
-			Scale:     metadata.ScaleContainer,
-			Severity:  metadata.SeveritySevere,
-		},
-		{
 			Blueprint: pod.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 90},
 			Scale:     metadata.ScalePod,
 			Severity:  metadata.SeveritySevere,
@@ -102,11 +97,6 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: node.IOStress{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS, UtilizationPercentage: 90},
 			Scale:     metadata.ScaleNode,
 			Severity:  metadata.SeveritySevere,
-		},
-		{
-			Blueprint: node.Restart{Namespace: cfg.ChaosNS, AppNamespace: cfg.AppNS},
-			Scale:     metadata.ScaleNode,
-			Severity:  metadata.SeverityCritical,
 		},
 	}
 }
