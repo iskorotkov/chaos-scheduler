@@ -23,10 +23,10 @@ type form struct {
 func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", func(writer http.ResponseWriter, request *http.Request) {
+	r.Get("/preview", func(writer http.ResponseWriter, request *http.Request) {
 		preview(writer, request, cfg, finder, logger.Named("preview"))
 	})
-	r.Post("/", func(writer http.ResponseWriter, request *http.Request) {
+	r.Post("/create", func(writer http.ResponseWriter, request *http.Request) {
 		create(writer, request, cfg, finder, executor, logger.Named("create"))
 	})
 
