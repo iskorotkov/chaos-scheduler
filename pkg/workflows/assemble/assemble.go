@@ -174,12 +174,14 @@ func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) (
 		stageIDs := make([]string, 0)
 
 		for actionIndex, action := range stage.Actions {
+			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
+
+			action.Engine.Metadata.Name = id
 			manifest, err := yaml.Marshal(action.Engine)
 			if err != nil {
 				return nil, ErrActionMarshalError
 			}
 
-			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 			manifestTemplate := templates.NewManifestTemplate(id, string(manifest))
 
 			if err := addFailureMetadata(&manifestTemplate, action); err != nil {
