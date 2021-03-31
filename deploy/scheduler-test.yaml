@@ -55,7 +55,7 @@ spec:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
-              value: iskorotkov/chaos-monitor:v0.5.0
+              value: iskorotkov/chaos-monitor:v0.6.0
             - name: APP_NS
               value: "{{ .AppNS }}"
             - name: CHAOS_NS
