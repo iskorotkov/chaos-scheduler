@@ -84,4 +84,4 @@ spec:
       port: 8811
       targetPort: 8811
       protocol: TCP
-  type: NodePort
+  type: ClusterIP
