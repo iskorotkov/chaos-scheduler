@@ -18,9 +18,9 @@ metadata:
   labels:
     app: chaos-framework
 rules:
-  - apiGroups: [ "" ]
-    resources: [ "pods"]
-    verbs: [ "get","list","watch" ]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -54,22 +54,76 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.10.0
+          image: iskorotkov/chaos-scheduler:v0.10.1-failures-config.1
+          ports:
+            - name: web
+              containerPort: 8811
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "64M"
           env:
+            # Infrastructure.
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
               value: iskorotkov/chaos-monitor:v0.6.0
+            - name: DEVELOPMENT
+              value: "false"
+
+            # Target.
             - name: APP_NS
               value: chaos-app
             - name: CHAOS_NS
               value: litmus
             - name: APP_LABEL
               value: app
+
+            # Workflow.
             - name: STAGE_DURATION
               value: 30s
             - name: STAGE_INTERVAL
               value: 30s
+
+            # Node.
+            - name: NODE_CPU_HOG_CORES
+              value: "1"
+            - name: NODE_MEMORY_HOG_PERCENTAGE
+              value: "50"
+            - name: NODE_IO_STRESS_PERCENTAGE
+              value: "90"
+
+            # Pod.
+            - name: POD_IO_STRESS_PERCENTAGE
+              value: "90"
+
+            # Container.
+            - name: CONTAINER_CPU_HOG_CORES
+              value: "1"
+            - name: CONTAINER_MEMORY_HOG_MB
+              value: "1000"
+
+            # Deployment part.
+            - name: DEPLOYMENT_PART_PODS_PERCENTAGE
+              value: "50"
+
+            # Severity.
+            - name: LIGHT_SEVERITY_PERCENTAGE
+              value: "30"
+            - name: SEVERE_SEVERITY_PERCENTAGE
+              value: "90"
+
+            # Latency.
+            - name: LIGHT_NETWORK_LATENCY_MS
+              value: "1000"
+            - name: SEVERE_NETWORK_LATENCY_MS
+              value: "9000"
+
+            # Pod delete.
+            - name: POD_DELETE_INTERVAL
+              value: "5"
+            - name: POD_DELETE_FORCE
+              value: "true"
 ---
 apiVersion: v1
 kind: Service
