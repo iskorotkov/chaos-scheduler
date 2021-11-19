@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type CPUHog struct {
@@ -37,6 +38,8 @@ func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) bluep
 					"TARGET_CONTAINER":     target.MainContainer,
 					"CPU_CORES":            strconv.Itoa(c.Cores),
 					"PODS_AFFECTED_PERC":   strconv.Itoa(c.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":    "containerd",
+					"SOCKET_PATH":          "/run/containerd/containerd.sock",
 				},
 			}),
 		},

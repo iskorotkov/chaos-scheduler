@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type NetworkLatency struct {
@@ -38,6 +39,8 @@ func (p NetworkLatency) Instantiate(target targets.Target, duration time.Duratio
 					"TARGET_CONTAINER":     target.MainContainer,
 					"NETWORK_LATENCY":      strconv.Itoa(p.NetworkLatency),
 					"PODS_AFFECTED_PERC":   strconv.Itoa(p.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":    "containerd",
+					"SOCKET_PATH":          "/run/containerd/containerd.sock",
 				},
 			}),
 		},

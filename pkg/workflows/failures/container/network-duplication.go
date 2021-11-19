@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type NetworkDuplication struct {
@@ -34,6 +35,8 @@ func (n NetworkDuplication) Instantiate(target targets.Target, duration time.Dur
 					"TARGET_CONTAINER":                      target.MainContainer,
 					"NETWORK_PACKET_DUPLICATION_PERCENTAGE": strconv.Itoa(n.DuplicationPercentage),
 					"PODS_AFFECTED_PERC":                    strconv.Itoa(n.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":                     "containerd",
+					"SOCKET_PATH":                           "/run/containerd/containerd.sock",
 				},
 			}),
 		},
