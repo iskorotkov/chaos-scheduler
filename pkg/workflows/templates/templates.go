@@ -3,11 +3,12 @@ package templates
 
 import (
 	"fmt"
-	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
-	"github.com/iskorotkov/chaos-scheduler/pkg/rx"
-	v1 "k8s.io/api/core/v1"
 	"math/rand"
 	"reflect"
+
+	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"github.com/iskorotkov/chaos-scheduler/pkg/rx"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Template is a reusable and composable unit of execution in a workflow.

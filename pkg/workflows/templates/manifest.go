@@ -1,7 +1,7 @@
 package templates
 
 import (
-	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 )
 
 // NewManifestTemplate returns a template that applies Kubernetes .yaml manifest on execution.

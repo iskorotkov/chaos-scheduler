@@ -1,7 +1,7 @@
 package templates
 
 import (
-	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 )
 
 // NewStepsTemplate returns a template representing a list of stages of steps, where each step contains one other template.
