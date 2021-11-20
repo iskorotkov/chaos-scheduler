@@ -54,7 +54,7 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.10.1-failures-config.1
+          image: iskorotkov/chaos-scheduler:v0.11.0
           ports:
             - name: web
               containerPort: 8811
@@ -67,7 +67,7 @@ spec:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
-              value: iskorotkov/chaos-monitor:v0.6.0
+              value: iskorotkov/chaos-monitor:v0.7.0
             - name: DEVELOPMENT
               value: "false"
 

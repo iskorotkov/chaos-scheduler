@@ -60,7 +60,7 @@ spec:
             - name: ARGO_SERVER
               value: argo-server.argo.svc:2746
             - name: STAGE_MONITOR_IMAGE
-              value: iskorotkov/chaos-monitor:v0.6.0
+              value: iskorotkov/chaos-monitor:v0.7.0
             - name: DEVELOPMENT
               value: "true"
 
