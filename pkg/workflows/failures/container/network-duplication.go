@@ -46,3 +46,7 @@ func (n NetworkDuplication) Instantiate(target targets.Target, duration time.Dur
 func (n NetworkDuplication) Name() string {
 	return "pod-network-duplication"
 }
+
+func (n NetworkDuplication) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeNetwork
+}

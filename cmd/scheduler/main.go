@@ -1,6 +1,12 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"os"
+	"runtime/debug"
+	"time"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -12,11 +18,6 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
-	"log"
-	"net/http"
-	"os"
-	"runtime/debug"
-	"time"
 )
 
 func main() {
@@ -69,9 +70,7 @@ func createRouter(cfg *config.Config, finder targets.TargetFinder, executor exec
 	}))
 
 	r.Route("/api", func(r chi.Router) {
-		r.Route("/v1", func(r chi.Router) {
-			r.Mount("/workflows", handlers.Router(cfg, finder, executor, logger.Named("workflows")))
-		})
+		r.Mount("/v1", handlers.Router(cfg, finder, executor, logger.Named("handlers")))
 	})
 
 	return r

@@ -1,10 +1,11 @@
 package node
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type CPUHog struct {
@@ -43,4 +44,8 @@ func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) bluep
 
 func (c CPUHog) Name() string {
 	return "node-cpu-hog"
+}
+
+func (c CPUHog) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeResources
 }

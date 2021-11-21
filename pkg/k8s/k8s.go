@@ -4,6 +4,10 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,9 +15,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 type finder struct {
@@ -63,6 +64,7 @@ func (k finder) List(namespace, label string) ([]targets.Target, error) {
 			MainContainer: containers[0],
 			Containers:    containers,
 			AppLabel:      fmt.Sprintf("%s=%s", label, appLabel),
+			AppLabelValue: appLabel,
 			Labels:        pod.Labels,
 			Annotations:   pod.Annotations,
 		}

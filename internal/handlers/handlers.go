@@ -2,13 +2,14 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
-	"net/http"
-	"strconv"
 )
 
 // form describes request form fields required to generate workflow.
@@ -23,11 +24,17 @@ type form struct {
 func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/preview", func(writer http.ResponseWriter, request *http.Request) {
-		preview(writer, request, cfg, finder, logger.Named("preview"))
+	r.Get("/targets", func(w http.ResponseWriter, r *http.Request) {
+		getAvailableTargets(w, cfg, finder, logger.Named("targets"))
 	})
-	r.Post("/create", func(writer http.ResponseWriter, request *http.Request) {
-		create(writer, request, cfg, finder, executor, logger.Named("create"))
+	r.Get("/failures", func(w http.ResponseWriter, r *http.Request) {
+		getAvailableFailures(w, cfg, logger.Named("failures"))
+	})
+	r.Get("/workflows/preview", func(w http.ResponseWriter, r *http.Request) {
+		preview(w, r, cfg, finder, logger.Named("preview"))
+	})
+	r.Post("/workflows/create", func(w http.ResponseWriter, r *http.Request) {
+		create(w, r, cfg, finder, executor, logger.Named("create"))
 	})
 
 	return r

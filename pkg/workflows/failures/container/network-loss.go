@@ -46,3 +46,7 @@ func (p NetworkLoss) Instantiate(target targets.Target, duration time.Duration) 
 func (p NetworkLoss) Name() string {
 	return "pod-network-loss"
 }
+
+func (p NetworkLoss) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeNetwork
+}

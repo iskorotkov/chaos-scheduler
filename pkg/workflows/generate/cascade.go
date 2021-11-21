@@ -36,7 +36,7 @@ func addCascadeFailures(params Params, rng *rand.Rand) []Stage {
 			target := randomTarget(stageTargets, rng)
 
 			actions = append(actions, Action{
-				Name:     failure.Name(),
+				Name:     failure.Blueprint.Name(),
 				Severity: failure.Severity,
 				Scale:    failure.Scale,
 				Target:   target,

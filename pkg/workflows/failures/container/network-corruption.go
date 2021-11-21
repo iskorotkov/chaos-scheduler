@@ -46,3 +46,7 @@ func (n NetworkCorruption) Instantiate(target targets.Target, duration time.Dura
 func (n NetworkCorruption) Name() string {
 	return "pod-network-corruption"
 }
+
+func (n NetworkCorruption) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeNetwork
+}

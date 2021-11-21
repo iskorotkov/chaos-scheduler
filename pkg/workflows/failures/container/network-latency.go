@@ -46,3 +46,7 @@ func (p NetworkLatency) Instantiate(target targets.Target, duration time.Duratio
 		},
 	})
 }
+
+func (p NetworkLatency) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeNetwork
+}

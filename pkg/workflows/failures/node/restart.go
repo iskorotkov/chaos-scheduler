@@ -1,10 +1,11 @@
 package node
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type Restart struct {
@@ -40,4 +41,8 @@ func (r Restart) Instantiate(target targets.Target, duration time.Duration) blue
 
 func (r Restart) Name() string {
 	return "node-restart"
+}
+
+func (r Restart) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeRestart
 }

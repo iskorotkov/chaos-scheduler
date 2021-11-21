@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type DiskFill struct {
@@ -41,4 +42,8 @@ func (d DiskFill) Instantiate(target targets.Target, duration time.Duration) blu
 
 func (d DiskFill) Name() string {
 	return "disk-fill"
+}
+
+func (d DiskFill) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeIO
 }

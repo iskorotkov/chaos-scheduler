@@ -1,10 +1,11 @@
 package pod
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type Delete struct {
@@ -42,4 +43,8 @@ func (p Delete) Instantiate(target targets.Target, duration time.Duration) bluep
 
 func (p Delete) Name() string {
 	return "pod-delete"
+}
+
+func (p Delete) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeRestart
 }

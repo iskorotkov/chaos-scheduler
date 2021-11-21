@@ -26,6 +26,8 @@ type Target struct {
 	Containers []string `json:"containers"`
 	// AppLabel is a pod label.
 	AppLabel string `json:"appLabel"`
+	// AppLabelValue is a value of AppLabel (i.e. without a key part).
+	AppLabelValue string
 	// Labels is a list of labels from target metadata.
 	Labels map[string]string `json:"labels"`
 	// Annotations is a list of annotations from target metadata.
@@ -48,6 +50,7 @@ func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
 		MainContainer: containers[r.Intn(len(containers))],
 		Containers:    containers,
 		AppLabel:      randomStr("label"),
+		AppLabelValue: randomStr("label-value"),
 		Labels: map[string]string{
 			randomStr("label1"): randomStr("value"),
 			randomStr("label2"): randomStr("value"),
