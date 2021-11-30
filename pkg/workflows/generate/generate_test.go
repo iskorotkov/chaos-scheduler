@@ -16,8 +16,8 @@ func TestGenerator_Generate(t *testing.T) {
 		if err != nil {
 			t.Log(err)
 			return err == ErrZeroTargets && len(params.Targets) == 0 ||
-				err == ErrNonPositiveStages && params.Stages <= 0 ||
-				err == ErrTooManyStages && params.Stages > 100 ||
+				err == ErrNonPositiveStages && (params.Stages.Single <= 0 || params.Stages.Similar <= 0 || params.Stages.Mixed <= 0) ||
+				err == ErrTooManyStages && (params.Stages.Single > 100 || params.Stages.Similar > 100 || params.Stages.Mixed > 100) ||
 				err == ErrZeroFailures && len(params.Failures) == 0 ||
 				err == ErrMaxFailures && params.Budget.MaxFailures < 1 ||
 				err == ErrMaxPoints && params.Budget.MaxPoints < 1 ||

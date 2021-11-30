@@ -1,22 +1,24 @@
 package generate
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/api/metadata"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/api/metadata"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 // Action is a single scenario step.
 type Action struct {
-	Name     string            `json:"name"`
-	Severity metadata.Severity `json:"severity"`
-	Scale    metadata.Scale    `json:"scale"`
-	Engine   blueprints.Engine `json:"engine"`
-	Target   targets.Target    `json:"target"`
+	Name     string                   `json:"name"`
+	Type     blueprints.BlueprintType `json:"type"`
+	Severity metadata.Severity        `json:"severity"`
+	Scale    metadata.Scale           `json:"scale"`
+	Engine   blueprints.Engine        `json:"engine"`
+	Target   targets.Target           `json:"target"`
 }
 
 func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
@@ -37,6 +39,7 @@ func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
 
 	return reflect.ValueOf(Action{
 		Name:     strconv.FormatUint(r.Uint64(), 10),
+		Type:     blueprints.BlueprintType(strconv.FormatUint(r.Uint64(), 10)),
 		Severity: severity[r.Intn(len(severity))],
 		Scale:    scale[r.Intn(len(scale))],
 		Engine:   blueprints.Engine{}.Generate(r, size).Interface().(blueprints.Engine),

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
@@ -32,7 +31,7 @@ func getAvailableTargets(w http.ResponseWriter, cfg *config.Config, finder targe
 	targetsMap := make(map[string][]Target)
 	for _, t := range tt {
 		targetsMap[t.AppLabelValue] = append(targetsMap[t.AppLabelValue], Target{
-			ID:        fmt.Sprintf("%s/deployment/%s", cfg.AppNS, t.AppLabelValue),
+			ID:        t.ID(),
 			Type:      "deployment",
 			Name:      t.AppLabelValue,
 			Namespace: cfg.AppNS,

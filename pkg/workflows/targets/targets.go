@@ -34,6 +34,10 @@ type Target struct {
 	Annotations map[string]string `json:"annotations"`
 }
 
+func (t Target) ID() string {
+	return fmt.Sprintf("deployment/%s", t.AppLabelValue)
+}
+
 func (t Target) Generate(r *rand.Rand, _ int) reflect.Value {
 	randomStr := func(prefix string) string {
 		return fmt.Sprintf("%s-%d", prefix, r.Int())

@@ -1,17 +1,20 @@
 package workflows
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"go.uber.org/zap"
 	"math/rand"
 	"testing"
 	"testing/quick"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
+	"go.uber.org/zap"
 )
 
 func paramsValid(params ScenarioParams) bool {
-	return params.Stages > 0 && params.Stages <= 100 && params.StageDuration >= time.Second
+	return params.Stages.Single > 0 && params.Stages.Single <= 100 &&
+		params.Stages.Similar > 0 && params.Stages.Similar <= 100 &&
+		params.Stages.Mixed > 0 && params.Stages.Mixed <= 100 &&
+		params.StageDuration >= time.Second
 }
 
 func TestCreateScenario(t *testing.T) {
@@ -20,19 +23,11 @@ func TestCreateScenario(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(params ScenarioParams) bool {
-		targetFinder := params.TargetFinder.(*targets.TestTargetFinder)
-
 		s, err := CreateScenario(params, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
 			return err == ErrScenarioParams && !paramsValid(params) ||
-				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
-				err == ErrTargetsFetch && targetFinder.Err != nil
-		}
-
-		if targetFinder.Err != nil {
-			t.Log("must return error when target finder returns error")
-			return false
+				err == ErrNotEnoughTargets && len(params.Targets) == 0
 		}
 
 		if !paramsValid(params) {
@@ -40,19 +35,13 @@ func TestCreateScenario(t *testing.T) {
 			return false
 		}
 
-		if len(targetFinder.Targets) == 0 {
+		if len(params.Targets) == 0 {
 			t.Log("must return error when len(targets) == 0")
 			return false
 		}
 
 		if len(s.Stages) == 0 {
 			t.Log("scenario must contain at least one stage")
-			return false
-		}
-
-		if targetFinder.SubmittedLabel != params.AppLabel ||
-			targetFinder.SubmittedNamespace != params.AppNS {
-			t.Log("app label and namespace must equal to values from params")
 			return false
 		}
 
@@ -71,19 +60,11 @@ func TestCreateWorkflow(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(sp ScenarioParams, wp WorkflowParams) bool {
-		targetFinder := sp.TargetFinder.(*targets.TestTargetFinder)
-
 		wf, err := CreateWorkflow(sp, wp, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
 			return err == ErrScenarioParams && !paramsValid(sp) ||
-				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
-				err == ErrTargetsFetch && targetFinder.Err != nil
-		}
-
-		if targetFinder.Err != nil {
-			t.Log("must return error when target finder returns error")
-			return false
+				err == ErrNotEnoughTargets && len(sp.Targets) == 0
 		}
 
 		if !paramsValid(sp) {
@@ -91,7 +72,7 @@ func TestCreateWorkflow(t *testing.T) {
 			return false
 		}
 
-		if len(targetFinder.Targets) == 0 {
+		if len(sp.Targets) == 0 {
 			t.Log("must return error when len(targets) == 0")
 			return false
 		}
@@ -105,12 +86,6 @@ func TestCreateWorkflow(t *testing.T) {
 		if len(wf.Labels) != 0 ||
 			len(wf.Annotations) != 0 {
 			t.Log("labels and annotations must contain zero items")
-			return false
-		}
-
-		if targetFinder.SubmittedLabel != sp.AppLabel ||
-			targetFinder.SubmittedNamespace != sp.AppNS {
-			t.Log("app label and namespace must equal to values from params")
 			return false
 		}
 
@@ -129,30 +104,18 @@ func TestExecuteWorkflow(t *testing.T) {
 	rng := rand.New(rand.NewSource(0))
 
 	f := func(sp ScenarioParams, wp WorkflowParams, ep ExecutionParams) bool {
-		targetFinder := sp.TargetFinder.(*targets.TestTargetFinder)
 		executor := ep.Executor.(*execute.TestExecutor)
 
 		wf, err := ExecuteWorkflow(sp, wp, ep, zap.NewNop().Sugar())
 		if err != nil {
 			t.Log(err)
 			return err == ErrScenarioParams && !paramsValid(sp) ||
-				err == ErrNotEnoughTargets && len(targetFinder.Targets) == 0 ||
-				err == ErrTargetsFetch && targetFinder.Err != nil ||
+				err == ErrNotEnoughTargets && len(sp.Targets) == 0 ||
 				err == ErrExecution && executor.Err != nil
-		}
-
-		if targetFinder.Err != nil {
-			t.Log("must return error when target finder returns error")
-			return false
 		}
 
 		if !paramsValid(sp) {
 			t.Log("must return error when params are invalid")
-			return false
-		}
-
-		if len(targetFinder.Targets) == 0 {
-			t.Log("must return error when len(targets) == 0")
 			return false
 		}
 
@@ -165,12 +128,6 @@ func TestExecuteWorkflow(t *testing.T) {
 		if len(executor.SubmittedWorkflow.Labels) != 0 ||
 			len(executor.SubmittedWorkflow.Annotations) != 0 {
 			t.Log("labels and annotations must contain zero items")
-			return false
-		}
-
-		if targetFinder.SubmittedLabel != sp.AppLabel ||
-			targetFinder.SubmittedNamespace != sp.AppNS {
-			t.Log("app label and namespace must equal to values from params")
 			return false
 		}
 
