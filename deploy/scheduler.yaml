@@ -54,7 +54,7 @@ spec:
       serviceAccountName: chaos-framework-sa
       containers:
         - name: scheduler
-          image: iskorotkov/chaos-scheduler:v0.11.0
+          image: iskorotkov/chaos-scheduler:v0.12.0
           ports:
             - name: web
               containerPort: 8811
