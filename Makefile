@@ -1,4 +1,4 @@
-VERSION = v0.10.0
+VERSION = v0.10.1-failures-config.1
 IMAGE = iskorotkov/chaos-scheduler
 NAMESPACE = chaos-framework
 

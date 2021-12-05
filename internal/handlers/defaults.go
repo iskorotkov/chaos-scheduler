@@ -31,7 +31,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 		Scale      metadata.Scale
 	}{
 		{Scale: metadata.ScalePod},
-		{Percentage: 50, Scale: metadata.ScaleDeploymentPart},
+		{Percentage: cfg.DeploymentPartPodsPercentage, Scale: metadata.ScaleDeploymentPart},
 		{Percentage: 100, Scale: metadata.ScaleDeployment},
 	}
 
@@ -39,8 +39,8 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 		Percentage int
 		Severity   metadata.Severity
 	}{
-		{Percentage: 10, Severity: metadata.SeverityLight},
-		{Percentage: 90, Severity: metadata.SeveritySevere},
+		{Percentage: cfg.LightSeverityPercentage, Severity: metadata.SeverityLight},
+		{Percentage: cfg.SevereSeverityPercentage, Severity: metadata.SeveritySevere},
 	}
 
 	// Node failures
@@ -49,7 +49,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: node.CPUHog{
 				Namespace:    cfg.ChaosNS,
 				AppNamespace: cfg.AppNS,
-				Cores:        2,
+				Cores:        cfg.NodeCPUHogCores,
 			},
 			Scale:    metadata.ScaleNode,
 			Severity: metadata.SeveritySevere,
@@ -58,7 +58,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: node.MemoryHog{
 				Namespace:        cfg.ChaosNS,
 				AppNamespace:     cfg.AppNS,
-				MemoryPercentage: 90,
+				MemoryPercentage: cfg.NodeMemoryHogPercentage,
 			},
 			Scale:    metadata.ScaleNode,
 			Severity: metadata.SeveritySevere,
@@ -67,7 +67,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: node.IOStress{
 				Namespace:             cfg.ChaosNS,
 				AppNamespace:          cfg.AppNS,
-				UtilizationPercentage: 90,
+				UtilizationPercentage: cfg.NodeIOStressPercentage,
 			},
 			Scale:    metadata.ScaleNode,
 			Severity: metadata.SeveritySevere,
@@ -80,7 +80,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: container.NetworkLatency{
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
-				NetworkLatency:         300,
+				NetworkLatency:         cfg.LightNetworkLatencyMS,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
@@ -89,7 +89,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: container.NetworkLatency{
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
-				NetworkLatency:         3000,
+				NetworkLatency:         cfg.SevereNetworkLatencyMS,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
@@ -98,7 +98,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: container.CPUHog{
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
-				Cores:                  1,
+				Cores:                  cfg.ContainerCPUHogCores,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
@@ -107,7 +107,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: container.MemoryHog{
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
-				MemoryConsumption:      1000,
+				MemoryConsumption:      cfg.ContainerMemoryHogMB,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
@@ -116,7 +116,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 			Blueprint: pod.IOStress{
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
-				UtilizationPercentage:  90,
+				UtilizationPercentage:  cfg.PodIOStressPercentage,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
@@ -126,7 +126,7 @@ func enabledFailures(cfg *config.Config) []failures.Failure {
 				Namespace:              cfg.ChaosNS,
 				AppNamespace:           cfg.AppNS,
 				Interval:               1,
-				Force:                  false,
+				Force:                  true,
 				PodsAffectedPercentage: pods.Percentage,
 			},
 			Scale:    pods.Scale,
