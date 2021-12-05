@@ -49,3 +49,7 @@ func (c CPUHog) Instantiate(target targets.Target, duration time.Duration) bluep
 func (c CPUHog) Name() string {
 	return "pod-cpu-hog"
 }
+
+func (c CPUHog) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeResources
+}

@@ -3,11 +3,12 @@ package failures
 
 import (
 	"fmt"
+	"math/rand"
+	"reflect"
+
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/pod"
-	"math/rand"
-	"reflect"
 )
 
 // Failure represents a real-world failure.
@@ -51,9 +52,4 @@ func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 		Scale:    scale[r.Intn(len(scale))],
 		Severity: severity[r.Intn(len(severity))],
 	})
-}
-
-// Name returns a Failure name.
-func (f Failure) Name() string {
-	return f.Blueprint.Name()
 }

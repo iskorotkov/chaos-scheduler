@@ -13,7 +13,7 @@ func addIsolatedFailures(params Params, rng *rand.Rand) []Stage {
 		target := randomTarget(params.Targets, rng)
 
 		actions := []Action{{
-			Name:     failure.Name(),
+			Name:     failure.Blueprint.Name(),
 			Severity: failure.Severity,
 			Scale:    failure.Scale,
 			Target:   target,

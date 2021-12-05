@@ -25,7 +25,7 @@ func addComplexFailures(params Params, rng *rand.Rand) []Stage {
 				points -= cost
 
 				actions = append(actions, Action{
-					Name:     failure.Name(),
+					Name:     failure.Blueprint.Name(),
 					Severity: failure.Severity,
 					Scale:    failure.Scale,
 					Target:   target,

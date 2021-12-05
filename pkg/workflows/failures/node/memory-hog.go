@@ -45,3 +45,7 @@ func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) bl
 func (m MemoryHog) Name() string {
 	return "node-memory-hog"
 }
+
+func (m MemoryHog) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeResources
+}

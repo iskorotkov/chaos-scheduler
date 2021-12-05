@@ -48,3 +48,7 @@ func (i IOStress) Instantiate(target targets.Target, duration time.Duration) blu
 func (i IOStress) Name() string {
 	return "pod-io-stress"
 }
+
+func (i IOStress) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeIO
+}

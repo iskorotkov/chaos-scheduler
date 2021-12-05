@@ -1,10 +1,11 @@
 package node
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type IOStress struct {
@@ -43,4 +44,8 @@ func (i IOStress) Instantiate(target targets.Target, duration time.Duration) blu
 
 func (i IOStress) Name() string {
 	return "node-io-stress"
+}
+
+func (i IOStress) Type() blueprints.BlueprintType {
+	return blueprints.BlueprintTypeIO
 }
