@@ -1,4 +1,4 @@
-VERSION = v0.12.2
+VERSION = v0.12.3
 IMAGE = iskorotkov/chaos-scheduler
 
 .PHONY: ci
