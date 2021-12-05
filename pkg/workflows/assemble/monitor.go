@@ -2,16 +2,17 @@ package assemble
 
 import (
 	"fmt"
+	"math/rand"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/rx"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/templates"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
-	"math/rand"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type monitor struct {
@@ -40,7 +41,7 @@ func (s monitor) Apply(stage generate.Stage, stageIndex int) []templates.Templat
 	ignoredLabels := make([]string, 0)
 	ignoredNodes := make([]string, 0)
 
-	for _, action := range stage.Actions {
+	for _, action := range stage.Steps {
 		if action.Severity == metadata.SeverityCritical {
 			if action.Scale == metadata.ScaleNode {
 				ignoredNodes = append(ignoredNodes, action.Target.Node)

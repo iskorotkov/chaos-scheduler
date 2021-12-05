@@ -35,12 +35,12 @@ func TestGenerator_Generate(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) == 0 {
+			if len(stage.Steps) == 0 {
 				t.Log("stage must contain at least one action")
 				return false
 			}
 
-			for _, action := range stage.Actions {
+			for _, action := range stage.Steps {
 				if action.Name == "" ||
 					action.Scale == "" ||
 					action.Severity == "" {

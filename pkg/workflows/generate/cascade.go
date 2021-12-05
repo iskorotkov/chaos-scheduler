@@ -13,7 +13,7 @@ func addCascadeFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 	for i := 0; i < params.Stages.Similar; i++ {
 		stageTargets := params.Targets
 
-		actions := make([]Action, 0)
+		steps := make([]Step, 0)
 		points := params.Budget.MaxPoints
 
 		failure := randomFailure(phaseFailures, failuresRng)
@@ -28,14 +28,14 @@ func addCascadeFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 			cost = calculateCost(params.Modifiers, failure)
 		}
 
-		for len(actions) < params.Budget.MaxFailures {
+		for len(steps) < params.Budget.MaxFailures {
 			if len(stageTargets) == 0 {
 				break
 			}
 
 			target := randomTarget(stageTargets, targetsRng)
 
-			actions = append(actions, Action{
+			steps = append(steps, Step{
 				Name:     failure.Blueprint.Name(),
 				Type:     failure.Blueprint.Type(),
 				Severity: failure.Severity,
@@ -51,7 +51,7 @@ func addCascadeFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 		}
 
 		stages = append(stages, Stage{
-			Actions:  actions,
+			Steps:    steps,
 			Duration: params.StageDuration,
 		})
 	}

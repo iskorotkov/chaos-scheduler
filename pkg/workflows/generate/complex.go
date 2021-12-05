@@ -12,11 +12,11 @@ func addComplexFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 		stageFailures := params.Failures
 		stageTargets := params.Targets
 
-		actions := make([]Action, 0)
+		steps := make([]Step, 0)
 
 		points := params.Budget.MaxPoints
 		stageRetries := retries
-		for len(actions) < params.Budget.MaxFailures {
+		for len(steps) < params.Budget.MaxFailures {
 			failure := randomFailure(stageFailures, failuresRng)
 			target := randomTarget(stageTargets, targetsRng)
 			cost := calculateCost(params.Modifiers, failure)
@@ -24,7 +24,7 @@ func addComplexFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 			if cost <= points {
 				points -= cost
 
-				actions = append(actions, Action{
+				steps = append(steps, Step{
 					Name:     failure.Blueprint.Name(),
 					Type:     failure.Blueprint.Type(),
 					Severity: failure.Severity,
@@ -42,7 +42,7 @@ func addComplexFailures(params Params, failuresRng *rand.Rand, targetsRng *rand.
 		}
 
 		stages = append(stages, Stage{
-			Actions:  actions,
+			Steps:    steps,
 			Duration: params.StageDuration,
 		})
 	}

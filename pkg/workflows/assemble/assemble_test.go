@@ -1,13 +1,14 @@
 package assemble
 
 import (
+	"math/rand"
+	"testing"
+	"testing/quick"
+
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/metadata"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math/rand"
-	"testing"
-	"testing/quick"
 )
 
 func TestModularAssembler_Assemble(t *testing.T) {
@@ -15,7 +16,7 @@ func TestModularAssembler_Assemble(t *testing.T) {
 
 	hasStageWithZeroActions := func(stages []generate.Stage) bool {
 		for _, s := range stages {
-			if len(s.Actions) == 0 {
+			if len(s.Steps) == 0 {
 				return true
 			}
 		}

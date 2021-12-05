@@ -24,12 +24,12 @@ func Test_addIsolatedFailures(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) != 1 {
+			if len(stage.Steps) != 1 {
 				t.Log("stage must contain exactly 1 action")
 				return false
 			}
 
-			for _, action := range stage.Actions {
+			for _, action := range stage.Steps {
 				if action.Name == "" ||
 					action.Scale == "" ||
 					action.Severity == "" {
