@@ -1,6 +1,5 @@
-VERSION = v0.10.1-failures-config.1
+VERSION = v0.11.0
 IMAGE = iskorotkov/chaos-scheduler
-NAMESPACE = chaos-framework
 
 .PHONY: ci
 ci: build test-short test build-image push-image deploy
@@ -27,8 +26,8 @@ push-image:
 
 .PHONY: deploy
 deploy:
-	kubectl apply -f deploy/scheduler.yaml -n $(NAMESPACE)
+	kubectl apply -f deploy/scheduler.yaml
 
 .PHONY: undeploy
 undeploy:
-	kubectl delete -f deploy/scheduler.yaml -n $(NAMESPACE)
+	kubectl delete -f deploy/scheduler.yaml

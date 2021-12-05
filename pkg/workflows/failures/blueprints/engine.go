@@ -2,7 +2,6 @@ package blueprints
 
 import (
 	"fmt"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"math/rand"
 	"reflect"
 )
@@ -17,16 +16,23 @@ type AppInfo struct {
 	AppKind string `json:"appkind" yaml:"appkind"`
 }
 
+type EngineMetadata struct {
+	Name        string            `json:"name,omitempty" yaml:"name"`
+	Namespace   string            `json:"namespace,omitempty" yaml:"namespace"`
+	Labels      map[string]string `json:"labels,omitempty" yaml:"labels"`
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations"`
+}
+
 // EngineSpec describes engine spec.
 type EngineSpec struct {
 	// AppInfo describes failure target.
 	AppInfo AppInfo `json:"appinfo" yaml:"appinfo"`
-	// JobCleanupPolicy describes cleanup actions after the engine finishes execution.
-	JobCleanupPolicy string `json:"jobCleanupPolicy,omitempty" yaml:"jobCleanupPolicy,omitempty"`
+	// JobCleanUpPolicy describes cleanup actions after the engine finishes execution.
+	JobCleanUpPolicy string `json:"jobCleanUpPolicy,omitempty" yaml:"jobCleanUpPolicy,omitempty"`
 	// Monitoring describes whether monitoring data should be exported.
 	Monitoring bool `json:"monitoring,omitempty" yaml:"monitoring,omitempty"`
-	// AnnotationsCheck describes whether failures must influence only pods with the annotation set.
-	AnnotationsCheck bool `json:"annotationsCheck,omitempty" yaml:"annotationsCheck,omitempty"`
+	// AnnotationCheck describes whether failures must influence only pods with the annotation set.
+	AnnotationCheck string `json:"annotationCheck,omitempty" yaml:"annotationCheck,omitempty"`
 	// EngineState is a current state of the engine.
 	EngineState string `json:"engineState,omitempty" yaml:"engineState,omitempty"`
 	// ChaosServiceAccount is a ServiceAccount name to use to cause chaos.
@@ -37,10 +43,10 @@ type EngineSpec struct {
 
 // Engine is a set of experiments and associated values.
 type Engine struct {
-	APIVersion string        `json:"apiVersion" yaml:"apiVersion"`
-	Kind       string        `json:"kind" yaml:"kind"`
-	Metadata   v1.ObjectMeta `json:"metadata" yaml:"metadata"`
-	Spec       EngineSpec    `json:"spec" yaml:"spec"`
+	APIVersion string         `json:"apiVersion" yaml:"apiVersion"`
+	Kind       string         `json:"kind" yaml:"kind"`
+	Metadata   EngineMetadata `json:"metadata" yaml:"metadata"`
+	Spec       EngineSpec     `json:"spec" yaml:"spec"`
 }
 
 type EngineParams struct {
@@ -91,7 +97,7 @@ func NewEngine(params EngineParams) Engine {
 	return Engine{
 		Kind:       "ChaosEngine",
 		APIVersion: "litmuschaos.io/v1alpha1",
-		Metadata: v1.ObjectMeta{
+		Metadata: EngineMetadata{
 			Name:        params.Name,
 			Namespace:   params.Namespace,
 			Labels:      params.Labels,
@@ -99,9 +105,9 @@ func NewEngine(params EngineParams) Engine {
 		},
 		Spec: EngineSpec{
 			AppInfo:             params.AppInfo,
-			JobCleanupPolicy:    "delete",
+			JobCleanUpPolicy:    "delete",
 			Monitoring:          false,
-			AnnotationsCheck:    true,
+			AnnotationCheck:     "true",
 			EngineState:         "active",
 			ChaosServiceAccount: "litmus-admin",
 			Experiments:         params.Experiments,

@@ -1,10 +1,11 @@
 package pod
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type IOStress struct {
@@ -36,6 +37,8 @@ func (i IOStress) Instantiate(target targets.Target, duration time.Duration) blu
 					"TOTAL_CHAOS_DURATION":              strconv.Itoa(int(duration.Seconds())),
 					"FILESYSTEM_UTILIZATION_PERCENTAGE": strconv.Itoa(i.UtilizationPercentage),
 					"PODS_AFFECTED_PERC":                strconv.Itoa(i.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":                 "containerd",
+					"SOCKET_PATH":                       "/run/containerd/containerd.sock",
 				},
 			}),
 		},

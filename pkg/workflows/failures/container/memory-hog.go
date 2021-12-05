@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type MemoryHog struct {
@@ -37,6 +38,8 @@ func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) bl
 					"TARGET_CONTAINER":     target.MainContainer,
 					"MEMORY_CONSUMPTION":   strconv.Itoa(m.MemoryConsumption),
 					"PODS_AFFECTED_PERC":   strconv.Itoa(m.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":    "containerd",
+					"SOCKET_PATH":          "/run/containerd/containerd.sock",
 				},
 			}),
 		},

@@ -1,10 +1,11 @@
 package node
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type MemoryHog struct {
@@ -32,9 +33,9 @@ func (m MemoryHog) Instantiate(target targets.Target, duration time.Duration) bl
 			blueprints.NewExperiment(blueprints.ExperimentParams{
 				Name: m.Name(),
 				Env: map[string]string{
-					"TOTAL_CHAOS_DURATION": strconv.Itoa(int(duration.Seconds())),
-					"TARGET_NODES":         target.Node,
-					"MEMORY_PERCENTAGE":    strconv.Itoa(m.MemoryPercentage),
+					"TOTAL_CHAOS_DURATION":          strconv.Itoa(int(duration.Seconds())),
+					"TARGET_NODES":                  target.Node,
+					"MEMORY_CONSUMPTION_PERCENTAGE": strconv.Itoa(m.MemoryPercentage),
 				},
 			}),
 		},

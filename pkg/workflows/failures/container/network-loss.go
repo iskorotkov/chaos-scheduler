@@ -1,10 +1,11 @@
 package container
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"strconv"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures/blueprints"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
 type NetworkLoss struct {
@@ -34,6 +35,8 @@ func (p NetworkLoss) Instantiate(target targets.Target, duration time.Duration) 
 					"TARGET_CONTAINER":               target.MainContainer,
 					"NETWORK_PACKET_LOSS_PERCENTAGE": strconv.Itoa(p.LossPercentage),
 					"PODS_AFFECTED_PERC":             strconv.Itoa(p.PodsAffectedPercentage),
+					"CONTAINER_RUNTIME":              "containerd",
+					"SOCKET_PATH":                    "/run/containerd/containerd.sock",
 				},
 			}),
 		},

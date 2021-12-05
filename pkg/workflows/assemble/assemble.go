@@ -4,7 +4,11 @@ package assemble
 import (
 	"errors"
 	"fmt"
-	"github.com/argoproj/argo/pkg/apis/workflow/v1alpha1"
+	"math/rand"
+	"reflect"
+	"time"
+
+	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	api "github.com/iskorotkov/chaos-scheduler/api/metadata"
 	"github.com/iskorotkov/chaos-scheduler/pkg/rx"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
@@ -13,9 +17,6 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"math/rand"
-	"reflect"
-	"time"
 )
 
 var (
