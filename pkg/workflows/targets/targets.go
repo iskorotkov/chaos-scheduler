@@ -27,7 +27,7 @@ type Target struct {
 	// AppLabel is a pod label.
 	AppLabel string `json:"appLabel"`
 	// AppLabelValue is a value of AppLabel (i.e. without a key part).
-	AppLabelValue string
+	AppLabelValue string `json:"appLabelValue"`
 	// Labels is a list of labels from target metadata.
 	Labels map[string]string `json:"labels"`
 	// Annotations is a list of annotations from target metadata.
