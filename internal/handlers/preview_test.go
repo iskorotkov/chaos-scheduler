@@ -81,8 +81,8 @@ func Test_preview(t *testing.T) {
 				return false
 			}
 
-			for _, action := range stage.Actions {
-				if action.Engine.Metadata.Namespace != cfg.ChaosNS {
+			for _, step := range stage.Steps {
+				if step.Engine.Metadata.Namespace != cfg.ChaosNS {
 					t.Log("actions namespace must match chaos namespace")
 					return false
 				}
