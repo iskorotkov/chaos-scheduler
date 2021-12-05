@@ -13,7 +13,8 @@ import (
 
 // previewResponse is a response returned after scenario was generated.
 type previewResponse struct {
-	Scenario generate.Scenario `json:"scenario"`
+	generate.Scenario
+	Namespace string `json:"namespace"`
 }
 
 // preview handles requests to create and preview scenario.
@@ -66,7 +67,7 @@ func preview(w http.ResponseWriter, r *http.Request, cfg *config.Config, finder 
 
 	w.Header().Add("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(previewResponse{Scenario: scenario})
+	err = json.NewEncoder(w).Encode(previewResponse{Namespace: body.Namespace, Scenario: scenario})
 	if err != nil {
 		logger.Errorw(err.Error())
 		http.Error(w, "couldn't encode response as JSON", http.StatusInternalServerError)

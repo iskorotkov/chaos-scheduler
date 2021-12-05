@@ -25,19 +25,19 @@ func Test_addCascadeFailures(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) == 0 {
+			if len(stage.Steps) == 0 {
 				t.Log("stage must contain at least 1 action")
 				return false
 			}
 
-			if len(stage.Actions) > params.Budget.MaxFailures {
+			if len(stage.Steps) > params.Budget.MaxFailures {
 				t.Log("total number os actions per stage must be less or equal to budget's max value")
 				return false
 			}
 
-			firstAction := stage.Actions[0]
+			firstAction := stage.Steps[0]
 
-			for _, action := range stage.Actions {
+			for _, action := range stage.Steps {
 				if action.Name != firstAction.Name ||
 					action.Scale != firstAction.Scale ||
 					action.Severity != firstAction.Severity ||

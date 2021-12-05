@@ -11,8 +11,8 @@ import (
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 )
 
-// Action is a single scenario step.
-type Action struct {
+// Step is a single scenario step.
+type Step struct {
 	Name     string                   `json:"name"`
 	Type     blueprints.BlueprintType `json:"type"`
 	Severity metadata.Severity        `json:"severity"`
@@ -21,7 +21,7 @@ type Action struct {
 	Target   targets.Target           `json:"target"`
 }
 
-func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
+func (a Step) Generate(r *rand.Rand, size int) reflect.Value {
 	severity := []metadata.Severity{
 		metadata.SeverityHarmless,
 		metadata.SeverityLight,
@@ -37,7 +37,7 @@ func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
 		metadata.ScaleCluster,
 	}
 
-	return reflect.ValueOf(Action{
+	return reflect.ValueOf(Step{
 		Name:     strconv.FormatUint(r.Uint64(), 10),
 		Type:     blueprints.BlueprintType(strconv.FormatUint(r.Uint64(), 10)),
 		Severity: severity[r.Intn(len(severity))],
@@ -49,18 +49,18 @@ func (a Action) Generate(r *rand.Rand, size int) reflect.Value {
 
 // Stage is a set of actions executed in parallel during specified time.
 type Stage struct {
-	Actions  []Action      `json:"actions"`
+	Steps    []Step        `json:"steps"`
 	Duration time.Duration `json:"duration"`
 }
 
 func (s Stage) Generate(rand *rand.Rand, size int) reflect.Value {
-	var actions []Action
+	var actions []Step
 	for i := 0; i < rand.Intn(10); i++ {
-		actions = append(actions, Action{}.Generate(rand, size).Interface().(Action))
+		actions = append(actions, Step{}.Generate(rand, size).Interface().(Step))
 	}
 
 	return reflect.ValueOf(Stage{
-		Actions:  actions,
+		Steps:    actions,
 		Duration: time.Duration(30 + rand.Intn(60)),
 	})
 }

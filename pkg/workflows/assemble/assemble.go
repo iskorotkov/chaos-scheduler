@@ -110,7 +110,7 @@ func NewWorkflow(entrypoint string, templates []templates.Template, opts ...Opti
 
 // ActionExt appends templates to a stage based on a previous action.
 type ActionExt interface {
-	Apply(action generate.Action, stageIndex, actionIndex int) []templates.Template
+	Apply(step generate.Step, stageIndex, actionIndex int) []templates.Template
 }
 
 // StageExt appends templates to a stage based on other actions of the stage.
@@ -164,17 +164,17 @@ func Assemble(scenario generate.Scenario, extensions ExtCollection) (Workflow, e
 
 // createTemplatesList returns linear list of all templates.
 func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) ([]templates.Template, error) {
-	actions := make([]templates.Template, 0)
+	steps := make([]templates.Template, 0)
 	ids := make([][]string, 0)
 
 	for stageIndex, stage := range scenario.Stages {
-		if len(stage.Actions) == 0 {
+		if len(stage.Steps) == 0 {
 			return nil, ErrActions
 		}
 
 		stageIDs := make([]string, 0)
 
-		for actionIndex, action := range stage.Actions {
+		for actionIndex, action := range stage.Steps {
 			id := fmt.Sprintf("%s-%d-%d", action.Name, stageIndex+1, actionIndex+1)
 
 			action.Engine.Metadata.Name = id
@@ -189,7 +189,7 @@ func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) (
 				return nil, err
 			}
 
-			actions = append(actions, manifestTemplate)
+			steps = append(steps, manifestTemplate)
 			stageIDs = append(stageIDs, id)
 
 			extensionsActions, extensionsIDs, err := applyActionExtensions(action, stageIndex, actionIndex, extensions.Action)
@@ -197,7 +197,7 @@ func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) (
 				return nil, err
 			}
 
-			actions, stageIDs = append(actions, extensionsActions...), append(stageIDs, extensionsIDs...)
+			steps, stageIDs = append(steps, extensionsActions...), append(stageIDs, extensionsIDs...)
 		}
 
 		extensionsActions, extensionsIDs, err := applyStageExtensions(stage, stageIndex, extensions.Stage)
@@ -205,7 +205,7 @@ func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) (
 			return nil, err
 		}
 
-		actions, stageIDs = append(actions, extensionsActions...), append(stageIDs, extensionsIDs...)
+		steps, stageIDs = append(steps, extensionsActions...), append(stageIDs, extensionsIDs...)
 
 		ids = append(ids, stageIDs)
 	}
@@ -215,17 +215,17 @@ func createTemplatesList(scenario generate.Scenario, extensions ExtCollection) (
 		return nil, err
 	}
 
-	actions = append(actions, workflowActions...)
-	return actions, nil
+	steps = append(steps, workflowActions...)
+	return steps, nil
 }
 
 // addFailureMetadata adds metadata to a failure template.
-func addFailureMetadata(t *templates.Template, action generate.Action) error {
+func addFailureMetadata(t *templates.Template, step generate.Step) error {
 	values := api.TemplateMetadata{
 		Version:  api.VersionV1,
 		Type:     api.TypeFailure,
-		Severity: action.Severity,
-		Scale:    action.Scale,
+		Severity: step.Severity,
+		Scale:    step.Scale,
 	}
 
 	// TODO: Do not use temporary ObjectMeta to marshal data to
@@ -285,7 +285,7 @@ func applyWorkflowExtensions(ids [][]string, extensions []WorkflowExt) ([]templa
 }
 
 func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []StageExt) ([]templates.Template, []string, error) {
-	actions := make([]templates.Template, 0)
+	steps := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
 	if extensions != nil {
@@ -293,7 +293,7 @@ func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []Sta
 			createdExtensions := extension.Apply(stage, stageIndex)
 
 			if createdExtensions != nil {
-				actions = append(actions, createdExtensions...)
+				steps = append(steps, createdExtensions...)
 
 				for _, created := range createdExtensions {
 					stageIDs = append(stageIDs, created.ID())
@@ -302,25 +302,25 @@ func applyStageExtensions(stage generate.Stage, stageIndex int, extensions []Sta
 		}
 	}
 
-	for i := 0; i < len(actions); i++ {
-		if err := addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
+	for i := 0; i < len(steps); i++ {
+		if err := addUtilityMetadata(&steps[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return actions, stageIDs, nil
+	return steps, stageIDs, nil
 }
 
-func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, extensions []ActionExt) ([]templates.Template, []string, error) {
-	actions := make([]templates.Template, 0)
+func applyActionExtensions(step generate.Step, stageIndex, actionIndex int, extensions []ActionExt) ([]templates.Template, []string, error) {
+	steps := make([]templates.Template, 0)
 	stageIDs := make([]string, 0)
 
 	if extensions != nil {
 		for _, extension := range extensions {
-			createdExtensions := extension.Apply(action, stageIndex, actionIndex)
+			createdExtensions := extension.Apply(step, stageIndex, actionIndex)
 
 			if createdExtensions != nil {
-				actions = append(actions, createdExtensions...)
+				steps = append(steps, createdExtensions...)
 
 				for _, created := range createdExtensions {
 					stageIDs = append(stageIDs, created.ID())
@@ -329,11 +329,11 @@ func applyActionExtensions(action generate.Action, stageIndex, actionIndex int, 
 		}
 	}
 
-	for i := 0; i < len(actions); i++ {
-		if err := addUtilityMetadata(&actions[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
+	for i := 0; i < len(steps); i++ {
+		if err := addUtilityMetadata(&steps[i], api.SeverityHarmless, api.ScaleCluster); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return actions, stageIDs, nil
+	return steps, stageIDs, nil
 }

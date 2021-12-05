@@ -26,18 +26,18 @@ func Test_addComplexFailures(t *testing.T) {
 				return false
 			}
 
-			if len(stage.Actions) == 0 {
+			if len(stage.Steps) == 0 {
 				t.Log("stage must contain at least 1 action")
 				return false
 			}
 
-			if len(stage.Actions) > params.Budget.MaxFailures {
+			if len(stage.Steps) > params.Budget.MaxFailures {
 				t.Log("total number os actions per stage must be less or equal to budget's max value")
 				return false
 			}
 
 			points := Cost(0)
-			for _, action := range stage.Actions {
+			for _, action := range stage.Steps {
 				if action.Name == "" ||
 					action.Scale == "" ||
 					action.Severity == "" {

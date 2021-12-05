@@ -27,7 +27,7 @@ func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Ex
 	r.Get("/namespaces", func(w http.ResponseWriter, r *http.Request) {
 		getAvailableNamespaces(w, cfg, logger.Named("namespaces"))
 	})
-	r.Get("/workflows/preview", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/workflows/preview", func(w http.ResponseWriter, r *http.Request) {
 		preview(w, r, cfg, finder, logger.Named("preview"))
 	})
 	r.Post("/workflows/create", func(w http.ResponseWriter, r *http.Request) {
