@@ -21,6 +21,10 @@ type Failure struct {
 	Severity api.Severity
 }
 
+func (f Failure) ID() string {
+	return fmt.Sprintf("%s/%s#%s#%s", f.Blueprint.Type(), f.Blueprint.Name(), f.Scale, f.Severity)
+}
+
 // Generate returns random Failure.
 func (f Failure) Generate(r *rand.Rand, _ int) reflect.Value {
 	scale := []api.Scale{

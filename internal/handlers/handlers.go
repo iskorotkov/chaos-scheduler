@@ -2,23 +2,17 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
 )
-
-// form describes request form fields required to generate workflow.
-type form struct {
-	// Seed is a seed used in both failure and target selection.
-	Seed int64 `json:"seed"`
-	// Stages is a number of stages in generated workflow.
-	Stages int `json:"stages"`
-}
 
 // Router returns a handler with configured routes.
 func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) http.Handler {
@@ -40,18 +34,30 @@ func Router(cfg *config.Config, finder targets.TargetFinder, executor execute.Ex
 	return r
 }
 
-func parseForm(r *http.Request, logger *zap.SugaredLogger) (form, bool) {
-	stages, err := strconv.ParseInt(r.FormValue("stages"), 10, 32)
+type Seeds = workflows.Seeds
+
+type Stages = workflows.Stages
+
+type WorkflowBody struct {
+	Namespace string   `json:"namespace"`
+	Seeds     Seeds    `json:"seeds"`
+	Stages    Stages   `json:"stages"`
+	Targets   []string `json:"targets"`
+	Failures  []string `json:"failures"`
+}
+
+func parseWorkflowRequest(r *http.Request, log *zap.SugaredLogger) (WorkflowBody, bool) {
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Error(err.Error())
-		return form{}, false
+		log.Errorf("error reading request body: %v", err)
+		return WorkflowBody{}, false
 	}
 
-	seed, err := strconv.ParseInt(r.FormValue("seed"), 10, 64)
-	if err != nil {
-		logger.Error(err.Error())
-		return form{}, false
+	var body WorkflowBody
+	if err := json.Unmarshal(b, &body); err != nil {
+		log.Errorf("error marshaling request body to json: %v", err)
+		return WorkflowBody{}, false
 	}
 
-	return form{Seed: seed, Stages: int(stages)}, true
+	return body, true
 }

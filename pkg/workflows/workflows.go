@@ -3,22 +3,21 @@ package workflows
 
 import (
 	"errors"
+	"math/rand"
+	"reflect"
+	"time"
+
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/assemble"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/generate"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
-	"math/rand"
-	"reflect"
-	"time"
 )
 
 var (
 	// ErrScenarioParams is returned when scenario params are invalid.
 	ErrScenarioParams = errors.New("couldn't create scenario with given parameters")
-	// ErrTargetsFetch is returned when targets couldn't be fetched.
-	ErrTargetsFetch = errors.New("couldn't fetch targets")
 	// ErrNotEnoughTargets is returned when the number of targets is too small.
 	ErrNotEnoughTargets = errors.New("not enough targets present")
 	// ErrNotEnoughFailures is returned when the number of failures is too small.
@@ -29,12 +28,17 @@ var (
 	ErrExecution = errors.New("couldn't execute generated workflow")
 )
 
+type (
+	Seeds  = generate.Seeds
+	Stages = generate.Stages
+)
+
 // ScenarioParams describes all values required to generate scenario.
 type ScenarioParams struct {
-	// Seed is used for selecting both targets and failures.
-	Seed int64
+	// Seeds is used for selecting both targets and failures.
+	Seeds Seeds
 	// Stages is a number of stages in a generated scenario.
-	Stages int
+	Stages Stages
 	// AppNS is a namespace with targets.
 	AppNS string
 	// AppLabel is a label used for target selection.
@@ -43,8 +47,8 @@ type ScenarioParams struct {
 	StageDuration time.Duration
 	// Failures is a list of enabled failures.
 	Failures []failures.Failure
-	// TargetFinder is used to fetch targets.
-	TargetFinder targets.TargetFinder
+	// Targets is a list of enabled targets.
+	Targets []targets.Target
 }
 
 // Generate returns random ScenarioParams.
@@ -54,36 +58,37 @@ func (s ScenarioParams) Generate(rand *rand.Rand, size int) reflect.Value {
 		fs = append(fs, failures.Failure{}.Generate(rand, size).Interface().(failures.Failure))
 	}
 
-	finder := targets.TestTargetFinder{}.Generate(rand, size).Interface().(targets.TestTargetFinder)
+	var ts []targets.Target
+	for i := 0; i <= rand.Intn(10); i++ {
+		ts = append(ts, targets.Target{}.Generate(rand, size).Interface().(targets.Target))
+	}
+
 	return reflect.ValueOf(ScenarioParams{
-		Seed:          rand.Int63(),
-		Stages:        -10 + rand.Intn(120),
+		Seeds: Seeds{
+			Targets:  rand.Int63(),
+			Failures: rand.Int63(),
+		},
+		Stages: Stages{
+			Single:  -10 + rand.Intn(120),
+			Similar: -10 + rand.Intn(120),
+			Mixed:   -10 + rand.Intn(120),
+		},
 		AppNS:         "chaos-app",
 		AppLabel:      "app",
 		StageDuration: time.Duration(-10+rand.Int63n(200)) * time.Second,
 		Failures:      fs,
-		TargetFinder:  &finder,
+		Targets:       ts,
 	})
 }
 
 // CreateScenario returns new generate.Scenario to preview.
 func CreateScenario(params ScenarioParams, logger *zap.SugaredLogger) (generate.Scenario, error) {
-	ts, err := params.TargetFinder.List(params.AppNS, params.AppLabel)
-	if err != nil {
-		logger.Errorw(err.Error())
-		if err == targets.ErrClient {
-			return generate.Scenario{}, ErrTargetsFetch
-		} else {
-			return generate.Scenario{}, ErrNotEnoughTargets
-		}
-	}
-
 	scenario, err := generate.Generate(generate.Params{
-		Seed:          params.Seed,
+		Seed:          params.Seeds,
 		Stages:        params.Stages,
 		StageDuration: params.StageDuration,
 		Failures:      params.Failures,
-		Targets:       ts,
+		Targets:       params.Targets,
 		Budget:        generate.DefaultBudget(),
 		Modifiers:     generate.DefaultModifiers(),
 		Logger:        logger.Named("generate"),

@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/execute"
 	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 // createResponse is a response returned after workflow was created and launched.
@@ -20,22 +21,38 @@ type createResponse struct {
 
 // create handles requests to create and launch workflow.
 func create(w http.ResponseWriter, r *http.Request, cfg *config.Config, finder targets.TargetFinder, executor execute.Executor, logger *zap.SugaredLogger) {
-	form, ok := parseForm(r, logger.Named("params"))
+	body, ok := parseWorkflowRequest(r, logger.Named("body"))
 	if !ok {
-		msg := "couldn't parse form data"
+		msg := "couldn't parse body"
 		logger.Error(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
+	if body.Namespace != cfg.AppNS {
+		msg := "only default namespace is allowed in current version"
+		logger.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	ts, err := finder.List(body.Namespace, cfg.AppLabel)
+	if err != nil {
+		logger.Errorf("error getting list of targets: %v", err)
+		http.Error(w, "error getting list of targets", http.StatusInternalServerError)
+		return
+	}
+
+	fs := enabledFailures(cfg)
+
 	sp := workflows.ScenarioParams{
-		Seed:          form.Seed,
-		Stages:        form.Stages,
-		AppNS:         cfg.AppNS,
+		Seeds:         body.Seeds,
+		Stages:        body.Stages,
+		AppNS:         body.Namespace,
 		AppLabel:      cfg.AppLabel,
 		StageDuration: cfg.StageDuration,
-		Failures:      enabledFailures(cfg),
-		TargetFinder:  finder,
+		Failures:      mergeFailures(fs, body.Failures),
+		Targets:       mergeTargets(ts, body.Targets),
 	}
 	wp := workflows.WorkflowParams{Extensions: enabledExtensions(cfg, logger.Named("extensions"))}
 	ep := workflows.ExecutionParams{Executor: executor}
@@ -45,12 +62,10 @@ func create(w http.ResponseWriter, r *http.Request, cfg *config.Config, finder t
 		logger.Errorw(err.Error())
 		if err == workflows.ErrNotEnoughTargets ||
 			err == workflows.ErrNotEnoughFailures ||
-			err == workflows.ErrTargetsFetch ||
-			err == workflows.ErrAssemble ||
-			err == workflows.ErrExecution {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
+			err == workflows.ErrScenarioParams {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		return

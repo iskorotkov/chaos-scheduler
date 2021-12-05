@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/iskorotkov/chaos-scheduler/internal/config"
@@ -21,7 +20,7 @@ func getAvailableFailures(w http.ResponseWriter, cfg *config.Config, log *zap.Su
 	var failures []Failure
 	for _, f := range enabledFailures(cfg) {
 		failures = append(failures, Failure{
-			ID:       fmt.Sprintf("%s/%s/%s/%s", f.Blueprint.Type(), f.Blueprint.Name(), f.Scale, f.Severity),
+			ID:       f.ID(),
 			Type:     string(f.Blueprint.Type()),
 			Name:     f.Blueprint.Name(),
 			Severity: string(f.Severity),

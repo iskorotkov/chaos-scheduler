@@ -1,10 +1,11 @@
 package generate
 
 import (
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 	"math/rand"
 	"testing"
 	"testing/quick"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
 )
 
 func Test_addComplexFailures(t *testing.T) {
@@ -17,7 +18,7 @@ func Test_addComplexFailures(t *testing.T) {
 			return true
 		}
 
-		stages := addComplexFailures(params, rand.New(rand.NewSource(0)))
+		stages := addComplexFailures(params, rand.New(rand.NewSource(0)), r)
 
 		for _, stage := range stages {
 			if stage.Duration != params.StageDuration {

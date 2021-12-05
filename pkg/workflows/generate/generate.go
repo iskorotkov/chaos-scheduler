@@ -3,12 +3,13 @@ package generate
 
 import (
 	"errors"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
-	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
-	"go.uber.org/zap"
 	"math/rand"
 	"reflect"
 	"time"
+
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/failures"
+	"github.com/iskorotkov/chaos-scheduler/pkg/workflows/targets"
+	"go.uber.org/zap"
 )
 
 var (
@@ -25,11 +26,26 @@ const (
 	retries = 3
 )
 
+type Seeds struct {
+	Targets  int64 `json:"targets"`
+	Failures int64 `json:"failures"`
+}
+
+type Stages struct {
+	Single  int `json:"single"`
+	Similar int `json:"similar"`
+	Mixed   int `json:"mixed"`
+}
+
+func (s Stages) Sum() int {
+	return s.Single + s.Similar + s.Mixed
+}
+
 type Params struct {
 	// Seed to use for selecting both targets and failures.
-	Seed int64
+	Seed Seeds
 	// Stages is a total number of stages.
-	Stages        int
+	Stages        Stages
 	StageDuration time.Duration
 	Failures      []failures.Failure
 	Targets       []targets.Target
@@ -52,8 +68,15 @@ func (p Params) Generate(r *rand.Rand, size int) reflect.Value {
 	}
 
 	return reflect.ValueOf(Params{
-		Stages:        -10 + r.Intn(120),
-		Seed:          0,
+		Stages: Stages{
+			Single:  -10 + r.Intn(120),
+			Similar: -10 + r.Intn(120),
+			Mixed:   -10 + r.Intn(120),
+		},
+		Seed: Seeds{
+			Targets:  0,
+			Failures: 0,
+		},
 		StageDuration: time.Duration(-10+r.Intn(200)) * time.Second,
 		Failures:      fs,
 		Targets:       ts,
@@ -76,11 +99,11 @@ func Generate(params Params) (Scenario, error) {
 		return Scenario{}, ErrMaxPoints
 	}
 
-	if params.Stages <= 0 {
+	if params.Stages.Single < 0 || params.Stages.Similar < 0 || params.Stages.Mixed < 0 || params.Stages.Sum() <= 0 {
 		return Scenario{}, ErrNonPositiveStages
 	}
 
-	if params.Stages > 100 {
+	if params.Stages.Single > 100 || params.Stages.Similar > 100 || params.Stages.Mixed > 100 {
 		return Scenario{}, ErrTooManyStages
 	}
 
@@ -92,12 +115,13 @@ func Generate(params Params) (Scenario, error) {
 		return Scenario{}, ErrStageDuration
 	}
 
-	rng := rand.New(rand.NewSource(params.Seed))
+	failuresRng := rand.New(rand.NewSource(params.Seed.Failures))
+	targetsRng := rand.New(rand.NewSource(params.Seed.Targets))
 
 	s := make([]Stage, 0)
-	s = append(s, addIsolatedFailures(params, rng)...)
-	s = append(s, addCascadeFailures(params, rng)...)
-	s = append(s, addComplexFailures(params, rng)...)
+	s = append(s, addIsolatedFailures(params, failuresRng, targetsRng)...)
+	s = append(s, addCascadeFailures(params, failuresRng, targetsRng)...)
+	s = append(s, addComplexFailures(params, failuresRng, targetsRng)...)
 
 	return Scenario{Stages: s}, nil
 }
