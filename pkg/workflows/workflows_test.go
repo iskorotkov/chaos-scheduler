@@ -11,9 +11,9 @@ import (
 )
 
 func paramsValid(params ScenarioParams) bool {
-	return params.Stages.Single > 0 && params.Stages.Single <= 100 &&
-		params.Stages.Similar > 0 && params.Stages.Similar <= 100 &&
-		params.Stages.Mixed > 0 && params.Stages.Mixed <= 100 &&
+	return params.Stages.Single >= 0 && params.Stages.Single <= 100 &&
+		params.Stages.Similar >= 0 && params.Stages.Similar <= 100 &&
+		params.Stages.Mixed >= 0 && params.Stages.Mixed <= 100 &&
 		params.StageDuration >= time.Second
 }
 
