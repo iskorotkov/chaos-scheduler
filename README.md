@@ -65,8 +65,6 @@ Cluster failures target entire cluster. No cluster failures currently supported.
 
 **Namespace**. Targets are fetched from Kubernetes. Service fetches only targets from specified namespace to avoid targeting production instances.
 
-**Annotation**. Moreover, each target must have annotation `litmuschaos.io/chaos: "true"` in order for chaos experiments to work. It is a precaution measure to avoid targeting production instances.
-
 **Target selection**. Service randomly picks appropriate target for each failure. It's possible to change target selection by providing another seed.
 
 ### Workflows

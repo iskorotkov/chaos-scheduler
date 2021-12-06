@@ -107,7 +107,7 @@ func NewEngine(params EngineParams) Engine {
 			AppInfo:             params.AppInfo,
 			JobCleanUpPolicy:    "delete",
 			Monitoring:          false,
-			AnnotationCheck:     "true",
+			AnnotationCheck:     "false",
 			EngineState:         "active",
 			ChaosServiceAccount: "litmus-admin",
 			Experiments:         params.Experiments,
