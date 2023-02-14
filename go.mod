@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/argoproj/argo-workflows/v3 v3.2.1
 	github.com/argoproj/pkg v0.11.0 // indirect
-	github.com/aws/aws-sdk-go v1.33.16 // indirect
+	github.com/aws/aws-sdk-go v1.34.0 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
